@@ -1,0 +1,170 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - button "Open search" [ref=e5] [cursor=pointer]:
+        - img [ref=e6]
+      - button "Open menu" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+        - generic [ref=e11]: Menu
+  - complementary [ref=e12]:
+    - button [ref=e13] [cursor=pointer]:
+      - img [ref=e14]
+      - generic [ref=e17]: Close
+    - link [ref=e18] [cursor=pointer]:
+      - /url: /
+      - text: Home
+    - link [ref=e19] [cursor=pointer]:
+      - /url: /posts
+      - text: All Posts
+    - link [ref=e20] [cursor=pointer]:
+      - /url: /about
+      - text: About
+    - link [ref=e21] [cursor=pointer]:
+      - /url: /contact
+      - text: Contact
+    - link [ref=e22] [cursor=pointer]:
+      - /url: /privacy
+      - text: Privacy
+    - link [ref=e23] [cursor=pointer]:
+      - /url: /terms
+      - text: Terms
+    - link [ref=e24] [cursor=pointer]:
+      - /url: /admin/login
+      - text: Admin Login
+    - heading [level=3] [ref=e25]: Categories
+    - link [ref=e26] [cursor=pointer]:
+      - /url: /category/archive-011e7db8
+      - text: Archive 011e7db8
+    - link [ref=e27] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+      - text: Archive 03ea265b
+    - link [ref=e28] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+      - text: Archive 3be96e1c
+    - link [ref=e29] [cursor=pointer]:
+      - /url: /category/archive-906af7b3
+      - text: Archive 906af7b3
+    - link [ref=e30] [cursor=pointer]:
+      - /url: /category/archive-b20abaec
+      - text: Archive b20abaec
+    - link [ref=e31] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+      - text: Archive bcdd9822
+    - link [ref=e32] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+      - text: Archive c06c9518
+    - link [ref=e33] [cursor=pointer]:
+      - /url: /category/archive-cba273d0
+      - text: Archive cba273d0
+    - link [ref=e34] [cursor=pointer]:
+      - /url: /category/browser-category
+      - text: Browser Category
+    - link [ref=e35] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+      - text: Media API Category 1108
+    - link [ref=e36] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+      - text: Media API Test Category 17783254
+    - link [ref=e37] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+      - text: Python 0dc25206
+    - link [ref=e38] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+      - text: Python 11c0e389
+    - link [ref=e39] [cursor=pointer]:
+      - /url: /category/python-20794c79
+      - text: Python 20794c79
+    - link [ref=e40] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+      - text: Python 2488b0e3
+    - link [ref=e41] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+      - text: Python 2b82d3e6
+    - link [ref=e42] [cursor=pointer]:
+      - /url: /category/python-4d920560
+      - text: Python 4d920560
+    - link [ref=e43] [cursor=pointer]:
+      - /url: /category/python-5063a70e
+      - text: Python 5063a70e
+    - link [ref=e44] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+      - text: Python 6341aab5
+    - link [ref=e45] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+      - text: Python 69cec7ad
+    - link [ref=e46] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+      - text: Python 7bb5438e
+    - link [ref=e47] [cursor=pointer]:
+      - /url: /category/python-bc356bf5
+      - text: Python bc356bf5
+    - link [ref=e48] [cursor=pointer]:
+      - /url: /category/python-bcf1bf29
+      - text: Python bcf1bf29
+    - link [ref=e49] [cursor=pointer]:
+      - /url: /category/python-c4898dba
+      - text: Python c4898dba
+  - main [ref=e50]:
+    - article [ref=e51]:
+      - paragraph [ref=e52]: Archive c06c9518 · 5 views · 1 min read · May 09, 2026
+      - heading "Archive Post 11 c06c9518" [level=1] [ref=e53]
+      - paragraph [ref=e54]: Archive summary 11 c06c9518.
+      - generic [ref=e55]: Detailed FastAPI content for terminal testing.
+      - link "#Related c06c9518" [ref=e57] [cursor=pointer]:
+        - /url: /tag/related-c06c9518
+    - generic [ref=e58]:
+      - heading "Related Posts" [level=2] [ref=e59]
+      - generic [ref=e60]:
+        - article [ref=e61]:
+          - paragraph [ref=e62]: Archive c06c9518 · May 09, 2026
+          - heading "Archive Post 10 c06c9518" [level=3] [ref=e63]:
+            - link "Archive Post 10 c06c9518" [ref=e64] [cursor=pointer]:
+              - /url: /post/archive-post-10-c06c9518
+          - paragraph [ref=e65]: Archive summary 10 c06c9518.
+          - link "Read the post" [ref=e66] [cursor=pointer]:
+            - /url: /post/archive-post-10-c06c9518
+        - article [ref=e67]:
+          - paragraph [ref=e68]: Archive c06c9518 · May 09, 2026
+          - heading "Archive Post 09 c06c9518" [level=3] [ref=e69]:
+            - link "Archive Post 09 c06c9518" [ref=e70] [cursor=pointer]:
+              - /url: /post/archive-post-09-c06c9518
+          - paragraph [ref=e71]: Archive summary 09 c06c9518.
+          - link "Read the post" [ref=e72] [cursor=pointer]:
+            - /url: /post/archive-post-09-c06c9518
+        - article [ref=e73]:
+          - paragraph [ref=e74]: Archive c06c9518 · May 09, 2026
+          - heading "Archive Post 08 c06c9518" [level=3] [ref=e75]:
+            - link "Archive Post 08 c06c9518" [ref=e76] [cursor=pointer]:
+              - /url: /post/archive-post-08-c06c9518
+          - paragraph [ref=e77]: Archive summary 08 c06c9518.
+          - link "Read the post" [ref=e78] [cursor=pointer]:
+            - /url: /post/archive-post-08-c06c9518
+        - article [ref=e79]:
+          - paragraph [ref=e80]: Archive c06c9518 · May 09, 2026
+          - heading "Archive Post 07 c06c9518" [level=3] [ref=e81]:
+            - link "Archive Post 07 c06c9518" [ref=e82] [cursor=pointer]:
+              - /url: /post/archive-post-07-c06c9518
+          - paragraph [ref=e83]: Archive summary 07 c06c9518.
+          - link "Read the post" [ref=e84] [cursor=pointer]:
+            - /url: /post/archive-post-07-c06c9518
+        - article [ref=e85]:
+          - paragraph [ref=e86]: Archive c06c9518 · May 09, 2026
+          - heading "Archive Post 06 c06c9518" [level=3] [ref=e87]:
+            - link "Archive Post 06 c06c9518" [ref=e88] [cursor=pointer]:
+              - /url: /post/archive-post-06-c06c9518
+          - paragraph [ref=e89]: Archive summary 06 c06c9518.
+          - link "Read the post" [ref=e90] [cursor=pointer]:
+            - /url: /post/archive-post-06-c06c9518
+        - article [ref=e91]:
+          - paragraph [ref=e92]: Archive c06c9518 · May 09, 2026
+          - heading "Archive Post 05 c06c9518" [level=3] [ref=e93]:
+            - link "Archive Post 05 c06c9518" [ref=e94] [cursor=pointer]:
+              - /url: /post/archive-post-05-c06c9518
+          - paragraph [ref=e95]: Archive summary 05 c06c9518.
+          - link "Read the post" [ref=e96] [cursor=pointer]:
+            - /url: /post/archive-post-05-c06c9518
+  - contentinfo [ref=e97]:
+    - paragraph [ref=e98]: Updated from tests
+    - paragraph [ref=e99]: © Blog Website

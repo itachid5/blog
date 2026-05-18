@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% block title %}Settings{% endblock %}
+{% block header %}Settings{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Site identity</p>
+      <h2>Site Settings</h2>
+    </div>
+  </div>
+  <form method="post" class="form-grid">
+    <div class="form-section two-column">
+      <label>Site Name<input name="site_name" value="{{ settings.get('site_name', '') }}" required></label>
+      <label>Logo URL<input name="logo_url" value="{{ settings.get('logo_url', '') }}"></label>
+    </div>
+    <label>Description<textarea name="site_description" rows="4">{{ settings.get('site_description', '') }}</textarea></label>
+    <div class="form-section two-column">
+      <label>Twitter URL<input name="twitter_url" value="{{ settings.get('twitter_url', '') }}"></label>
+      <label>GitHub URL<input name="github_url" value="{{ settings.get('github_url', '') }}"></label>
+      <label>LinkedIn URL<input name="linkedin_url" value="{{ settings.get('linkedin_url', '') }}"></label>
+    </div>
+    <button class="save-button">Save Settings</button>
+  </form>
+</section>
+{% endblock %}

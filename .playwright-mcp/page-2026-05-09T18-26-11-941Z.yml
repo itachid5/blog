@@ -1,0 +1,239 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - button "Open search" [ref=e5] [cursor=pointer]:
+        - img [ref=e6]
+      - button "Open menu" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+        - generic [ref=e11]: Menu
+  - complementary [ref=e12]:
+    - button [ref=e13] [cursor=pointer]:
+      - img [ref=e14]
+      - generic [ref=e17]: Close
+    - link [ref=e18] [cursor=pointer]:
+      - /url: /
+      - text: Home
+    - link [ref=e19] [cursor=pointer]:
+      - /url: /posts
+      - text: All Posts
+    - link [ref=e20] [cursor=pointer]:
+      - /url: /about
+      - text: About
+    - link [ref=e21] [cursor=pointer]:
+      - /url: /contact
+      - text: Contact
+    - link [ref=e22] [cursor=pointer]:
+      - /url: /privacy
+      - text: Privacy
+    - link [ref=e23] [cursor=pointer]:
+      - /url: /terms
+      - text: Terms
+    - link [ref=e24] [cursor=pointer]:
+      - /url: /admin/login
+      - text: Admin Login
+    - heading [level=3] [ref=e25]: Categories
+    - link [ref=e26] [cursor=pointer]:
+      - /url: /category/archive-011e7db8
+      - text: Archive 011e7db8
+    - link [ref=e27] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+      - text: Archive 03ea265b
+    - link [ref=e28] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+      - text: Archive 3be96e1c
+    - link [ref=e29] [cursor=pointer]:
+      - /url: /category/archive-906af7b3
+      - text: Archive 906af7b3
+    - link [ref=e30] [cursor=pointer]:
+      - /url: /category/archive-b20abaec
+      - text: Archive b20abaec
+    - link [ref=e31] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+      - text: Archive bcdd9822
+    - link [ref=e32] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+      - text: Archive c06c9518
+    - link [ref=e33] [cursor=pointer]:
+      - /url: /category/archive-cba273d0
+      - text: Archive cba273d0
+    - link [ref=e34] [cursor=pointer]:
+      - /url: /category/browser-category
+      - text: Browser Category
+    - link [ref=e35] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+      - text: Media API Category 1108
+    - link [ref=e36] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+      - text: Media API Test Category 17783254
+    - link [ref=e37] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+      - text: Python 0dc25206
+    - link [ref=e38] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+      - text: Python 11c0e389
+    - link [ref=e39] [cursor=pointer]:
+      - /url: /category/python-20794c79
+      - text: Python 20794c79
+    - link [ref=e40] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+      - text: Python 2488b0e3
+    - link [ref=e41] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+      - text: Python 2b82d3e6
+    - link [ref=e42] [cursor=pointer]:
+      - /url: /category/python-4d920560
+      - text: Python 4d920560
+    - link [ref=e43] [cursor=pointer]:
+      - /url: /category/python-5063a70e
+      - text: Python 5063a70e
+    - link [ref=e44] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+      - text: Python 6341aab5
+    - link [ref=e45] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+      - text: Python 69cec7ad
+    - link [ref=e46] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+      - text: Python 7bb5438e
+    - link [ref=e47] [cursor=pointer]:
+      - /url: /category/python-bc356bf5
+      - text: Python bc356bf5
+    - link [ref=e48] [cursor=pointer]:
+      - /url: /category/python-bcf1bf29
+      - text: Python bcf1bf29
+    - link [ref=e49] [cursor=pointer]:
+      - /url: /category/python-c4898dba
+      - text: Python c4898dba
+  - main [ref=e50]:
+    - generic [ref=e51]:
+      - paragraph [ref=e52]: Blog Archive
+      - heading "All Posts" [level=1] [ref=e53]
+      - paragraph [ref=e54]: Browse every published article, guide, and story.
+    - generic [ref=e55]:
+      - article [ref=e56]:
+        - paragraph [ref=e57]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 11 cba273d0" [level=3] [ref=e58]:
+          - link "Archive Post 11 cba273d0" [ref=e59] [cursor=pointer]:
+            - /url: /post/archive-post-11-cba273d0
+        - paragraph [ref=e60]: Archive summary 11 cba273d0.
+        - link "#Related cba273d0" [ref=e62] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e63] [cursor=pointer]:
+          - /url: /post/archive-post-11-cba273d0
+      - article [ref=e64]:
+        - paragraph [ref=e65]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 10 cba273d0" [level=3] [ref=e66]:
+          - link "Archive Post 10 cba273d0" [ref=e67] [cursor=pointer]:
+            - /url: /post/archive-post-10-cba273d0
+        - paragraph [ref=e68]: Archive summary 10 cba273d0.
+        - link "#Related cba273d0" [ref=e70] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e71] [cursor=pointer]:
+          - /url: /post/archive-post-10-cba273d0
+      - article [ref=e72]:
+        - paragraph [ref=e73]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 09 cba273d0" [level=3] [ref=e74]:
+          - link "Archive Post 09 cba273d0" [ref=e75] [cursor=pointer]:
+            - /url: /post/archive-post-09-cba273d0
+        - paragraph [ref=e76]: Archive summary 09 cba273d0.
+        - link "#Related cba273d0" [ref=e78] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e79] [cursor=pointer]:
+          - /url: /post/archive-post-09-cba273d0
+      - article [ref=e80]:
+        - paragraph [ref=e81]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 08 cba273d0" [level=3] [ref=e82]:
+          - link "Archive Post 08 cba273d0" [ref=e83] [cursor=pointer]:
+            - /url: /post/archive-post-08-cba273d0
+        - paragraph [ref=e84]: Archive summary 08 cba273d0.
+        - link "#Related cba273d0" [ref=e86] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e87] [cursor=pointer]:
+          - /url: /post/archive-post-08-cba273d0
+      - article [ref=e88]:
+        - paragraph [ref=e89]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 07 cba273d0" [level=3] [ref=e90]:
+          - link "Archive Post 07 cba273d0" [ref=e91] [cursor=pointer]:
+            - /url: /post/archive-post-07-cba273d0
+        - paragraph [ref=e92]: Archive summary 07 cba273d0.
+        - link "#Related cba273d0" [ref=e94] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e95] [cursor=pointer]:
+          - /url: /post/archive-post-07-cba273d0
+      - article [ref=e96]:
+        - paragraph [ref=e97]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 06 cba273d0" [level=3] [ref=e98]:
+          - link "Archive Post 06 cba273d0" [ref=e99] [cursor=pointer]:
+            - /url: /post/archive-post-06-cba273d0
+        - paragraph [ref=e100]: Archive summary 06 cba273d0.
+        - link "#Related cba273d0" [ref=e102] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e103] [cursor=pointer]:
+          - /url: /post/archive-post-06-cba273d0
+      - article [ref=e104]:
+        - paragraph [ref=e105]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 05 cba273d0" [level=3] [ref=e106]:
+          - link "Archive Post 05 cba273d0" [ref=e107] [cursor=pointer]:
+            - /url: /post/archive-post-05-cba273d0
+        - paragraph [ref=e108]: Archive summary 05 cba273d0.
+        - link "#Related cba273d0" [ref=e110] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e111] [cursor=pointer]:
+          - /url: /post/archive-post-05-cba273d0
+      - article [ref=e112]:
+        - paragraph [ref=e113]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 04 cba273d0" [level=3] [ref=e114]:
+          - link "Archive Post 04 cba273d0" [ref=e115] [cursor=pointer]:
+            - /url: /post/archive-post-04-cba273d0
+        - paragraph [ref=e116]: Archive summary 04 cba273d0.
+        - link "#Related cba273d0" [ref=e118] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e119] [cursor=pointer]:
+          - /url: /post/archive-post-04-cba273d0
+      - article [ref=e120]:
+        - paragraph [ref=e121]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 03 cba273d0" [level=3] [ref=e122]:
+          - link "Archive Post 03 cba273d0" [ref=e123] [cursor=pointer]:
+            - /url: /post/archive-post-03-cba273d0
+        - paragraph [ref=e124]: Archive summary 03 cba273d0.
+        - link "#Related cba273d0" [ref=e126] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e127] [cursor=pointer]:
+          - /url: /post/archive-post-03-cba273d0
+      - article [ref=e128]:
+        - paragraph [ref=e129]: Archive cba273d0 · May 09, 2026
+        - heading "Archive Post 02 cba273d0" [level=3] [ref=e130]:
+          - link "Archive Post 02 cba273d0" [ref=e131] [cursor=pointer]:
+            - /url: /post/archive-post-02-cba273d0
+        - paragraph [ref=e132]: Archive summary 02 cba273d0.
+        - link "#Related cba273d0" [ref=e134] [cursor=pointer]:
+          - /url: /tag/related-cba273d0
+        - link "Read more" [ref=e135] [cursor=pointer]:
+          - /url: /post/archive-post-02-cba273d0
+    - navigation "All posts pagination" [ref=e136]:
+      - generic [ref=e137]: "1"
+      - link "2" [ref=e138] [cursor=pointer]:
+        - /url: /posts?page=2
+      - link "3" [ref=e139] [cursor=pointer]:
+        - /url: /posts?page=3
+      - link "4" [ref=e140] [cursor=pointer]:
+        - /url: /posts?page=4
+      - link "5" [ref=e141] [cursor=pointer]:
+        - /url: /posts?page=5
+      - link "6" [ref=e142] [cursor=pointer]:
+        - /url: /posts?page=6
+      - link "7" [ref=e143] [cursor=pointer]:
+        - /url: /posts?page=7
+      - link "8" [ref=e144] [cursor=pointer]:
+        - /url: /posts?page=8
+      - link "9" [ref=e145] [cursor=pointer]:
+        - /url: /posts?page=9
+      - link "10" [ref=e146] [cursor=pointer]:
+        - /url: /posts?page=10
+      - link "Next" [ref=e147] [cursor=pointer]:
+        - /url: /posts?page=2
+  - contentinfo [ref=e148]:
+    - paragraph [ref=e149]: Updated from tests
+    - paragraph [ref=e150]: © Blog Website

@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block header %}Dashboard{% endblock %}
+{% block content %}
+<section class="stats dashboard-stats">
+  <div><strong>{{ counts.total_posts }}</strong><span>Total Posts</span></div>
+  <div><strong>{{ counts.published_posts }}</strong><span>Published</span></div>
+  <div><strong>{{ counts.draft_posts }}</strong><span>Drafts</span></div>
+  <div><strong>{{ counts.media }}</strong><span>Media Files</span></div>
+  <div><strong>{{ counts.categories }}</strong><span>Categories</span></div>
+  <div><strong>{{ counts.tags }}</strong><span>Tags</span></div>
+</section>
+<section class="quick-actions panel">
+  <div class="panel-heading"><div><p class="eyebrow">Shortcuts</p><h2>Quick Actions</h2></div></div>
+  <div class="quick-grid">
+    <a class="button" href="/admin/posts/create">Create Post</a>
+    <a class="button secondary-button" href="/admin/media">Upload Media</a>
+    <a class="button secondary-button" href="/admin/categories">Manage Categories</a>
+    <a class="button secondary-button" href="/admin/tags">Manage Tags</a>
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Latest activity</p><h2>Recent Posts</h2></div><a class="button ghost-button" href="/admin/posts">View All</a></div>
+  <table>
+    <thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for post in recent_posts %}
+      <tr><td data-label="Title">{{ post.title }}</td><td data-label="Status"><span class="badge {{ post.status }}">{{ post.status }}</span></td><td data-label="Views">{{ format_views_count(post.views_count) }}</td><td data-label="Action"><a href="/admin/posts/{{ post.id }}/edit">Edit</a></td></tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="4" class="empty-state">No posts yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

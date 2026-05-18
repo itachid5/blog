@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block title %}Pages{% endblock %}
+{% block header %}Pages{% endblock %}
+{% block extra_head %}<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">{% endblock %}
+{% block content %}
+<section class="panel editor-panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Static content</p>
+      <h2>Create / Update Page</h2>
+    </div>
+  </div>
+  <form method="post" class="form-grid editor-form" data-rich-form data-page-form>
+    <input type="hidden" name="page_id" id="page_id">
+    <div class="form-section two-column">
+      <label>Title<input name="title" id="page_title" required data-slug-source></label>
+      <label>Slug<input name="slug" id="page_slug" data-slug-target></label>
+      <label>Status<select name="status" id="page_status"><option value="draft">Draft</option><option value="published">Published</option></select></label>
+    </div>
+    <div class="form-section full-span">
+      <label>Content<textarea name="content" id="page_content" rows="8" required data-rich-textarea></textarea></label>
+      <div class="rich-editor" data-rich-editor></div>
+    </div>
+    <button class="save-button">Save Page</button>
+  </form>
+</section>
+<section class="panel">
+  <div class="panel-heading"><h2>Pages</h2></div>
+  <table>
+    <thead><tr><th>Title</th><th>Slug</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for page in pages %}
+      <tr>
+        <td data-label="Title">{{ page.title }}</td>
+        <td data-label="Slug">{{ page.slug }}</td>
+        <td data-label="Status"><span class="badge {{ page.status }}">{{ page.status }}</span></td>
+        <td data-label="Actions"><div class="actions"><button type="button" class="secondary-button" data-edit-page data-page-id="{{ page.id }}" data-page-title="{{ page.title }}" data-page-slug="{{ page.slug }}" data-page-status="{{ page.status }}" data-page-content="{{ page.content|e }}">Edit</button><form method="post" action="/admin/pages/{{ page.id }}/delete" data-confirm><button class="link-button">Delete</button></form></div></td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="4" class="empty-state">No pages yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+{% block scripts %}<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>{% endblock %}

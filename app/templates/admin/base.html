@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin{% endblock %}</title>
+  <script>
+    const savedAdminTheme = localStorage.getItem('admin-theme') || localStorage.getItem('theme');
+    document.documentElement.dataset.theme = savedAdminTheme || 'light';
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+  <link rel="stylesheet" href="/static/css/admin.css?v=premium-media-editor">
+</head>
+<body>
+<div class="admin-shell">
+  <div class="admin-overlay" data-admin-close hidden></div>
+  <aside class="admin-sidebar" id="admin-sidebar" aria-hidden="false">
+    <div class="admin-brand">
+      <span class="brand-mark">O</span>
+      <div>
+        <strong>{{ settings.get('site_name', 'Blog Admin') }}</strong>
+        <small>Editorial console</small>
+      </div>
+    </div>
+    {% set path = request.url.path if request is defined else '' %}
+    <nav class="admin-nav" aria-label="Admin navigation">
+      <a href="/admin/dashboard" class="{% if path.startswith('/admin/dashboard') %}active{% endif %}">Dashboard</a>
+      <a href="/admin/posts" class="{% if path.startswith('/admin/posts') %}active{% endif %}">Posts</a>
+      <a href="/admin/categories" class="{% if path.startswith('/admin/categories') %}active{% endif %}">Categories</a>
+      <a href="/admin/tags" class="{% if path.startswith('/admin/tags') %}active{% endif %}">Tags</a>
+      <a href="/admin/pages" class="{% if path.startswith('/admin/pages') %}active{% endif %}">Pages</a>
+      <span class="admin-nav-disabled" title="Comments backend is not available in this app yet">Comments</span>
+      <a href="/admin/media" class="{% if path.startswith('/admin/media') %}active{% endif %}">Media Library</a>
+      <a href="/admin/settings" class="{% if path.startswith('/admin/settings') %}active{% endif %}">Settings</a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <a href="/" target="_blank" rel="noopener">View Site</a>
+      <a href="/admin/logout">Logout</a>
+    </div>
+  </aside>
+  <main class="admin-main">
+    <header class="admin-top">
+      <button class="admin-menu-button" type="button" aria-label="Open admin menu" aria-controls="admin-sidebar" aria-expanded="false" data-admin-menu>Menu</button>
+      <div>
+        <p class="eyebrow">Admin</p>
+        <strong>{% block header %}Admin{% endblock %}</strong>
+      </div>
+      <button class="theme-pill" type="button" data-admin-theme-toggle>Theme</button>
+      <span>{{ admin.email if admin else '' }}</span>
+    </header>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+<script src="/static/js/admin.js?v=premium-media-editor"></script>
+</body>
+</html>

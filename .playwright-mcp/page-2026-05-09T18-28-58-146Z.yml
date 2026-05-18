@@ -1,0 +1,81 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - button "Open admin menu" [ref=e15] [cursor=pointer]: Menu
+      - strong [ref=e16]: Pages
+    - generic [ref=e17]:
+      - heading "Create / Update Page" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Title
+          - textbox "Title" [ref=e21]
+        - generic [ref=e22]:
+          - text: Slug
+          - textbox "Slug" [ref=e23]
+        - generic [ref=e24]:
+          - text: Content
+          - textbox "Content" [ref=e25]
+        - generic [ref=e26]:
+          - text: Status
+          - combobox "Status" [ref=e27]:
+            - option "Draft" [selected]
+            - option "Published"
+        - button "Save Page" [ref=e28] [cursor=pointer]
+    - generic [ref=e29]:
+      - heading "Pages" [level=2] [ref=e30]
+      - table [ref=e31]:
+        - rowgroup [ref=e32]:
+          - row "Title About Slug about Status published Actions Delete" [ref=e33]:
+            - cell "Title About" [ref=e34]
+            - cell "Slug about" [ref=e35]
+            - cell "Status published" [ref=e36]:
+              - text: Status
+              - generic [ref=e37]: published
+            - cell "Actions Delete" [ref=e38]:
+              - text: Actions
+              - button "Delete" [ref=e41] [cursor=pointer]
+          - row "Title Contact Slug contact Status published Actions Delete" [ref=e42]:
+            - cell "Title Contact" [ref=e43]
+            - cell "Slug contact" [ref=e44]
+            - cell "Status published" [ref=e45]:
+              - text: Status
+              - generic [ref=e46]: published
+            - cell "Actions Delete" [ref=e47]:
+              - text: Actions
+              - button "Delete" [ref=e50] [cursor=pointer]
+          - row "Title Privacy Policy Slug privacy Status published Actions Delete" [ref=e51]:
+            - cell "Title Privacy Policy" [ref=e52]
+            - cell "Slug privacy" [ref=e53]
+            - cell "Status published" [ref=e54]:
+              - text: Status
+              - generic [ref=e55]: published
+            - cell "Actions Delete" [ref=e56]:
+              - text: Actions
+              - button "Delete" [ref=e59] [cursor=pointer]
+          - row "Title Terms and Conditions Slug terms Status published Actions Delete" [ref=e60]:
+            - cell "Title Terms and Conditions" [ref=e61]
+            - cell "Slug terms" [ref=e62]
+            - cell "Status published" [ref=e63]:
+              - text: Status
+              - generic [ref=e64]: published
+            - cell "Actions Delete" [ref=e65]:
+              - text: Actions
+              - button "Delete" [ref=e68] [cursor=pointer]

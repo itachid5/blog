@@ -1,0 +1,99 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - button "Menu" [ref=e4]
+  - complementary [ref=e5]:
+    - button "Close" [ref=e6]
+    - link "Home" [ref=e7] [cursor=pointer]:
+      - /url: /
+    - link "About" [ref=e8] [cursor=pointer]:
+      - /url: /about
+    - link "Contact" [ref=e9] [cursor=pointer]:
+      - /url: /contact
+    - link "Privacy" [ref=e10] [cursor=pointer]:
+      - /url: /privacy
+    - link "Terms" [ref=e11] [cursor=pointer]:
+      - /url: /terms
+    - link "Admin Login" [ref=e12] [cursor=pointer]:
+      - /url: /admin/login
+    - heading "Categories" [level=3] [ref=e13]
+    - link "Browser Category" [ref=e14] [cursor=pointer]:
+      - /url: /category/browser-category
+    - link "Python 4d920560" [ref=e15] [cursor=pointer]:
+      - /url: /category/python-4d920560
+    - link "Python 6341aab5" [ref=e16] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - paragraph [ref=e20]: Professional Blog
+        - heading "Ideas, stories, and practical guides." [level=1] [ref=e21]
+        - paragraph [ref=e22]: Updated from tests
+        - generic [ref=e23]:
+          - textbox "Search articles" [ref=e24]
+          - button "Search" [ref=e25]
+      - article [ref=e26]:
+        - text: Featured
+        - heading "Browser Verified Blog Post" [level=2] [ref=e27]:
+          - link "Browser Verified Blog Post" [ref=e28] [cursor=pointer]:
+            - /url: /post/browser-verified-blog-post
+        - paragraph [ref=e29]: This post was created during browser verification.
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - heading "Latest Posts" [level=2] [ref=e32]
+        - generic [ref=e33]:
+          - article [ref=e34]:
+            - paragraph [ref=e35]: Browser Category
+            - heading "Browser Verified Blog Post" [level=3] [ref=e36]:
+              - link "Browser Verified Blog Post" [ref=e37] [cursor=pointer]:
+                - /url: /post/browser-verified-blog-post
+            - paragraph [ref=e38]: This post was created during browser verification.
+            - text: 1 views
+          - article [ref=e39]:
+            - paragraph [ref=e40]: Python 4d920560
+            - heading "Testing FastAPI Blog 4d920560" [level=3] [ref=e41]:
+              - link "Testing FastAPI Blog 4d920560" [ref=e42] [cursor=pointer]:
+                - /url: /post/testing-fastapi-blog-4d920560
+            - paragraph [ref=e43]: A searchable summary for pytest.
+            - text: 1 views
+          - article [ref=e44]:
+            - paragraph [ref=e45]: Python 6341aab5
+            - heading "Testing FastAPI Blog 6341aab5" [level=3] [ref=e46]:
+              - link "Testing FastAPI Blog 6341aab5" [ref=e47] [cursor=pointer]:
+                - /url: /post/testing-fastapi-blog-6341aab5
+            - paragraph [ref=e48]: A searchable summary for pytest.
+            - text: 1 views
+      - complementary [ref=e49]:
+        - heading "Trending" [level=2] [ref=e50]
+        - link "Browser Verified Blog Post 1 views" [ref=e51] [cursor=pointer]:
+          - /url: /post/browser-verified-blog-post
+          - strong [ref=e52]: Browser Verified Blog Post
+          - generic [ref=e53]: 1 views
+        - link "Testing FastAPI Blog 4d920560 1 views" [ref=e54] [cursor=pointer]:
+          - /url: /post/testing-fastapi-blog-4d920560
+          - strong [ref=e55]: Testing FastAPI Blog 4d920560
+          - generic [ref=e56]: 1 views
+        - link "Testing FastAPI Blog 6341aab5 1 views" [ref=e57] [cursor=pointer]:
+          - /url: /post/testing-fastapi-blog-6341aab5
+          - strong [ref=e58]: Testing FastAPI Blog 6341aab5
+          - generic [ref=e59]: 1 views
+        - heading "Categories" [level=2] [ref=e60]
+        - generic [ref=e61]:
+          - link "Browser Category" [ref=e62] [cursor=pointer]:
+            - /url: /category/browser-category
+          - link "Python 4d920560" [ref=e63] [cursor=pointer]:
+            - /url: /category/python-4d920560
+          - link "Python 6341aab5" [ref=e64] [cursor=pointer]:
+            - /url: /category/python-6341aab5
+        - heading "Tags" [level=2] [ref=e65]
+        - generic [ref=e66]:
+          - link "#Browser Tag" [ref=e67] [cursor=pointer]:
+            - /url: /tag/browser-tag
+          - link "#FastAPI 4d920560" [ref=e68] [cursor=pointer]:
+            - /url: /tag/fastapi-4d920560
+          - link "#FastAPI 6341aab5" [ref=e69] [cursor=pointer]:
+            - /url: /tag/fastapi-6341aab5
+  - contentinfo [ref=e70]:
+    - paragraph [ref=e71]: Updated from tests
+    - paragraph [ref=e72]: © Blog Website

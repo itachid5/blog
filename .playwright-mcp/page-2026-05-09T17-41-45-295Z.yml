@@ -1,0 +1,253 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - generic [ref=e173]:
+        - textbox "Search posts" [active] [ref=e174]
+        - button "Submit search" [ref=e175]:
+          - img [ref=e176]
+          - text: Search
+      - button "Open search" [ref=e5]:
+        - img [ref=e6]
+      - button "Open menu" [ref=e9]:
+        - img [ref=e10]
+        - generic [ref=e11]: Menu
+  - complementary [ref=e12]:
+    - button "Close menu" [ref=e13]:
+      - img [ref=e14]
+      - generic [ref=e17]: Close
+    - link "Home" [ref=e18] [cursor=pointer]:
+      - /url: /
+    - link "All Posts" [ref=e19] [cursor=pointer]:
+      - /url: /posts
+    - link "About" [ref=e20] [cursor=pointer]:
+      - /url: /about
+    - link "Contact" [ref=e21] [cursor=pointer]:
+      - /url: /contact
+    - link "Privacy" [ref=e22] [cursor=pointer]:
+      - /url: /privacy
+    - link "Terms" [ref=e23] [cursor=pointer]:
+      - /url: /terms
+    - link "Admin Login" [ref=e24] [cursor=pointer]:
+      - /url: /admin/login
+    - heading "Categories" [level=3] [ref=e25]
+    - link "Archive 03ea265b" [ref=e26] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+    - link "Archive 3be96e1c" [ref=e27] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+    - link "Archive bcdd9822" [ref=e28] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+    - link "Archive c06c9518" [ref=e29] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+    - link "Browser Category" [ref=e30] [cursor=pointer]:
+      - /url: /category/browser-category
+    - link "Media API Category 1108" [ref=e31] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+    - link "Media API Test Category 17783254" [ref=e32] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+    - link "Python 0dc25206" [ref=e33] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+    - link "Python 11c0e389" [ref=e34] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+    - link "Python 20794c79" [ref=e35] [cursor=pointer]:
+      - /url: /category/python-20794c79
+    - link "Python 2488b0e3" [ref=e36] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+    - link "Python 2b82d3e6" [ref=e37] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+    - link "Python 4d920560" [ref=e38] [cursor=pointer]:
+      - /url: /category/python-4d920560
+    - link "Python 6341aab5" [ref=e39] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+    - link "Python 69cec7ad" [ref=e40] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+    - link "Python 7bb5438e" [ref=e41] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+  - main [ref=e42]:
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - paragraph [ref=e45]: Professional Blog
+        - heading "Ideas, stories, and practical guides." [level=1] [ref=e46]
+        - paragraph [ref=e47]: Updated from tests
+        - generic [ref=e48]:
+          - textbox "Search articles" [ref=e49]
+          - button "Search" [ref=e50]
+      - article [ref=e51]:
+        - text: Featured
+        - heading "Testing FastAPI Blog 0dc25206" [level=2] [ref=e52]:
+          - link "Testing FastAPI Blog 0dc25206" [ref=e53] [cursor=pointer]:
+            - /url: /post/testing-fastapi-blog-0dc25206
+        - paragraph [ref=e54]: A searchable summary for pytest.
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - generic [ref=e57]:
+          - heading "Latest Posts" [level=2] [ref=e58]
+          - link "View All Posts" [ref=e59] [cursor=pointer]:
+            - /url: /posts
+        - generic [ref=e60]:
+          - article [ref=e61]:
+            - paragraph [ref=e62]: Archive 3be96e1c
+            - paragraph [ref=e63]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 11 3be96e1c" [level=3] [ref=e64]:
+              - link "Archive Post 11 3be96e1c" [ref=e65] [cursor=pointer]:
+                - /url: /post/archive-post-11-3be96e1c
+            - paragraph [ref=e66]: Archive summary 11 3be96e1c.
+            - link "Read more" [ref=e67] [cursor=pointer]:
+              - /url: /post/archive-post-11-3be96e1c
+          - article [ref=e68]:
+            - paragraph [ref=e69]: Archive 3be96e1c
+            - paragraph [ref=e70]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 10 3be96e1c" [level=3] [ref=e71]:
+              - link "Archive Post 10 3be96e1c" [ref=e72] [cursor=pointer]:
+                - /url: /post/archive-post-10-3be96e1c
+            - paragraph [ref=e73]: Archive summary 10 3be96e1c.
+            - link "Read more" [ref=e74] [cursor=pointer]:
+              - /url: /post/archive-post-10-3be96e1c
+          - article [ref=e75]:
+            - paragraph [ref=e76]: Archive 3be96e1c
+            - paragraph [ref=e77]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 09 3be96e1c" [level=3] [ref=e78]:
+              - link "Archive Post 09 3be96e1c" [ref=e79] [cursor=pointer]:
+                - /url: /post/archive-post-09-3be96e1c
+            - paragraph [ref=e80]: Archive summary 09 3be96e1c.
+            - link "Read more" [ref=e81] [cursor=pointer]:
+              - /url: /post/archive-post-09-3be96e1c
+          - article [ref=e82]:
+            - paragraph [ref=e83]: Archive 3be96e1c
+            - paragraph [ref=e84]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 08 3be96e1c" [level=3] [ref=e85]:
+              - link "Archive Post 08 3be96e1c" [ref=e86] [cursor=pointer]:
+                - /url: /post/archive-post-08-3be96e1c
+            - paragraph [ref=e87]: Archive summary 08 3be96e1c.
+            - link "Read more" [ref=e88] [cursor=pointer]:
+              - /url: /post/archive-post-08-3be96e1c
+          - article [ref=e89]:
+            - paragraph [ref=e90]: Archive 3be96e1c
+            - paragraph [ref=e91]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 07 3be96e1c" [level=3] [ref=e92]:
+              - link "Archive Post 07 3be96e1c" [ref=e93] [cursor=pointer]:
+                - /url: /post/archive-post-07-3be96e1c
+            - paragraph [ref=e94]: Archive summary 07 3be96e1c.
+            - link "Read more" [ref=e95] [cursor=pointer]:
+              - /url: /post/archive-post-07-3be96e1c
+          - article [ref=e96]:
+            - paragraph [ref=e97]: Archive 3be96e1c
+            - paragraph [ref=e98]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 06 3be96e1c" [level=3] [ref=e99]:
+              - link "Archive Post 06 3be96e1c" [ref=e100] [cursor=pointer]:
+                - /url: /post/archive-post-06-3be96e1c
+            - paragraph [ref=e101]: Archive summary 06 3be96e1c.
+            - link "Read more" [ref=e102] [cursor=pointer]:
+              - /url: /post/archive-post-06-3be96e1c
+          - article [ref=e103]:
+            - paragraph [ref=e104]: Archive 3be96e1c
+            - paragraph [ref=e105]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 05 3be96e1c" [level=3] [ref=e106]:
+              - link "Archive Post 05 3be96e1c" [ref=e107] [cursor=pointer]:
+                - /url: /post/archive-post-05-3be96e1c
+            - paragraph [ref=e108]: Archive summary 05 3be96e1c.
+            - link "Read more" [ref=e109] [cursor=pointer]:
+              - /url: /post/archive-post-05-3be96e1c
+          - article [ref=e110]:
+            - paragraph [ref=e111]: Archive 3be96e1c
+            - paragraph [ref=e112]: Published 3 minutes ago · 1 min read
+            - heading "Archive Post 04 3be96e1c" [level=3] [ref=e113]:
+              - link "Archive Post 04 3be96e1c" [ref=e114] [cursor=pointer]:
+                - /url: /post/archive-post-04-3be96e1c
+            - paragraph [ref=e115]: Archive summary 04 3be96e1c.
+            - link "Read more" [ref=e116] [cursor=pointer]:
+              - /url: /post/archive-post-04-3be96e1c
+      - complementary [ref=e117]:
+        - heading "Trending" [level=2] [ref=e118]
+        - link "Archive Post 11 c06c9518 4 views" [ref=e119] [cursor=pointer]:
+          - /url: /post/archive-post-11-c06c9518
+          - strong [ref=e120]: Archive Post 11 c06c9518
+          - generic [ref=e121]: 4 views
+        - link "Testing FastAPI Blog 0dc25206 4 views" [ref=e122] [cursor=pointer]:
+          - /url: /post/testing-fastapi-blog-0dc25206
+          - strong [ref=e123]: Testing FastAPI Blog 0dc25206
+          - generic [ref=e124]: 4 views
+        - link "Testing FastAPI Blog 69cec7ad 4 views" [ref=e125] [cursor=pointer]:
+          - /url: /post/testing-fastapi-blog-69cec7ad
+          - strong [ref=e126]: Testing FastAPI Blog 69cec7ad
+          - generic [ref=e127]: 4 views
+        - link "Media API Upload Test 17783254 2 views" [ref=e128] [cursor=pointer]:
+          - /url: /post/media-api-upload-test-17783254
+          - strong [ref=e129]: Media API Upload Test 17783254
+          - generic [ref=e130]: 2 views
+        - link "Media API Upload Verification 1108 2 views" [ref=e131] [cursor=pointer]:
+          - /url: /post/media-api-upload-verification-1108
+          - strong [ref=e132]: Media API Upload Verification 1108
+          - generic [ref=e133]: 2 views
+        - heading "Categories" [level=2] [ref=e134]
+        - generic [ref=e135]:
+          - link "Archive 03ea265b" [ref=e136] [cursor=pointer]:
+            - /url: /category/archive-03ea265b
+          - link "Archive 3be96e1c" [ref=e137] [cursor=pointer]:
+            - /url: /category/archive-3be96e1c
+          - link "Archive bcdd9822" [ref=e138] [cursor=pointer]:
+            - /url: /category/archive-bcdd9822
+          - link "Archive c06c9518" [ref=e139] [cursor=pointer]:
+            - /url: /category/archive-c06c9518
+          - link "Browser Category" [ref=e140] [cursor=pointer]:
+            - /url: /category/browser-category
+          - link "Media API Category 1108" [ref=e141] [cursor=pointer]:
+            - /url: /category/media-api-category-1108
+          - link "Media API Test Category 17783254" [ref=e142] [cursor=pointer]:
+            - /url: /category/media-api-test-category-17783254
+          - link "Python 0dc25206" [ref=e143] [cursor=pointer]:
+            - /url: /category/python-0dc25206
+          - link "Python 11c0e389" [ref=e144] [cursor=pointer]:
+            - /url: /category/python-11c0e389
+          - link "Python 20794c79" [ref=e145] [cursor=pointer]:
+            - /url: /category/python-20794c79
+          - link "Python 2488b0e3" [ref=e146] [cursor=pointer]:
+            - /url: /category/python-2488b0e3
+          - link "Python 2b82d3e6" [ref=e147] [cursor=pointer]:
+            - /url: /category/python-2b82d3e6
+          - link "Python 4d920560" [ref=e148] [cursor=pointer]:
+            - /url: /category/python-4d920560
+          - link "Python 6341aab5" [ref=e149] [cursor=pointer]:
+            - /url: /category/python-6341aab5
+          - link "Python 69cec7ad" [ref=e150] [cursor=pointer]:
+            - /url: /category/python-69cec7ad
+          - link "Python 7bb5438e" [ref=e151] [cursor=pointer]:
+            - /url: /category/python-7bb5438e
+        - heading "Tags" [level=2] [ref=e152]
+        - generic [ref=e153]:
+          - link "#Browser Tag" [ref=e154] [cursor=pointer]:
+            - /url: /tag/browser-tag
+          - link "#FastAPI 0dc25206" [ref=e155] [cursor=pointer]:
+            - /url: /tag/fastapi-0dc25206
+          - link "#FastAPI 11c0e389" [ref=e156] [cursor=pointer]:
+            - /url: /tag/fastapi-11c0e389
+          - link "#FastAPI 20794c79" [ref=e157] [cursor=pointer]:
+            - /url: /tag/fastapi-20794c79
+          - link "#FastAPI 2488b0e3" [ref=e158] [cursor=pointer]:
+            - /url: /tag/fastapi-2488b0e3
+          - link "#FastAPI 2b82d3e6" [ref=e159] [cursor=pointer]:
+            - /url: /tag/fastapi-2b82d3e6
+          - link "#FastAPI 4d920560" [ref=e160] [cursor=pointer]:
+            - /url: /tag/fastapi-4d920560
+          - link "#FastAPI 6341aab5" [ref=e161] [cursor=pointer]:
+            - /url: /tag/fastapi-6341aab5
+          - link "#FastAPI 69cec7ad" [ref=e162] [cursor=pointer]:
+            - /url: /tag/fastapi-69cec7ad
+          - link "#FastAPI 7bb5438e" [ref=e163] [cursor=pointer]:
+            - /url: /tag/fastapi-7bb5438e
+          - link "#Media API Tag 1108" [ref=e164] [cursor=pointer]:
+            - /url: /tag/media-api-tag-1108
+          - link "#Related 03ea265b" [ref=e165] [cursor=pointer]:
+            - /url: /tag/related-03ea265b
+          - link "#Related 3be96e1c" [ref=e166] [cursor=pointer]:
+            - /url: /tag/related-3be96e1c
+          - link "#Related bcdd9822" [ref=e167] [cursor=pointer]:
+            - /url: /tag/related-bcdd9822
+          - link "#Related c06c9518" [ref=e168] [cursor=pointer]:
+            - /url: /tag/related-c06c9518
+          - link "#media-api-test-17783254" [ref=e169] [cursor=pointer]:
+            - /url: /tag/media-api-test-17783254
+  - contentinfo [ref=e170]:
+    - paragraph [ref=e171]: Updated from tests
+    - paragraph [ref=e172]: © Blog Website

@@ -1,0 +1,105 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - button "Open admin menu" [ref=e15] [cursor=pointer]: Menu
+      - strong [ref=e16]: Create Post
+    - generic [ref=e17]:
+      - heading "Create Post" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Title
+          - textbox "Title" [ref=e21]
+        - generic [ref=e22]:
+          - text: Slug
+          - textbox "Slug" [ref=e23]
+        - generic [ref=e24]:
+          - text: Summary
+          - textbox "Summary" [ref=e25]
+        - generic [ref=e26]:
+          - text: Content
+          - textbox "Content" [ref=e27]
+        - generic [ref=e28]:
+          - text: Category
+          - combobox "Category" [ref=e29]:
+            - option "Uncategorized" [selected]
+            - option "Archive 011e7db8"
+            - option "Archive 03ea265b"
+            - option "Archive 3be96e1c"
+            - option "Archive 906af7b3"
+            - option "Archive b20abaec"
+            - option "Archive bcdd9822"
+            - option "Archive c06c9518"
+            - option "Archive cba273d0"
+            - option "Browser Category"
+            - option "Media API Category 1108"
+            - option "Media API Test Category 17783254"
+            - option "Python 0dc25206"
+            - option "Python 11c0e389"
+            - option "Python 20794c79"
+            - option "Python 2488b0e3"
+            - option "Python 2b82d3e6"
+            - option "Python 4d920560"
+            - option "Python 5063a70e"
+            - option "Python 6341aab5"
+            - option "Python 69cec7ad"
+            - option "Python 7bb5438e"
+            - option "Python bc356bf5"
+            - option "Python bcf1bf29"
+            - option "Python c4898dba"
+        - generic [ref=e30]:
+          - text: Tags
+          - listbox "Tags" [ref=e31]:
+            - option "Browser Tag" [ref=e32]
+            - option "FastAPI 0dc25206" [ref=e33]
+            - option "FastAPI 11c0e389" [ref=e34]
+            - option "FastAPI 20794c79" [ref=e35]
+            - option "FastAPI 2488b0e3" [ref=e36]
+            - option "FastAPI 2b82d3e6" [ref=e37]
+            - option "FastAPI 4d920560" [ref=e38]
+            - option "FastAPI 5063a70e" [ref=e39]
+            - option "FastAPI 6341aab5" [ref=e40]
+            - option "FastAPI 69cec7ad" [ref=e41]
+            - option "FastAPI 7bb5438e" [ref=e42]
+            - option "FastAPI bc356bf5" [ref=e43]
+            - option "FastAPI bcf1bf29" [ref=e44]
+            - option "FastAPI c4898dba" [ref=e45]
+            - option "Media API Tag 1108" [ref=e46]
+            - option "Related 011e7db8" [ref=e47]
+            - option "Related 03ea265b" [ref=e48]
+            - option "Related 3be96e1c" [ref=e49]
+            - option "Related 906af7b3" [ref=e50]
+            - option "Related b20abaec" [ref=e51]
+            - option "Related bcdd9822" [ref=e52]
+            - option "Related c06c9518" [ref=e53]
+            - option "Related cba273d0" [ref=e54]
+            - option "media-api-test-17783254" [ref=e55]
+        - generic [ref=e56]:
+          - text: Status
+          - combobox "Status" [ref=e57]:
+            - option "Draft" [selected]
+            - option "Published"
+        - generic [ref=e58]:
+          - checkbox "Featured post" [ref=e59]
+          - text: Featured post
+        - generic [ref=e60]:
+          - text: Featured Image
+          - button "Featured Image" [ref=e61]
+        - button "Save Post" [ref=e62] [cursor=pointer]

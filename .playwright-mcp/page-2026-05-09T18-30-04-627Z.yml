@@ -1,0 +1,100 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: Dashboard
+      - generic [ref=e16]: admin@example.com
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - strong [ref=e19]: "100"
+        - text: Total Posts
+      - generic [ref=e20]:
+        - strong [ref=e21]: "100"
+        - text: Published
+      - generic [ref=e22]:
+        - strong [ref=e23]: "0"
+        - text: Drafts
+      - generic [ref=e24]:
+        - strong [ref=e25]: "24"
+        - text: Categories
+      - generic [ref=e26]:
+        - strong [ref=e27]: "24"
+        - text: Tags
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Recent Posts" [level=2] [ref=e30]
+        - link "Create Post" [ref=e31] [cursor=pointer]:
+          - /url: /admin/posts/create
+      - table [ref=e32]:
+        - rowgroup [ref=e33]:
+          - row "Title Status Views Action" [ref=e34]:
+            - columnheader "Title" [ref=e35]
+            - columnheader "Status" [ref=e36]
+            - columnheader "Views" [ref=e37]
+            - columnheader "Action" [ref=e38]
+        - rowgroup [ref=e39]:
+          - row "Archive Post 11 cba273d0 published 1 Edit" [ref=e40]:
+            - cell "Archive Post 11 cba273d0" [ref=e41]
+            - cell "published" [ref=e42]:
+              - generic [ref=e43]: published
+            - cell "1" [ref=e44]
+            - cell "Edit" [ref=e45]:
+              - link "Edit" [ref=e46] [cursor=pointer]:
+                - /url: /admin/posts/100/edit
+          - row "Archive Post 10 cba273d0 published 0 Edit" [ref=e47]:
+            - cell "Archive Post 10 cba273d0" [ref=e48]
+            - cell "published" [ref=e49]:
+              - generic [ref=e50]: published
+            - cell "0" [ref=e51]
+            - cell "Edit" [ref=e52]:
+              - link "Edit" [ref=e53] [cursor=pointer]:
+                - /url: /admin/posts/99/edit
+          - row "Archive Post 09 cba273d0 published 2 Edit" [ref=e54]:
+            - cell "Archive Post 09 cba273d0" [ref=e55]
+            - cell "published" [ref=e56]:
+              - generic [ref=e57]: published
+            - cell "2" [ref=e58]
+            - cell "Edit" [ref=e59]:
+              - link "Edit" [ref=e60] [cursor=pointer]:
+                - /url: /admin/posts/98/edit
+          - row "Archive Post 08 cba273d0 published 0 Edit" [ref=e61]:
+            - cell "Archive Post 08 cba273d0" [ref=e62]
+            - cell "published" [ref=e63]:
+              - generic [ref=e64]: published
+            - cell "0" [ref=e65]
+            - cell "Edit" [ref=e66]:
+              - link "Edit" [ref=e67] [cursor=pointer]:
+                - /url: /admin/posts/97/edit
+          - row "Archive Post 07 cba273d0 published 0 Edit" [ref=e68]:
+            - cell "Archive Post 07 cba273d0" [ref=e69]
+            - cell "published" [ref=e70]:
+              - generic [ref=e71]: published
+            - cell "0" [ref=e72]
+            - cell "Edit" [ref=e73]:
+              - link "Edit" [ref=e74] [cursor=pointer]:
+                - /url: /admin/posts/96/edit
+          - row "Archive Post 06 cba273d0 published 0 Edit" [ref=e75]:
+            - cell "Archive Post 06 cba273d0" [ref=e76]
+            - cell "published" [ref=e77]:
+              - generic [ref=e78]: published
+            - cell "0" [ref=e79]
+            - cell "Edit" [ref=e80]:
+              - link "Edit" [ref=e81] [cursor=pointer]:
+                - /url: /admin/posts/95/edit

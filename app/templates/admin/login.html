@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/admin.css?v=premium-media-editor">
+</head>
+<body class="login-body">
+  <form class="login-card" method="post" action="/admin/login">
+    <p class="eyebrow">Editorial console</p>
+    <h1>Admin Login</h1>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <label>Username or email<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <button>Login</button>
+    <a href="/">Back to site</a>
+  </form>
+</body>
+</html>

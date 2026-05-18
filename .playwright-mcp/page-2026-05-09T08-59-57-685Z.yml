@@ -1,0 +1,77 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e4]:
+      - link "Home" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "About" [ref=e6] [cursor=pointer]:
+        - /url: /about
+      - link "Contact" [ref=e7] [cursor=pointer]:
+        - /url: /contact
+      - link "Privacy" [ref=e8] [cursor=pointer]:
+        - /url: /privacy
+      - link "Terms" [ref=e9] [cursor=pointer]:
+        - /url: /terms
+      - link "Admin Login" [ref=e10] [cursor=pointer]:
+        - /url: /admin/login
+    - generic [ref=e11]:
+      - textbox "Search posts" [ref=e12]
+      - button "Search" [ref=e13]
+  - complementary [ref=e14]:
+    - button "Close" [ref=e15]
+    - link "Home" [ref=e16] [cursor=pointer]:
+      - /url: /
+    - link "About" [ref=e17] [cursor=pointer]:
+      - /url: /about
+    - link "Contact" [ref=e18] [cursor=pointer]:
+      - /url: /contact
+    - link "Privacy" [ref=e19] [cursor=pointer]:
+      - /url: /privacy
+    - link "Terms" [ref=e20] [cursor=pointer]:
+      - /url: /terms
+    - link "Admin Login" [ref=e21] [cursor=pointer]:
+      - /url: /admin/login
+    - heading "Categories" [level=3] [ref=e22]
+    - link "Python 6341aab5" [ref=e23] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+  - main [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: Professional Blog
+        - heading "Ideas, stories, and practical guides." [level=1] [ref=e28]
+        - paragraph [ref=e29]: Updated from tests
+        - generic [ref=e30]:
+          - textbox "Search articles" [ref=e31]
+          - button "Search" [ref=e32]
+      - article [ref=e33]:
+        - text: Featured
+        - heading "Testing FastAPI Blog 6341aab5" [level=2] [ref=e34]:
+          - link "Testing FastAPI Blog 6341aab5" [ref=e35] [cursor=pointer]:
+            - /url: /post/testing-fastapi-blog-6341aab5
+        - paragraph [ref=e36]: A searchable summary for pytest.
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - heading "Latest Posts" [level=2] [ref=e39]
+        - article [ref=e41]:
+          - paragraph [ref=e42]: Python 6341aab5
+          - heading "Testing FastAPI Blog 6341aab5" [level=3] [ref=e43]:
+            - link "Testing FastAPI Blog 6341aab5" [ref=e44] [cursor=pointer]:
+              - /url: /post/testing-fastapi-blog-6341aab5
+          - paragraph [ref=e45]: A searchable summary for pytest.
+          - text: 1 views
+      - complementary [ref=e46]:
+        - heading "Trending" [level=2] [ref=e47]
+        - link "Testing FastAPI Blog 6341aab5 1 views" [ref=e48] [cursor=pointer]:
+          - /url: /post/testing-fastapi-blog-6341aab5
+          - strong [ref=e49]: Testing FastAPI Blog 6341aab5
+          - generic [ref=e50]: 1 views
+        - heading "Categories" [level=2] [ref=e51]
+        - link "Python 6341aab5" [ref=e53] [cursor=pointer]:
+          - /url: /category/python-6341aab5
+        - heading "Tags" [level=2] [ref=e54]
+        - link "#FastAPI 6341aab5" [ref=e56] [cursor=pointer]:
+          - /url: /tag/fastapi-6341aab5
+  - contentinfo [ref=e57]:
+    - paragraph [ref=e58]: Updated from tests
+    - paragraph [ref=e59]: © Blog Website

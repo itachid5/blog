@@ -1,0 +1,915 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: Categories
+      - generic [ref=e16]: admin@example.com
+    - generic [ref=e17]:
+      - heading "Add Category" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Name
+          - textbox "Name" [ref=e21]
+        - generic [ref=e22]:
+          - text: Description
+          - textbox "Description" [ref=e23]
+        - generic [ref=e24]:
+          - text: Menu Order
+          - spinbutton "Menu Order" [ref=e25]: "0"
+        - generic [ref=e26]:
+          - checkbox "Show in Menu" [ref=e27]
+          - text: Show in Menu
+        - button "Add Category" [ref=e28] [cursor=pointer]
+    - generic [ref=e29]:
+      - heading "All Categories" [level=2] [ref=e30]
+      - table [ref=e31]:
+        - rowgroup [ref=e32]:
+          - row "Name Slug Description Show in Menu Order Actions" [ref=e33]:
+            - columnheader "Name" [ref=e34]
+            - columnheader "Slug" [ref=e35]
+            - columnheader "Description" [ref=e36]
+            - columnheader "Show in Menu" [ref=e37]
+            - columnheader "Order" [ref=e38]
+            - columnheader "Actions" [ref=e39]
+        - rowgroup [ref=e40]:
+          - row "Archive 011e7db8 archive-011e7db8 Test category Visible 0 Update Delete" [ref=e41]:
+            - cell "Archive 011e7db8" [ref=e42]:
+              - textbox [ref=e43]: Archive 011e7db8
+            - cell "archive-011e7db8" [ref=e44]
+            - cell "Test category" [ref=e45]:
+              - textbox [ref=e46]: Test category
+            - cell "Visible" [ref=e47]:
+              - generic [ref=e48]:
+                - checkbox "Visible" [ref=e49]
+                - text: Visible
+            - cell "0" [ref=e50]:
+              - spinbutton [ref=e51]: "0"
+            - cell "Update Delete" [ref=e52]:
+              - generic [ref=e53]:
+                - button "Update" [ref=e55] [cursor=pointer]
+                - button "Delete" [ref=e57] [cursor=pointer]
+          - row "Archive 03ea265b archive-03ea265b Test category Visible 0 Update Delete" [ref=e58]:
+            - cell "Archive 03ea265b" [ref=e59]:
+              - textbox [ref=e60]: Archive 03ea265b
+            - cell "archive-03ea265b" [ref=e61]
+            - cell "Test category" [ref=e62]:
+              - textbox [ref=e63]: Test category
+            - cell "Visible" [ref=e64]:
+              - generic [ref=e65]:
+                - checkbox "Visible" [ref=e66]
+                - text: Visible
+            - cell "0" [ref=e67]:
+              - spinbutton [ref=e68]: "0"
+            - cell "Update Delete" [ref=e69]:
+              - generic [ref=e70]:
+                - button "Update" [ref=e72] [cursor=pointer]
+                - button "Delete" [ref=e74] [cursor=pointer]
+          - row "Archive 0441965f archive-0441965f Test category Visible 0 Update Delete" [ref=e75]:
+            - cell "Archive 0441965f" [ref=e76]:
+              - textbox [ref=e77]: Archive 0441965f
+            - cell "archive-0441965f" [ref=e78]
+            - cell "Test category" [ref=e79]:
+              - textbox [ref=e80]: Test category
+            - cell "Visible" [ref=e81]:
+              - generic [ref=e82]:
+                - checkbox "Visible" [ref=e83]
+                - text: Visible
+            - cell "0" [ref=e84]:
+              - spinbutton [ref=e85]: "0"
+            - cell "Update Delete" [ref=e86]:
+              - generic [ref=e87]:
+                - button "Update" [ref=e89] [cursor=pointer]
+                - button "Delete" [ref=e91] [cursor=pointer]
+          - row "Archive 3be96e1c archive-3be96e1c Test category Visible 0 Update Delete" [ref=e92]:
+            - cell "Archive 3be96e1c" [ref=e93]:
+              - textbox [ref=e94]: Archive 3be96e1c
+            - cell "archive-3be96e1c" [ref=e95]
+            - cell "Test category" [ref=e96]:
+              - textbox [ref=e97]: Test category
+            - cell "Visible" [ref=e98]:
+              - generic [ref=e99]:
+                - checkbox "Visible" [ref=e100]
+                - text: Visible
+            - cell "0" [ref=e101]:
+              - spinbutton [ref=e102]: "0"
+            - cell "Update Delete" [ref=e103]:
+              - generic [ref=e104]:
+                - button "Update" [ref=e106] [cursor=pointer]
+                - button "Delete" [ref=e108] [cursor=pointer]
+          - row "Archive 7ed5163d archive-7ed5163d Test category Visible 0 Update Delete" [ref=e109]:
+            - cell "Archive 7ed5163d" [ref=e110]:
+              - textbox [ref=e111]: Archive 7ed5163d
+            - cell "archive-7ed5163d" [ref=e112]
+            - cell "Test category" [ref=e113]:
+              - textbox [ref=e114]: Test category
+            - cell "Visible" [ref=e115]:
+              - generic [ref=e116]:
+                - checkbox "Visible" [ref=e117]
+                - text: Visible
+            - cell "0" [ref=e118]:
+              - spinbutton [ref=e119]: "0"
+            - cell "Update Delete" [ref=e120]:
+              - generic [ref=e121]:
+                - button "Update" [ref=e123] [cursor=pointer]
+                - button "Delete" [ref=e125] [cursor=pointer]
+          - row "Archive 878e572e archive-878e572e Test category Visible 0 Update Delete" [ref=e126]:
+            - cell "Archive 878e572e" [ref=e127]:
+              - textbox [ref=e128]: Archive 878e572e
+            - cell "archive-878e572e" [ref=e129]
+            - cell "Test category" [ref=e130]:
+              - textbox [ref=e131]: Test category
+            - cell "Visible" [ref=e132]:
+              - generic [ref=e133]:
+                - checkbox "Visible" [ref=e134]
+                - text: Visible
+            - cell "0" [ref=e135]:
+              - spinbutton [ref=e136]: "0"
+            - cell "Update Delete" [ref=e137]:
+              - generic [ref=e138]:
+                - button "Update" [ref=e140] [cursor=pointer]
+                - button "Delete" [ref=e142] [cursor=pointer]
+          - row "Archive 906af7b3 archive-906af7b3 Test category Visible 0 Update Delete" [ref=e143]:
+            - cell "Archive 906af7b3" [ref=e144]:
+              - textbox [ref=e145]: Archive 906af7b3
+            - cell "archive-906af7b3" [ref=e146]
+            - cell "Test category" [ref=e147]:
+              - textbox [ref=e148]: Test category
+            - cell "Visible" [ref=e149]:
+              - generic [ref=e150]:
+                - checkbox "Visible" [ref=e151]
+                - text: Visible
+            - cell "0" [ref=e152]:
+              - spinbutton [ref=e153]: "0"
+            - cell "Update Delete" [ref=e154]:
+              - generic [ref=e155]:
+                - button "Update" [ref=e157] [cursor=pointer]
+                - button "Delete" [ref=e159] [cursor=pointer]
+          - row "Archive a13ea975 archive-a13ea975 Test category Visible 0 Update Delete" [ref=e160]:
+            - cell "Archive a13ea975" [ref=e161]:
+              - textbox [ref=e162]: Archive a13ea975
+            - cell "archive-a13ea975" [ref=e163]
+            - cell "Test category" [ref=e164]:
+              - textbox [ref=e165]: Test category
+            - cell "Visible" [ref=e166]:
+              - generic [ref=e167]:
+                - checkbox "Visible" [ref=e168]
+                - text: Visible
+            - cell "0" [ref=e169]:
+              - spinbutton [ref=e170]: "0"
+            - cell "Update Delete" [ref=e171]:
+              - generic [ref=e172]:
+                - button "Update" [ref=e174] [cursor=pointer]
+                - button "Delete" [ref=e176] [cursor=pointer]
+          - row "Archive b20abaec archive-b20abaec Test category Visible 0 Update Delete" [ref=e177]:
+            - cell "Archive b20abaec" [ref=e178]:
+              - textbox [ref=e179]: Archive b20abaec
+            - cell "archive-b20abaec" [ref=e180]
+            - cell "Test category" [ref=e181]:
+              - textbox [ref=e182]: Test category
+            - cell "Visible" [ref=e183]:
+              - generic [ref=e184]:
+                - checkbox "Visible" [ref=e185]
+                - text: Visible
+            - cell "0" [ref=e186]:
+              - spinbutton [ref=e187]: "0"
+            - cell "Update Delete" [ref=e188]:
+              - generic [ref=e189]:
+                - button "Update" [ref=e191] [cursor=pointer]
+                - button "Delete" [ref=e193] [cursor=pointer]
+          - row "Archive bcdd9822 archive-bcdd9822 Test category Visible 0 Update Delete" [ref=e194]:
+            - cell "Archive bcdd9822" [ref=e195]:
+              - textbox [ref=e196]: Archive bcdd9822
+            - cell "archive-bcdd9822" [ref=e197]
+            - cell "Test category" [ref=e198]:
+              - textbox [ref=e199]: Test category
+            - cell "Visible" [ref=e200]:
+              - generic [ref=e201]:
+                - checkbox "Visible" [ref=e202]
+                - text: Visible
+            - cell "0" [ref=e203]:
+              - spinbutton [ref=e204]: "0"
+            - cell "Update Delete" [ref=e205]:
+              - generic [ref=e206]:
+                - button "Update" [ref=e208] [cursor=pointer]
+                - button "Delete" [ref=e210] [cursor=pointer]
+          - row "Archive c06c9518 archive-c06c9518 Test category Visible 0 Update Delete" [ref=e211]:
+            - cell "Archive c06c9518" [ref=e212]:
+              - textbox [ref=e213]: Archive c06c9518
+            - cell "archive-c06c9518" [ref=e214]
+            - cell "Test category" [ref=e215]:
+              - textbox [ref=e216]: Test category
+            - cell "Visible" [ref=e217]:
+              - generic [ref=e218]:
+                - checkbox "Visible" [ref=e219]
+                - text: Visible
+            - cell "0" [ref=e220]:
+              - spinbutton [ref=e221]: "0"
+            - cell "Update Delete" [ref=e222]:
+              - generic [ref=e223]:
+                - button "Update" [ref=e225] [cursor=pointer]
+                - button "Delete" [ref=e227] [cursor=pointer]
+          - row "Archive cba273d0 archive-cba273d0 Test category Visible 0 Update Delete" [ref=e228]:
+            - cell "Archive cba273d0" [ref=e229]:
+              - textbox [ref=e230]: Archive cba273d0
+            - cell "archive-cba273d0" [ref=e231]
+            - cell "Test category" [ref=e232]:
+              - textbox [ref=e233]: Test category
+            - cell "Visible" [ref=e234]:
+              - generic [ref=e235]:
+                - checkbox "Visible" [ref=e236]
+                - text: Visible
+            - cell "0" [ref=e237]:
+              - spinbutton [ref=e238]: "0"
+            - cell "Update Delete" [ref=e239]:
+              - generic [ref=e240]:
+                - button "Update" [ref=e242] [cursor=pointer]
+                - button "Delete" [ref=e244] [cursor=pointer]
+          - row "Archive f36b1cfb archive-f36b1cfb Test category Visible 0 Update Delete" [ref=e245]:
+            - cell "Archive f36b1cfb" [ref=e246]:
+              - textbox [ref=e247]: Archive f36b1cfb
+            - cell "archive-f36b1cfb" [ref=e248]
+            - cell "Test category" [ref=e249]:
+              - textbox [ref=e250]: Test category
+            - cell "Visible" [ref=e251]:
+              - generic [ref=e252]:
+                - checkbox "Visible" [ref=e253]
+                - text: Visible
+            - cell "0" [ref=e254]:
+              - spinbutton [ref=e255]: "0"
+            - cell "Update Delete" [ref=e256]:
+              - generic [ref=e257]:
+                - button "Update" [ref=e259] [cursor=pointer]
+                - button "Delete" [ref=e261] [cursor=pointer]
+          - row "Archive f6a4dc2f archive-f6a4dc2f Test category Visible 0 Update Delete" [ref=e262]:
+            - cell "Archive f6a4dc2f" [ref=e263]:
+              - textbox [ref=e264]: Archive f6a4dc2f
+            - cell "archive-f6a4dc2f" [ref=e265]
+            - cell "Test category" [ref=e266]:
+              - textbox [ref=e267]: Test category
+            - cell "Visible" [ref=e268]:
+              - generic [ref=e269]:
+                - checkbox "Visible" [ref=e270]
+                - text: Visible
+            - cell "0" [ref=e271]:
+              - spinbutton [ref=e272]: "0"
+            - cell "Update Delete" [ref=e273]:
+              - generic [ref=e274]:
+                - button "Update" [ref=e276] [cursor=pointer]
+                - button "Delete" [ref=e278] [cursor=pointer]
+          - row "Browser Category browser-category Created during Playwright verification. Visible 0 Update Delete" [ref=e279]:
+            - cell "Browser Category" [ref=e280]:
+              - textbox [ref=e281]: Browser Category
+            - cell "browser-category" [ref=e282]
+            - cell "Created during Playwright verification." [ref=e283]:
+              - textbox [ref=e284]: Created during Playwright verification.
+            - cell "Visible" [ref=e285]:
+              - generic [ref=e286]:
+                - checkbox "Visible" [ref=e287]
+                - text: Visible
+            - cell "0" [ref=e288]:
+              - spinbutton [ref=e289]: "0"
+            - cell "Update Delete" [ref=e290]:
+              - generic [ref=e291]:
+                - button "Update" [ref=e293] [cursor=pointer]
+                - button "Delete" [ref=e295] [cursor=pointer]
+          - row "Browser Menu Category browser-menu-category Created during menu verification. Visible 2 Update Delete" [ref=e296]:
+            - cell "Browser Menu Category" [ref=e297]:
+              - textbox [ref=e298]: Browser Menu Category
+            - cell "browser-menu-category" [ref=e299]
+            - cell "Created during menu verification." [ref=e300]:
+              - textbox [ref=e301]: Created during menu verification.
+            - cell "Visible" [ref=e302]:
+              - generic [ref=e303]:
+                - checkbox "Visible" [checked] [ref=e304]
+                - text: Visible
+            - cell "2" [ref=e305]:
+              - spinbutton [ref=e306]: "2"
+            - cell "Update Delete" [ref=e307]:
+              - generic [ref=e308]:
+                - button "Update" [ref=e310] [cursor=pointer]
+                - button "Delete" [ref=e312] [cursor=pointer]
+          - row "Design design Interface polish, content structure, and visual systems. Visible 0 Update Delete" [ref=e313]:
+            - cell "Design" [ref=e314]:
+              - textbox [ref=e315]: Design
+            - cell "design" [ref=e316]
+            - cell "Interface polish, content structure, and visual systems." [ref=e317]:
+              - textbox [ref=e318]: Interface polish, content structure, and visual systems.
+            - cell "Visible" [ref=e319]:
+              - generic [ref=e320]:
+                - checkbox "Visible" [ref=e321]
+                - text: Visible
+            - cell "0" [ref=e322]:
+              - spinbutton [ref=e323]: "0"
+            - cell "Update Delete" [ref=e324]:
+              - generic [ref=e325]:
+                - button "Update" [ref=e327] [cursor=pointer]
+                - button "Delete" [ref=e329] [cursor=pointer]
+          - row "Development development Practical engineering tutorials and platform notes. Visible 0 Update Delete" [ref=e330]:
+            - cell "Development" [ref=e331]:
+              - textbox [ref=e332]: Development
+            - cell "development" [ref=e333]
+            - cell "Practical engineering tutorials and platform notes." [ref=e334]:
+              - textbox [ref=e335]: Practical engineering tutorials and platform notes.
+            - cell "Visible" [ref=e336]:
+              - generic [ref=e337]:
+                - checkbox "Visible" [ref=e338]
+                - text: Visible
+            - cell "0" [ref=e339]:
+              - spinbutton [ref=e340]: "0"
+            - cell "Update Delete" [ref=e341]:
+              - generic [ref=e342]:
+                - button "Update" [ref=e344] [cursor=pointer]
+                - button "Delete" [ref=e346] [cursor=pointer]
+          - row "Engineering engineering Architecture notes, implementation details, and practical software decisions. Visible 0 Update Delete" [ref=e347]:
+            - cell "Engineering" [ref=e348]:
+              - textbox [ref=e349]: Engineering
+            - cell "engineering" [ref=e350]
+            - cell "Architecture notes, implementation details, and practical software decisions." [ref=e351]:
+              - textbox [ref=e352]: Architecture notes, implementation details, and practical software decisions.
+            - cell "Visible" [ref=e353]:
+              - generic [ref=e354]:
+                - checkbox "Visible" [ref=e355]
+                - text: Visible
+            - cell "0" [ref=e356]:
+              - spinbutton [ref=e357]: "0"
+            - cell "Update Delete" [ref=e358]:
+              - generic [ref=e359]:
+                - button "Update" [ref=e361] [cursor=pointer]
+                - button "Delete" [ref=e363] [cursor=pointer]
+          - row "Hidden Category a35591fa hidden-category-a35591fa Hidden Visible 0 Update Delete" [ref=e364]:
+            - cell "Hidden Category a35591fa" [ref=e365]:
+              - textbox [ref=e366]: Hidden Category a35591fa
+            - cell "hidden-category-a35591fa" [ref=e367]
+            - cell "Hidden" [ref=e368]:
+              - textbox [ref=e369]: Hidden
+            - cell "Visible" [ref=e370]:
+              - generic [ref=e371]:
+                - checkbox "Visible" [ref=e372]
+                - text: Visible
+            - cell "0" [ref=e373]:
+              - spinbutton [ref=e374]: "0"
+            - cell "Update Delete" [ref=e375]:
+              - generic [ref=e376]:
+                - button "Update" [ref=e378] [cursor=pointer]
+                - button "Delete" [ref=e380] [cursor=pointer]
+          - row "Hidden Category b23bcf81 hidden-category-b23bcf81 Hidden Visible 0 Update Delete" [ref=e381]:
+            - cell "Hidden Category b23bcf81" [ref=e382]:
+              - textbox [ref=e383]: Hidden Category b23bcf81
+            - cell "hidden-category-b23bcf81" [ref=e384]
+            - cell "Hidden" [ref=e385]:
+              - textbox [ref=e386]: Hidden
+            - cell "Visible" [ref=e387]:
+              - generic [ref=e388]:
+                - checkbox "Visible" [ref=e389]
+                - text: Visible
+            - cell "0" [ref=e390]:
+              - spinbutton [ref=e391]: "0"
+            - cell "Update Delete" [ref=e392]:
+              - generic [ref=e393]:
+                - button "Update" [ref=e395] [cursor=pointer]
+                - button "Delete" [ref=e397] [cursor=pointer]
+          - row "Media API Category 1108 media-api-category-1108 Category created during media API verification. Visible 0 Update Delete" [ref=e398]:
+            - cell "Media API Category 1108" [ref=e399]:
+              - textbox [ref=e400]: Media API Category 1108
+            - cell "media-api-category-1108" [ref=e401]
+            - cell "Category created during media API verification." [ref=e402]:
+              - textbox [ref=e403]: Category created during media API verification.
+            - cell "Visible" [ref=e404]:
+              - generic [ref=e405]:
+                - checkbox "Visible" [ref=e406]
+                - text: Visible
+            - cell "0" [ref=e407]:
+              - spinbutton [ref=e408]: "0"
+            - cell "Update Delete" [ref=e409]:
+              - generic [ref=e410]:
+                - button "Update" [ref=e412] [cursor=pointer]
+                - button "Delete" [ref=e414] [cursor=pointer]
+          - row "Media API Test Category 17783254 media-api-test-category-17783254 Created during media API browser test Visible 0 Update Delete" [ref=e415]:
+            - cell "Media API Test Category 17783254" [ref=e416]:
+              - textbox [ref=e417]: Media API Test Category 17783254
+            - cell "media-api-test-category-17783254" [ref=e418]
+            - cell "Created during media API browser test" [ref=e419]:
+              - textbox [ref=e420]: Created during media API browser test
+            - cell "Visible" [ref=e421]:
+              - generic [ref=e422]:
+                - checkbox "Visible" [ref=e423]
+                - text: Visible
+            - cell "0" [ref=e424]:
+              - spinbutton [ref=e425]: "0"
+            - cell "Update Delete" [ref=e426]:
+              - generic [ref=e427]:
+                - button "Update" [ref=e429] [cursor=pointer]
+                - button "Delete" [ref=e431] [cursor=pointer]
+          - row "Menu Category 179f3a04 menu-category-179f3a04 Hidden Visible 9 Update Delete" [ref=e432]:
+            - cell "Menu Category 179f3a04" [ref=e433]:
+              - textbox [ref=e434]: Menu Category 179f3a04
+            - cell "menu-category-179f3a04" [ref=e435]
+            - cell "Hidden" [ref=e436]:
+              - textbox [ref=e437]: Hidden
+            - cell "Visible" [ref=e438]:
+              - generic [ref=e439]:
+                - checkbox "Visible" [ref=e440]
+                - text: Visible
+            - cell "9" [ref=e441]:
+              - spinbutton [ref=e442]: "9"
+            - cell "Update Delete" [ref=e443]:
+              - generic [ref=e444]:
+                - button "Update" [ref=e446] [cursor=pointer]
+                - button "Delete" [ref=e448] [cursor=pointer]
+          - row "Menu Category e01dc0e4 menu-category-e01dc0e4 Hidden Visible 9 Update Delete" [ref=e449]:
+            - cell "Menu Category e01dc0e4" [ref=e450]:
+              - textbox [ref=e451]: Menu Category e01dc0e4
+            - cell "menu-category-e01dc0e4" [ref=e452]
+            - cell "Hidden" [ref=e453]:
+              - textbox [ref=e454]: Hidden
+            - cell "Visible" [ref=e455]:
+              - generic [ref=e456]:
+                - checkbox "Visible" [ref=e457]
+                - text: Visible
+            - cell "9" [ref=e458]:
+              - spinbutton [ref=e459]: "9"
+            - cell "Update Delete" [ref=e460]:
+              - generic [ref=e461]:
+                - button "Update" [ref=e463] [cursor=pointer]
+                - button "Delete" [ref=e465] [cursor=pointer]
+          - row "Operations operations Deployment, reliability, and maintenance lessons. Visible 0 Update Delete" [ref=e466]:
+            - cell "Operations" [ref=e467]:
+              - textbox [ref=e468]: Operations
+            - cell "operations" [ref=e469]
+            - cell "Deployment, reliability, and maintenance lessons." [ref=e470]:
+              - textbox [ref=e471]: Deployment, reliability, and maintenance lessons.
+            - cell "Visible" [ref=e472]:
+              - generic [ref=e473]:
+                - checkbox "Visible" [ref=e474]
+                - text: Visible
+            - cell "0" [ref=e475]:
+              - spinbutton [ref=e476]: "0"
+            - cell "Update Delete" [ref=e477]:
+              - generic [ref=e478]:
+                - button "Update" [ref=e480] [cursor=pointer]
+                - button "Delete" [ref=e482] [cursor=pointer]
+          - row "Product product Product thinking, launch notes, and user-centered tradeoffs. Visible 0 Update Delete" [ref=e483]:
+            - cell "Product" [ref=e484]:
+              - textbox [ref=e485]: Product
+            - cell "product" [ref=e486]
+            - cell "Product thinking, launch notes, and user-centered tradeoffs." [ref=e487]:
+              - textbox [ref=e488]: Product thinking, launch notes, and user-centered tradeoffs.
+            - cell "Visible" [ref=e489]:
+              - generic [ref=e490]:
+                - checkbox "Visible" [ref=e491]
+                - text: Visible
+            - cell "0" [ref=e492]:
+              - spinbutton [ref=e493]: "0"
+            - cell "Update Delete" [ref=e494]:
+              - generic [ref=e495]:
+                - button "Update" [ref=e497] [cursor=pointer]
+                - button "Delete" [ref=e499] [cursor=pointer]
+          - row "Python 0dc25206 python-0dc25206 Python category Visible 0 Update Delete" [ref=e500]:
+            - cell "Python 0dc25206" [ref=e501]:
+              - textbox [ref=e502]: Python 0dc25206
+            - cell "python-0dc25206" [ref=e503]
+            - cell "Python category" [ref=e504]:
+              - textbox [ref=e505]: Python category
+            - cell "Visible" [ref=e506]:
+              - generic [ref=e507]:
+                - checkbox "Visible" [ref=e508]
+                - text: Visible
+            - cell "0" [ref=e509]:
+              - spinbutton [ref=e510]: "0"
+            - cell "Update Delete" [ref=e511]:
+              - generic [ref=e512]:
+                - button "Update" [ref=e514] [cursor=pointer]
+                - button "Delete" [ref=e516] [cursor=pointer]
+          - row "Python 0f2b1b0f python-0f2b1b0f Test category Visible 0 Update Delete" [ref=e517]:
+            - cell "Python 0f2b1b0f" [ref=e518]:
+              - textbox [ref=e519]: Python 0f2b1b0f
+            - cell "python-0f2b1b0f" [ref=e520]
+            - cell "Test category" [ref=e521]:
+              - textbox [ref=e522]: Test category
+            - cell "Visible" [ref=e523]:
+              - generic [ref=e524]:
+                - checkbox "Visible" [ref=e525]
+                - text: Visible
+            - cell "0" [ref=e526]:
+              - spinbutton [ref=e527]: "0"
+            - cell "Update Delete" [ref=e528]:
+              - generic [ref=e529]:
+                - button "Update" [ref=e531] [cursor=pointer]
+                - button "Delete" [ref=e533] [cursor=pointer]
+          - row "Python 11c0e389 python-11c0e389 Test category Visible 0 Update Delete" [ref=e534]:
+            - cell "Python 11c0e389" [ref=e535]:
+              - textbox [ref=e536]: Python 11c0e389
+            - cell "python-11c0e389" [ref=e537]
+            - cell "Test category" [ref=e538]:
+              - textbox [ref=e539]: Test category
+            - cell "Visible" [ref=e540]:
+              - generic [ref=e541]:
+                - checkbox "Visible" [ref=e542]
+                - text: Visible
+            - cell "0" [ref=e543]:
+              - spinbutton [ref=e544]: "0"
+            - cell "Update Delete" [ref=e545]:
+              - generic [ref=e546]:
+                - button "Update" [ref=e548] [cursor=pointer]
+                - button "Delete" [ref=e550] [cursor=pointer]
+          - row "Python 20794c79 python-20794c79 Python category Visible 0 Update Delete" [ref=e551]:
+            - cell "Python 20794c79" [ref=e552]:
+              - textbox [ref=e553]: Python 20794c79
+            - cell "python-20794c79" [ref=e554]
+            - cell "Python category" [ref=e555]:
+              - textbox [ref=e556]: Python category
+            - cell "Visible" [ref=e557]:
+              - generic [ref=e558]:
+                - checkbox "Visible" [ref=e559]
+                - text: Visible
+            - cell "0" [ref=e560]:
+              - spinbutton [ref=e561]: "0"
+            - cell "Update Delete" [ref=e562]:
+              - generic [ref=e563]:
+                - button "Update" [ref=e565] [cursor=pointer]
+                - button "Delete" [ref=e567] [cursor=pointer]
+          - row "Python 2488b0e3 python-2488b0e3 Test category Visible 0 Update Delete" [ref=e568]:
+            - cell "Python 2488b0e3" [ref=e569]:
+              - textbox [ref=e570]: Python 2488b0e3
+            - cell "python-2488b0e3" [ref=e571]
+            - cell "Test category" [ref=e572]:
+              - textbox [ref=e573]: Test category
+            - cell "Visible" [ref=e574]:
+              - generic [ref=e575]:
+                - checkbox "Visible" [ref=e576]
+                - text: Visible
+            - cell "0" [ref=e577]:
+              - spinbutton [ref=e578]: "0"
+            - cell "Update Delete" [ref=e579]:
+              - generic [ref=e580]:
+                - button "Update" [ref=e582] [cursor=pointer]
+                - button "Delete" [ref=e584] [cursor=pointer]
+          - row "Python 2b82d3e6 python-2b82d3e6 Test category Visible 0 Update Delete" [ref=e585]:
+            - cell "Python 2b82d3e6" [ref=e586]:
+              - textbox [ref=e587]: Python 2b82d3e6
+            - cell "python-2b82d3e6" [ref=e588]
+            - cell "Test category" [ref=e589]:
+              - textbox [ref=e590]: Test category
+            - cell "Visible" [ref=e591]:
+              - generic [ref=e592]:
+                - checkbox "Visible" [ref=e593]
+                - text: Visible
+            - cell "0" [ref=e594]:
+              - spinbutton [ref=e595]: "0"
+            - cell "Update Delete" [ref=e596]:
+              - generic [ref=e597]:
+                - button "Update" [ref=e599] [cursor=pointer]
+                - button "Delete" [ref=e601] [cursor=pointer]
+          - row "Python 4d920560 python-4d920560 Python category Visible 0 Update Delete" [ref=e602]:
+            - cell "Python 4d920560" [ref=e603]:
+              - textbox [ref=e604]: Python 4d920560
+            - cell "python-4d920560" [ref=e605]
+            - cell "Python category" [ref=e606]:
+              - textbox [ref=e607]: Python category
+            - cell "Visible" [ref=e608]:
+              - generic [ref=e609]:
+                - checkbox "Visible" [ref=e610]
+                - text: Visible
+            - cell "0" [ref=e611]:
+              - spinbutton [ref=e612]: "0"
+            - cell "Update Delete" [ref=e613]:
+              - generic [ref=e614]:
+                - button "Update" [ref=e616] [cursor=pointer]
+                - button "Delete" [ref=e618] [cursor=pointer]
+          - row "Python 5063a70e python-5063a70e Test category Visible 0 Update Delete" [ref=e619]:
+            - cell "Python 5063a70e" [ref=e620]:
+              - textbox [ref=e621]: Python 5063a70e
+            - cell "python-5063a70e" [ref=e622]
+            - cell "Test category" [ref=e623]:
+              - textbox [ref=e624]: Test category
+            - cell "Visible" [ref=e625]:
+              - generic [ref=e626]:
+                - checkbox "Visible" [ref=e627]
+                - text: Visible
+            - cell "0" [ref=e628]:
+              - spinbutton [ref=e629]: "0"
+            - cell "Update Delete" [ref=e630]:
+              - generic [ref=e631]:
+                - button "Update" [ref=e633] [cursor=pointer]
+                - button "Delete" [ref=e635] [cursor=pointer]
+          - row "Python 5ed139e3 python-5ed139e3 Test category Visible 0 Update Delete" [ref=e636]:
+            - cell "Python 5ed139e3" [ref=e637]:
+              - textbox [ref=e638]: Python 5ed139e3
+            - cell "python-5ed139e3" [ref=e639]
+            - cell "Test category" [ref=e640]:
+              - textbox [ref=e641]: Test category
+            - cell "Visible" [ref=e642]:
+              - generic [ref=e643]:
+                - checkbox "Visible" [ref=e644]
+                - text: Visible
+            - cell "0" [ref=e645]:
+              - spinbutton [ref=e646]: "0"
+            - cell "Update Delete" [ref=e647]:
+              - generic [ref=e648]:
+                - button "Update" [ref=e650] [cursor=pointer]
+                - button "Delete" [ref=e652] [cursor=pointer]
+          - row "Python 6341aab5 python-6341aab5 Python category Visible 0 Update Delete" [ref=e653]:
+            - cell "Python 6341aab5" [ref=e654]:
+              - textbox [ref=e655]: Python 6341aab5
+            - cell "python-6341aab5" [ref=e656]
+            - cell "Python category" [ref=e657]:
+              - textbox [ref=e658]: Python category
+            - cell "Visible" [ref=e659]:
+              - generic [ref=e660]:
+                - checkbox "Visible" [ref=e661]
+                - text: Visible
+            - cell "0" [ref=e662]:
+              - spinbutton [ref=e663]: "0"
+            - cell "Update Delete" [ref=e664]:
+              - generic [ref=e665]:
+                - button "Update" [ref=e667] [cursor=pointer]
+                - button "Delete" [ref=e669] [cursor=pointer]
+          - row "Python 69cec7ad python-69cec7ad Python category Visible 0 Update Delete" [ref=e670]:
+            - cell "Python 69cec7ad" [ref=e671]:
+              - textbox [ref=e672]: Python 69cec7ad
+            - cell "python-69cec7ad" [ref=e673]
+            - cell "Python category" [ref=e674]:
+              - textbox [ref=e675]: Python category
+            - cell "Visible" [ref=e676]:
+              - generic [ref=e677]:
+                - checkbox "Visible" [ref=e678]
+                - text: Visible
+            - cell "0" [ref=e679]:
+              - spinbutton [ref=e680]: "0"
+            - cell "Update Delete" [ref=e681]:
+              - generic [ref=e682]:
+                - button "Update" [ref=e684] [cursor=pointer]
+                - button "Delete" [ref=e686] [cursor=pointer]
+          - row "Python 7bb5438e python-7bb5438e Test category Visible 0 Update Delete" [ref=e687]:
+            - cell "Python 7bb5438e" [ref=e688]:
+              - textbox [ref=e689]: Python 7bb5438e
+            - cell "python-7bb5438e" [ref=e690]
+            - cell "Test category" [ref=e691]:
+              - textbox [ref=e692]: Test category
+            - cell "Visible" [ref=e693]:
+              - generic [ref=e694]:
+                - checkbox "Visible" [ref=e695]
+                - text: Visible
+            - cell "0" [ref=e696]:
+              - spinbutton [ref=e697]: "0"
+            - cell "Update Delete" [ref=e698]:
+              - generic [ref=e699]:
+                - button "Update" [ref=e701] [cursor=pointer]
+                - button "Delete" [ref=e703] [cursor=pointer]
+          - row "Python 884711ec python-884711ec Test category Visible 0 Update Delete" [ref=e704]:
+            - cell "Python 884711ec" [ref=e705]:
+              - textbox [ref=e706]: Python 884711ec
+            - cell "python-884711ec" [ref=e707]
+            - cell "Test category" [ref=e708]:
+              - textbox [ref=e709]: Test category
+            - cell "Visible" [ref=e710]:
+              - generic [ref=e711]:
+                - checkbox "Visible" [ref=e712]
+                - text: Visible
+            - cell "0" [ref=e713]:
+              - spinbutton [ref=e714]: "0"
+            - cell "Update Delete" [ref=e715]:
+              - generic [ref=e716]:
+                - button "Update" [ref=e718] [cursor=pointer]
+                - button "Delete" [ref=e720] [cursor=pointer]
+          - row "Python a2023e38 python-a2023e38 Test category Visible 0 Update Delete" [ref=e721]:
+            - cell "Python a2023e38" [ref=e722]:
+              - textbox [ref=e723]: Python a2023e38
+            - cell "python-a2023e38" [ref=e724]
+            - cell "Test category" [ref=e725]:
+              - textbox [ref=e726]: Test category
+            - cell "Visible" [ref=e727]:
+              - generic [ref=e728]:
+                - checkbox "Visible" [ref=e729]
+                - text: Visible
+            - cell "0" [ref=e730]:
+              - spinbutton [ref=e731]: "0"
+            - cell "Update Delete" [ref=e732]:
+              - generic [ref=e733]:
+                - button "Update" [ref=e735] [cursor=pointer]
+                - button "Delete" [ref=e737] [cursor=pointer]
+          - row "Python bc356bf5 python-bc356bf5 Test category Visible 0 Update Delete" [ref=e738]:
+            - cell "Python bc356bf5" [ref=e739]:
+              - textbox [ref=e740]: Python bc356bf5
+            - cell "python-bc356bf5" [ref=e741]
+            - cell "Test category" [ref=e742]:
+              - textbox [ref=e743]: Test category
+            - cell "Visible" [ref=e744]:
+              - generic [ref=e745]:
+                - checkbox "Visible" [ref=e746]
+                - text: Visible
+            - cell "0" [ref=e747]:
+              - spinbutton [ref=e748]: "0"
+            - cell "Update Delete" [ref=e749]:
+              - generic [ref=e750]:
+                - button "Update" [ref=e752] [cursor=pointer]
+                - button "Delete" [ref=e754] [cursor=pointer]
+          - row "Python bcf1bf29 python-bcf1bf29 Test category Visible 0 Update Delete" [ref=e755]:
+            - cell "Python bcf1bf29" [ref=e756]:
+              - textbox [ref=e757]: Python bcf1bf29
+            - cell "python-bcf1bf29" [ref=e758]
+            - cell "Test category" [ref=e759]:
+              - textbox [ref=e760]: Test category
+            - cell "Visible" [ref=e761]:
+              - generic [ref=e762]:
+                - checkbox "Visible" [ref=e763]
+                - text: Visible
+            - cell "0" [ref=e764]:
+              - spinbutton [ref=e765]: "0"
+            - cell "Update Delete" [ref=e766]:
+              - generic [ref=e767]:
+                - button "Update" [ref=e769] [cursor=pointer]
+                - button "Delete" [ref=e771] [cursor=pointer]
+          - row "Python c4898dba python-c4898dba Test category Visible 0 Update Delete" [ref=e772]:
+            - cell "Python c4898dba" [ref=e773]:
+              - textbox [ref=e774]: Python c4898dba
+            - cell "python-c4898dba" [ref=e775]
+            - cell "Test category" [ref=e776]:
+              - textbox [ref=e777]: Test category
+            - cell "Visible" [ref=e778]:
+              - generic [ref=e779]:
+                - checkbox "Visible" [ref=e780]
+                - text: Visible
+            - cell "0" [ref=e781]:
+              - spinbutton [ref=e782]: "0"
+            - cell "Update Delete" [ref=e783]:
+              - generic [ref=e784]:
+                - button "Update" [ref=e786] [cursor=pointer]
+                - button "Delete" [ref=e788] [cursor=pointer]
+          - row "Python dbc719dc python-dbc719dc Test category Visible 0 Update Delete" [ref=e789]:
+            - cell "Python dbc719dc" [ref=e790]:
+              - textbox [ref=e791]: Python dbc719dc
+            - cell "python-dbc719dc" [ref=e792]
+            - cell "Test category" [ref=e793]:
+              - textbox [ref=e794]: Test category
+            - cell "Visible" [ref=e795]:
+              - generic [ref=e796]:
+                - checkbox "Visible" [ref=e797]
+                - text: Visible
+            - cell "0" [ref=e798]:
+              - spinbutton [ref=e799]: "0"
+            - cell "Update Delete" [ref=e800]:
+              - generic [ref=e801]:
+                - button "Update" [ref=e803] [cursor=pointer]
+                - button "Delete" [ref=e805] [cursor=pointer]
+          - row "Python f45b7b34 python-f45b7b34 Test category Visible 0 Update Delete" [ref=e806]:
+            - cell "Python f45b7b34" [ref=e807]:
+              - textbox [ref=e808]: Python f45b7b34
+            - cell "python-f45b7b34" [ref=e809]
+            - cell "Test category" [ref=e810]:
+              - textbox [ref=e811]: Test category
+            - cell "Visible" [ref=e812]:
+              - generic [ref=e813]:
+                - checkbox "Visible" [ref=e814]
+                - text: Visible
+            - cell "0" [ref=e815]:
+              - spinbutton [ref=e816]: "0"
+            - cell "Update Delete" [ref=e817]:
+              - generic [ref=e818]:
+                - button "Update" [ref=e820] [cursor=pointer]
+                - button "Delete" [ref=e822] [cursor=pointer]
+          - row "Shown Category a35591fa shown-category-a35591fa Visible Visible 1 Update Delete" [ref=e823]:
+            - cell "Shown Category a35591fa" [ref=e824]:
+              - textbox [ref=e825]: Shown Category a35591fa
+            - cell "shown-category-a35591fa" [ref=e826]
+            - cell "Visible" [ref=e827]:
+              - textbox [ref=e828]: Visible
+            - cell "Visible" [ref=e829]:
+              - generic [ref=e830]:
+                - checkbox "Visible" [checked] [ref=e831]
+                - text: Visible
+            - cell "1" [ref=e832]:
+              - spinbutton [ref=e833]: "1"
+            - cell "Update Delete" [ref=e834]:
+              - generic [ref=e835]:
+                - button "Update" [ref=e837] [cursor=pointer]
+                - button "Delete" [ref=e839] [cursor=pointer]
+          - row "Shown Category b23bcf81 shown-category-b23bcf81 Visible Visible 1 Update Delete" [ref=e840]:
+            - cell "Shown Category b23bcf81" [ref=e841]:
+              - textbox [ref=e842]: Shown Category b23bcf81
+            - cell "shown-category-b23bcf81" [ref=e843]
+            - cell "Visible" [ref=e844]:
+              - textbox [ref=e845]: Visible
+            - cell "Visible" [ref=e846]:
+              - generic [ref=e847]:
+                - checkbox "Visible" [checked] [ref=e848]
+                - text: Visible
+            - cell "1" [ref=e849]:
+              - spinbutton [ref=e850]: "1"
+            - cell "Update Delete" [ref=e851]:
+              - generic [ref=e852]:
+                - button "Update" [ref=e854] [cursor=pointer]
+                - button "Delete" [ref=e856] [cursor=pointer]
+          - row "Views 4b7e1a2c views-4b7e1a2c Test category Visible 0 Update Delete" [ref=e857]:
+            - cell "Views 4b7e1a2c" [ref=e858]:
+              - textbox [ref=e859]: Views 4b7e1a2c
+            - cell "views-4b7e1a2c" [ref=e860]
+            - cell "Test category" [ref=e861]:
+              - textbox [ref=e862]: Test category
+            - cell "Visible" [ref=e863]:
+              - generic [ref=e864]:
+                - checkbox "Visible" [ref=e865]
+                - text: Visible
+            - cell "0" [ref=e866]:
+              - spinbutton [ref=e867]: "0"
+            - cell "Update Delete" [ref=e868]:
+              - generic [ref=e869]:
+                - button "Update" [ref=e871] [cursor=pointer]
+                - button "Delete" [ref=e873] [cursor=pointer]
+          - row "Views 52fe71a0 views-52fe71a0 Test category Visible 0 Update Delete" [ref=e874]:
+            - cell "Views 52fe71a0" [ref=e875]:
+              - textbox [ref=e876]: Views 52fe71a0
+            - cell "views-52fe71a0" [ref=e877]
+            - cell "Test category" [ref=e878]:
+              - textbox [ref=e879]: Test category
+            - cell "Visible" [ref=e880]:
+              - generic [ref=e881]:
+                - checkbox "Visible" [ref=e882]
+                - text: Visible
+            - cell "0" [ref=e883]:
+              - spinbutton [ref=e884]: "0"
+            - cell "Update Delete" [ref=e885]:
+              - generic [ref=e886]:
+                - button "Update" [ref=e888] [cursor=pointer]
+                - button "Delete" [ref=e890] [cursor=pointer]
+          - row "Views 7401b7f4 views-7401b7f4 Test category Visible 0 Update Delete" [ref=e891]:
+            - cell "Views 7401b7f4" [ref=e892]:
+              - textbox [ref=e893]: Views 7401b7f4
+            - cell "views-7401b7f4" [ref=e894]
+            - cell "Test category" [ref=e895]:
+              - textbox [ref=e896]: Test category
+            - cell "Visible" [ref=e897]:
+              - generic [ref=e898]:
+                - checkbox "Visible" [ref=e899]
+                - text: Visible
+            - cell "0" [ref=e900]:
+              - spinbutton [ref=e901]: "0"
+            - cell "Update Delete" [ref=e902]:
+              - generic [ref=e903]:
+                - button "Update" [ref=e905] [cursor=pointer]
+                - button "Delete" [ref=e907] [cursor=pointer]
+          - row "Views 8781b2f3 views-8781b2f3 Test category Visible 0 Update Delete" [ref=e908]:
+            - cell "Views 8781b2f3" [ref=e909]:
+              - textbox [ref=e910]: Views 8781b2f3
+            - cell "views-8781b2f3" [ref=e911]
+            - cell "Test category" [ref=e912]:
+              - textbox [ref=e913]: Test category
+            - cell "Visible" [ref=e914]:
+              - generic [ref=e915]:
+                - checkbox "Visible" [ref=e916]
+                - text: Visible
+            - cell "0" [ref=e917]:
+              - spinbutton [ref=e918]: "0"
+            - cell "Update Delete" [ref=e919]:
+              - generic [ref=e920]:
+                - button "Update" [ref=e922] [cursor=pointer]
+                - button "Delete" [ref=e924] [cursor=pointer]
+          - row "Views f1a4b8b2 views-f1a4b8b2 Test category Visible 0 Update Delete" [ref=e925]:
+            - cell "Views f1a4b8b2" [ref=e926]:
+              - textbox [ref=e927]: Views f1a4b8b2
+            - cell "views-f1a4b8b2" [ref=e928]
+            - cell "Test category" [ref=e929]:
+              - textbox [ref=e930]: Test category
+            - cell "Visible" [ref=e931]:
+              - generic [ref=e932]:
+                - checkbox "Visible" [ref=e933]
+                - text: Visible
+            - cell "0" [ref=e934]:
+              - spinbutton [ref=e935]: "0"
+            - cell "Update Delete" [ref=e936]:
+              - generic [ref=e937]:
+                - button "Update" [ref=e939] [cursor=pointer]
+                - button "Delete" [ref=e941] [cursor=pointer]
+          - row "Views f84bba81 views-f84bba81 Test category Visible 0 Update Delete" [ref=e942]:
+            - cell "Views f84bba81" [ref=e943]:
+              - textbox [ref=e944]: Views f84bba81
+            - cell "views-f84bba81" [ref=e945]
+            - cell "Test category" [ref=e946]:
+              - textbox [ref=e947]: Test category
+            - cell "Visible" [ref=e948]:
+              - generic [ref=e949]:
+                - checkbox "Visible" [ref=e950]
+                - text: Visible
+            - cell "0" [ref=e951]:
+              - spinbutton [ref=e952]: "0"
+            - cell "Update Delete" [ref=e953]:
+              - generic [ref=e954]:
+                - button "Update" [ref=e956] [cursor=pointer]
+                - button "Delete" [ref=e958] [cursor=pointer]

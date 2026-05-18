@@ -1,0 +1,90 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: Posts
+      - generic [ref=e16]: admin@example.com
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - heading "Posts" [level=2] [ref=e19]
+        - link "New Post" [ref=e20] [cursor=pointer]:
+          - /url: /admin/posts/create
+      - table [ref=e21]:
+        - rowgroup [ref=e22]:
+          - row "Title Category Status Views Actions" [ref=e23]:
+            - columnheader "Title" [ref=e24]
+            - columnheader "Category" [ref=e25]
+            - columnheader "Status" [ref=e26]
+            - columnheader "Views" [ref=e27]
+            - columnheader "Actions" [ref=e28]
+          - row "Media API Upload Verification 1108 Media API Category 1108 published 0 Edit Delete" [ref=e29]:
+            - cell "Media API Upload Verification 1108" [ref=e30]
+            - cell "Media API Category 1108" [ref=e31]
+            - cell "published" [ref=e32]
+            - cell "0" [ref=e33]
+            - cell "Edit Delete" [ref=e34]:
+              - link "Edit" [ref=e35] [cursor=pointer]:
+                - /url: /admin/posts/6/edit
+              - button "Delete" [ref=e37] [cursor=pointer]
+          - row "Testing FastAPI Blog 69cec7ad Python 69cec7ad published 3 Edit Delete" [ref=e38]:
+            - cell "Testing FastAPI Blog 69cec7ad" [ref=e39]
+            - cell "Python 69cec7ad" [ref=e40]
+            - cell "published" [ref=e41]
+            - cell "3" [ref=e42]
+            - cell "Edit Delete" [ref=e43]:
+              - link "Edit" [ref=e44] [cursor=pointer]:
+                - /url: /admin/posts/5/edit
+              - button "Delete" [ref=e46] [cursor=pointer]
+          - row "Testing FastAPI Blog 20794c79 Browser Category published 1 Edit Delete" [ref=e47]:
+            - cell "Testing FastAPI Blog 20794c79" [ref=e48]
+            - cell "Browser Category" [ref=e49]
+            - cell "published" [ref=e50]
+            - cell "1" [ref=e51]
+            - cell "Edit Delete" [ref=e52]:
+              - link "Edit" [ref=e53] [cursor=pointer]:
+                - /url: /admin/posts/4/edit
+              - button "Delete" [ref=e55] [cursor=pointer]
+          - row "Browser Verified Blog Post Browser Category published 1 Edit Delete" [ref=e56]:
+            - cell "Browser Verified Blog Post" [ref=e57]
+            - cell "Browser Category" [ref=e58]
+            - cell "published" [ref=e59]
+            - cell "1" [ref=e60]
+            - cell "Edit Delete" [ref=e61]:
+              - link "Edit" [ref=e62] [cursor=pointer]:
+                - /url: /admin/posts/3/edit
+              - button "Delete" [ref=e64] [cursor=pointer]
+          - row "Testing FastAPI Blog 4d920560 Python 4d920560 published 1 Edit Delete" [ref=e65]:
+            - cell "Testing FastAPI Blog 4d920560" [ref=e66]
+            - cell "Python 4d920560" [ref=e67]
+            - cell "published" [ref=e68]
+            - cell "1" [ref=e69]
+            - cell "Edit Delete" [ref=e70]:
+              - link "Edit" [ref=e71] [cursor=pointer]:
+                - /url: /admin/posts/2/edit
+              - button "Delete" [ref=e73] [cursor=pointer]
+          - row "Testing FastAPI Blog 6341aab5 Python 6341aab5 published 1 Edit Delete" [ref=e74]:
+            - cell "Testing FastAPI Blog 6341aab5" [ref=e75]
+            - cell "Python 6341aab5" [ref=e76]
+            - cell "published" [ref=e77]
+            - cell "1" [ref=e78]
+            - cell "Edit Delete" [ref=e79]:
+              - link "Edit" [ref=e80] [cursor=pointer]:
+                - /url: /admin/posts/1/edit
+              - button "Delete" [ref=e82] [cursor=pointer]

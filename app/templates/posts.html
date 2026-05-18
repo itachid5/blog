@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}All Posts - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}
+{% block content %}
+<section class="page-card archive-hero">
+  <p class="eyebrow">Blog Archive</p>
+  <h1>All Posts</h1>
+  <p>Browse every published article, guide, and story.</p>
+</section>
+<div class="post-grid list-page">
+  {% for post in posts %}
+  <article class="post-card">
+    {% if post.featured_image_url %}<img src="{{ post.featured_image_url }}" alt="{{ post.title }}">{% endif %}
+    <p class="meta">{{ post.category.name if post.category else 'Uncategorized' }}</p>
+    <p class="post-card-meta">{{ format_views_count(post.views_count) }} · {{ estimate_read_time(post.content) }} min read{% if post.published_at %} · Published {{ published_time_label(post.published_at) }}{% endif %}</p>
+    <h3><a href="/post/{{ post.slug }}">{{ post.title }}</a></h3>
+    <p>{{ post.summary }}</p>
+    {% if post.tags %}<div class="chips post-tags">{% for tag in post.tags %}<a href="/tag/{{ tag.slug }}">#{{ tag.name }}</a>{% endfor %}</div>{% endif %}
+    <a class="read-more" href="/post/{{ post.slug }}">Read more</a>
+  </article>
+  {% else %}
+  <p class="empty-state">No published posts yet.</p>
+  {% endfor %}
+</div>
+{% if pagination.pages > 1 %}
+<nav class="pagination" aria-label="All posts pagination">
+  {% if pagination.page > 1 %}<a href="/posts?page={{ pagination.page - 1 }}">Previous</a>{% endif %}
+  {% for page_number in range(1, pagination.pages + 1) %}
+    {% if page_number == pagination.page %}<span aria-current="page">{{ page_number }}</span>{% else %}<a href="/posts?page={{ page_number }}">{{ page_number }}</a>{% endif %}
+  {% endfor %}
+  {% if pagination.page < pagination.pages %}<a href="/posts?page={{ pagination.page + 1 }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

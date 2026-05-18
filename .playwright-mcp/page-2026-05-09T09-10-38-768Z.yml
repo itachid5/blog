@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - button "Menu" [ref=e4]
+  - complementary [ref=e5]:
+    - button "Close" [ref=e6]
+    - link "Home" [ref=e7] [cursor=pointer]:
+      - /url: /
+    - link "About" [ref=e8] [cursor=pointer]:
+      - /url: /about
+    - link "Contact" [ref=e9] [cursor=pointer]:
+      - /url: /contact
+    - link "Privacy" [ref=e10] [cursor=pointer]:
+      - /url: /privacy
+    - link "Terms" [ref=e11] [cursor=pointer]:
+      - /url: /terms
+    - link "Admin Login" [ref=e12] [cursor=pointer]:
+      - /url: /admin/login
+    - heading "Categories" [level=3] [ref=e13]
+    - link "Browser Category" [ref=e14] [cursor=pointer]:
+      - /url: /category/browser-category
+    - link "Python 20794c79" [ref=e15] [cursor=pointer]:
+      - /url: /category/python-20794c79
+    - link "Python 4d920560" [ref=e16] [cursor=pointer]:
+      - /url: /category/python-4d920560
+    - link "Python 6341aab5" [ref=e17] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+    - link "Python 69cec7ad" [ref=e18] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - heading "Search" [level=1] [ref=e21]
+      - generic [ref=e22]:
+        - textbox "Search posts" [ref=e23]: Browser
+        - button "Search" [ref=e24]
+      - paragraph [ref=e25]: 2 result(s) for “Browser”.
+    - generic [ref=e26]:
+      - article [ref=e27]:
+        - heading "Testing FastAPI Blog 20794c79" [level=3] [ref=e28]:
+          - link "Testing FastAPI Blog 20794c79" [ref=e29] [cursor=pointer]:
+            - /url: /post/testing-fastapi-blog-20794c79
+        - paragraph [ref=e30]: A searchable summary for pytest.
+      - article [ref=e31]:
+        - heading "Browser Verified Blog Post" [level=3] [ref=e32]:
+          - link "Browser Verified Blog Post" [ref=e33] [cursor=pointer]:
+            - /url: /post/browser-verified-blog-post
+        - paragraph [ref=e34]: This post was created during browser verification.
+  - contentinfo [ref=e35]:
+    - paragraph [ref=e36]: Updated from tests
+    - paragraph [ref=e37]: © Blog Website

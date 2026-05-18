@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Tags{% endblock %}
+{% block header %}Tags{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Discovery labels</p>
+      <h2>Add Tag</h2>
+    </div>
+  </div>
+  <form method="post" class="form-grid compact taxonomy-form">
+    <label>Name<input name="name" required></label>
+    <label>Menu Order<input type="number" name="menu_order" value="0"></label>
+    <label class="check"><input type="checkbox" name="show_in_menu" value="true"> Show in Menu</label>
+    <button>Add Tag</button>
+  </form>
+</section>
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Taxonomy</p>
+      <h2>All Tags</h2>
+    </div>
+  </div>
+  <table class="tags-table taxonomy-admin-table">
+    <thead>
+      <tr><th>Name</th><th>Slug</th><th>Show in Menu</th><th>Order</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for tag in tags %}
+      <tr>
+        <td data-label="Name"><input form="tag-{{ tag.id }}-form" name="name" value="{{ tag.name }}" required></td>
+        <td data-label="Slug"><strong>{{ tag.slug }}</strong></td>
+        <td data-label="Show in Menu"><label class="check compact-check"><input form="tag-{{ tag.id }}-form" type="checkbox" name="show_in_menu" value="true" {% if tag.show_in_menu %}checked{% endif %}> Visible</label></td>
+        <td data-label="Order"><input form="tag-{{ tag.id }}-form" type="number" name="menu_order" value="{{ tag.menu_order }}"></td>
+        <td data-label="Actions">
+          <div class="actions">
+            <form id="tag-{{ tag.id }}-form" method="post" action="/admin/tags/{{ tag.id }}/update"><button>Update</button></form>
+            <form method="post" action="/admin/tags/{{ tag.id }}/delete" data-confirm><button class="link-button">Delete</button></form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="5" class="empty-state">No tags yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

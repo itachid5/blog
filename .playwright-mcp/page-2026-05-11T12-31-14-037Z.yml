@@ -1,0 +1,333 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - button "Switch to dark mode" [ref=e5] [cursor=pointer]:
+        - img [ref=e7]
+        - img [ref=e14]
+        - generic [ref=e16]: Dark Mode
+      - button "Open search" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - button "Open menu" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e23]: Menu
+  - complementary [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: Navigation
+        - heading [level=2] [ref=e28]: Blog Website
+      - button [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+    - navigation [ref=e33]:
+      - link [ref=e34] [cursor=pointer]:
+        - /url: /
+        - img [ref=e35]
+        - generic [ref=e39]: Home
+      - link [ref=e40] [cursor=pointer]:
+        - /url: /posts
+        - img [ref=e41]
+        - generic [ref=e43]: All Posts
+      - button [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+        - generic [ref=e51]: Categories
+        - img [ref=e53]
+      - button [ref=e56] [cursor=pointer]:
+        - img [ref=e57]
+        - generic [ref=e59]: Tags
+        - img [ref=e61]
+      - link [ref=e63] [cursor=pointer]:
+        - /url: /about
+        - img [ref=e64]
+        - generic [ref=e67]: About
+      - link [ref=e68] [cursor=pointer]:
+        - /url: /contact
+        - img [ref=e69]
+        - generic [ref=e72]: Contact
+      - link [ref=e73] [cursor=pointer]:
+        - /url: /privacy
+        - img [ref=e74]
+        - generic [ref=e76]: Privacy Policy
+      - link [ref=e77] [cursor=pointer]:
+        - /url: /terms
+        - img [ref=e78]
+        - generic [ref=e81]: Terms
+      - link [ref=e82] [cursor=pointer]:
+        - /url: /admin/login
+        - img [ref=e83]
+        - generic [ref=e86]: Admin Login
+      - button [ref=e87] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e90]: Dark Mode
+  - main [ref=e91]:
+    - generic [ref=e92]:
+      - paragraph [ref=e93]: Tags
+      - heading "Explore Tags" [level=1] [ref=e94]
+      - paragraph [ref=e95]: Follow specific ideas, series, and themes across posts.
+    - generic [ref=e96]:
+      - link "#Automation 4 posts" [ref=e97] [cursor=pointer]:
+        - /url: /tag/automation
+        - generic [ref=e98]: "#Automation"
+        - generic [ref=e99]: 4 posts
+      - link "#Browser Tag 2 posts" [ref=e100] [cursor=pointer]:
+        - /url: /tag/browser-tag
+        - generic [ref=e101]: "#Browser Tag"
+        - generic [ref=e102]: 2 posts
+      - link "#Cloud 9 posts" [ref=e103] [cursor=pointer]:
+        - /url: /tag/cloud
+        - generic [ref=e104]: "#Cloud"
+        - generic [ref=e105]: 9 posts
+      - link "#Data 3 posts" [ref=e106] [cursor=pointer]:
+        - /url: /tag/data
+        - generic [ref=e107]: "#Data"
+        - generic [ref=e108]: 3 posts
+      - link "#FastAPI 7 posts" [ref=e109] [cursor=pointer]:
+        - /url: /tag/fastapi
+        - generic [ref=e110]: "#FastAPI"
+        - generic [ref=e111]: 7 posts
+      - link "#FastAPI 0dc25206 1 post" [ref=e112] [cursor=pointer]:
+        - /url: /tag/fastapi-0dc25206
+        - generic [ref=e113]: "#FastAPI 0dc25206"
+        - generic [ref=e114]: 1 post
+      - link "#FastAPI 0f2b1b0f 1 post" [ref=e115] [cursor=pointer]:
+        - /url: /tag/fastapi-0f2b1b0f
+        - generic [ref=e116]: "#FastAPI 0f2b1b0f"
+        - generic [ref=e117]: 1 post
+      - link "#FastAPI 11c0e389 1 post" [ref=e118] [cursor=pointer]:
+        - /url: /tag/fastapi-11c0e389
+        - generic [ref=e119]: "#FastAPI 11c0e389"
+        - generic [ref=e120]: 1 post
+      - link "#FastAPI 20794c79 0 posts" [ref=e121] [cursor=pointer]:
+        - /url: /tag/fastapi-20794c79
+        - generic [ref=e122]: "#FastAPI 20794c79"
+        - generic [ref=e123]: 0 posts
+      - link "#FastAPI 2488b0e3 1 post" [ref=e124] [cursor=pointer]:
+        - /url: /tag/fastapi-2488b0e3
+        - generic [ref=e125]: "#FastAPI 2488b0e3"
+        - generic [ref=e126]: 1 post
+      - link "#FastAPI 2b82d3e6 1 post" [ref=e127] [cursor=pointer]:
+        - /url: /tag/fastapi-2b82d3e6
+        - generic [ref=e128]: "#FastAPI 2b82d3e6"
+        - generic [ref=e129]: 1 post
+      - link "#FastAPI 4d920560 1 post" [ref=e130] [cursor=pointer]:
+        - /url: /tag/fastapi-4d920560
+        - generic [ref=e131]: "#FastAPI 4d920560"
+        - generic [ref=e132]: 1 post
+      - link "#FastAPI 5063a70e 1 post" [ref=e133] [cursor=pointer]:
+        - /url: /tag/fastapi-5063a70e
+        - generic [ref=e134]: "#FastAPI 5063a70e"
+        - generic [ref=e135]: 1 post
+      - link "#FastAPI 5ed139e3 1 post" [ref=e136] [cursor=pointer]:
+        - /url: /tag/fastapi-5ed139e3
+        - generic [ref=e137]: "#FastAPI 5ed139e3"
+        - generic [ref=e138]: 1 post
+      - link "#FastAPI 6341aab5 1 post" [ref=e139] [cursor=pointer]:
+        - /url: /tag/fastapi-6341aab5
+        - generic [ref=e140]: "#FastAPI 6341aab5"
+        - generic [ref=e141]: 1 post
+      - link "#FastAPI 69cec7ad 1 post" [ref=e142] [cursor=pointer]:
+        - /url: /tag/fastapi-69cec7ad
+        - generic [ref=e143]: "#FastAPI 69cec7ad"
+        - generic [ref=e144]: 1 post
+      - link "#FastAPI 7bb5438e 1 post" [ref=e145] [cursor=pointer]:
+        - /url: /tag/fastapi-7bb5438e
+        - generic [ref=e146]: "#FastAPI 7bb5438e"
+        - generic [ref=e147]: 1 post
+      - link "#FastAPI 884711ec 1 post" [ref=e148] [cursor=pointer]:
+        - /url: /tag/fastapi-884711ec
+        - generic [ref=e149]: "#FastAPI 884711ec"
+        - generic [ref=e150]: 1 post
+      - link "#FastAPI a2023e38 1 post" [ref=e151] [cursor=pointer]:
+        - /url: /tag/fastapi-a2023e38
+        - generic [ref=e152]: "#FastAPI a2023e38"
+        - generic [ref=e153]: 1 post
+      - link "#FastAPI bc356bf5 0 posts" [ref=e154] [cursor=pointer]:
+        - /url: /tag/fastapi-bc356bf5
+        - generic [ref=e155]: "#FastAPI bc356bf5"
+        - generic [ref=e156]: 0 posts
+      - link "#FastAPI bcf1bf29 1 post" [ref=e157] [cursor=pointer]:
+        - /url: /tag/fastapi-bcf1bf29
+        - generic [ref=e158]: "#FastAPI bcf1bf29"
+        - generic [ref=e159]: 1 post
+      - link "#FastAPI c4898dba 1 post" [ref=e160] [cursor=pointer]:
+        - /url: /tag/fastapi-c4898dba
+        - generic [ref=e161]: "#FastAPI c4898dba"
+        - generic [ref=e162]: 1 post
+      - link "#FastAPI dbc719dc 1 post" [ref=e163] [cursor=pointer]:
+        - /url: /tag/fastapi-dbc719dc
+        - generic [ref=e164]: "#FastAPI dbc719dc"
+        - generic [ref=e165]: 1 post
+      - link "#FastAPI f45b7b34 1 post" [ref=e166] [cursor=pointer]:
+        - /url: /tag/fastapi-f45b7b34
+        - generic [ref=e167]: "#FastAPI f45b7b34"
+        - generic [ref=e168]: 1 post
+      - link "#Frontend 9 posts" [ref=e169] [cursor=pointer]:
+        - /url: /tag/frontend
+        - generic [ref=e170]: "#Frontend"
+        - generic [ref=e171]: 9 posts
+      - link "#Hidden Tag a35591fa 0 posts" [ref=e172] [cursor=pointer]:
+        - /url: /tag/hidden-tag-a35591fa
+        - generic [ref=e173]: "#Hidden Tag a35591fa"
+        - generic [ref=e174]: 0 posts
+      - link "#Hidden Tag b23bcf81 0 posts" [ref=e175] [cursor=pointer]:
+        - /url: /tag/hidden-tag-b23bcf81
+        - generic [ref=e176]: "#Hidden Tag b23bcf81"
+        - generic [ref=e177]: 0 posts
+      - link "#Images 4b7e1a2c 2 posts" [ref=e178] [cursor=pointer]:
+        - /url: /tag/images-4b7e1a2c
+        - generic [ref=e179]: "#Images 4b7e1a2c"
+        - generic [ref=e180]: 2 posts
+      - link "#Images 52fe71a0 2 posts" [ref=e181] [cursor=pointer]:
+        - /url: /tag/images-52fe71a0
+        - generic [ref=e182]: "#Images 52fe71a0"
+        - generic [ref=e183]: 2 posts
+      - link "#Images 7401b7f4 2 posts" [ref=e184] [cursor=pointer]:
+        - /url: /tag/images-7401b7f4
+        - generic [ref=e185]: "#Images 7401b7f4"
+        - generic [ref=e186]: 2 posts
+      - link "#Images 8781b2f3 2 posts" [ref=e187] [cursor=pointer]:
+        - /url: /tag/images-8781b2f3
+        - generic [ref=e188]: "#Images 8781b2f3"
+        - generic [ref=e189]: 2 posts
+      - link "#Images f1a4b8b2 2 posts" [ref=e190] [cursor=pointer]:
+        - /url: /tag/images-f1a4b8b2
+        - generic [ref=e191]: "#Images f1a4b8b2"
+        - generic [ref=e192]: 2 posts
+      - link "#Images f84bba81 2 posts" [ref=e193] [cursor=pointer]:
+        - /url: /tag/images-f84bba81
+        - generic [ref=e194]: "#Images f84bba81"
+        - generic [ref=e195]: 2 posts
+      - link "#Launch 3 posts" [ref=e196] [cursor=pointer]:
+        - /url: /tag/launch
+        - generic [ref=e197]: "#Launch"
+        - generic [ref=e198]: 3 posts
+      - link "#Media API Tag 1108 1 post" [ref=e199] [cursor=pointer]:
+        - /url: /tag/media-api-tag-1108
+        - generic [ref=e200]: "#Media API Tag 1108"
+        - generic [ref=e201]: 1 post
+      - link "#Menu Tag 179f3a04 0 posts" [ref=e202] [cursor=pointer]:
+        - /url: /tag/menu-tag-179f3a04
+        - generic [ref=e203]: "#Menu Tag 179f3a04"
+        - generic [ref=e204]: 0 posts
+      - link "#Menu Tag e01dc0e4 0 posts" [ref=e205] [cursor=pointer]:
+        - /url: /tag/menu-tag-e01dc0e4
+        - generic [ref=e206]: "#Menu Tag e01dc0e4"
+        - generic [ref=e207]: 0 posts
+      - link "#Python 8 posts" [ref=e208] [cursor=pointer]:
+        - /url: /tag/python
+        - generic [ref=e209]: "#Python"
+        - generic [ref=e210]: 8 posts
+      - link "#Related 011e7db8 12 posts" [ref=e211] [cursor=pointer]:
+        - /url: /tag/related-011e7db8
+        - generic [ref=e212]: "#Related 011e7db8"
+        - generic [ref=e213]: 12 posts
+      - link "#Related 03ea265b 12 posts" [ref=e214] [cursor=pointer]:
+        - /url: /tag/related-03ea265b
+        - generic [ref=e215]: "#Related 03ea265b"
+        - generic [ref=e216]: 12 posts
+      - link "#Related 0441965f 12 posts" [ref=e217] [cursor=pointer]:
+        - /url: /tag/related-0441965f
+        - generic [ref=e218]: "#Related 0441965f"
+        - generic [ref=e219]: 12 posts
+      - link "#Related 3be96e1c 12 posts" [ref=e220] [cursor=pointer]:
+        - /url: /tag/related-3be96e1c
+        - generic [ref=e221]: "#Related 3be96e1c"
+        - generic [ref=e222]: 12 posts
+      - link "#Related 7ed5163d 12 posts" [ref=e223] [cursor=pointer]:
+        - /url: /tag/related-7ed5163d
+        - generic [ref=e224]: "#Related 7ed5163d"
+        - generic [ref=e225]: 12 posts
+      - link "#Related 878e572e 12 posts" [ref=e226] [cursor=pointer]:
+        - /url: /tag/related-878e572e
+        - generic [ref=e227]: "#Related 878e572e"
+        - generic [ref=e228]: 12 posts
+      - link "#Related 906af7b3 0 posts" [ref=e229] [cursor=pointer]:
+        - /url: /tag/related-906af7b3
+        - generic [ref=e230]: "#Related 906af7b3"
+        - generic [ref=e231]: 0 posts
+      - link "#Related a13ea975 12 posts" [ref=e232] [cursor=pointer]:
+        - /url: /tag/related-a13ea975
+        - generic [ref=e233]: "#Related a13ea975"
+        - generic [ref=e234]: 12 posts
+      - link "#Related b20abaec 12 posts" [ref=e235] [cursor=pointer]:
+        - /url: /tag/related-b20abaec
+        - generic [ref=e236]: "#Related b20abaec"
+        - generic [ref=e237]: 12 posts
+      - link "#Related bcdd9822 12 posts" [ref=e238] [cursor=pointer]:
+        - /url: /tag/related-bcdd9822
+        - generic [ref=e239]: "#Related bcdd9822"
+        - generic [ref=e240]: 12 posts
+      - link "#Related c06c9518 12 posts" [ref=e241] [cursor=pointer]:
+        - /url: /tag/related-c06c9518
+        - generic [ref=e242]: "#Related c06c9518"
+        - generic [ref=e243]: 12 posts
+      - link "#Related cba273d0 12 posts" [ref=e244] [cursor=pointer]:
+        - /url: /tag/related-cba273d0
+        - generic [ref=e245]: "#Related cba273d0"
+        - generic [ref=e246]: 12 posts
+      - link "#Related f36b1cfb 12 posts" [ref=e247] [cursor=pointer]:
+        - /url: /tag/related-f36b1cfb
+        - generic [ref=e248]: "#Related f36b1cfb"
+        - generic [ref=e249]: 12 posts
+      - link "#Related f6a4dc2f 12 posts" [ref=e250] [cursor=pointer]:
+        - /url: /tag/related-f6a4dc2f
+        - generic [ref=e251]: "#Related f6a4dc2f"
+        - generic [ref=e252]: 12 posts
+      - link "#Shown Tag a35591fa 0 posts" [ref=e253] [cursor=pointer]:
+        - /url: /tag/shown-tag-a35591fa
+        - generic [ref=e254]: "#Shown Tag a35591fa"
+        - generic [ref=e255]: 0 posts
+      - link "#Shown Tag b23bcf81 0 posts" [ref=e256] [cursor=pointer]:
+        - /url: /tag/shown-tag-b23bcf81
+        - generic [ref=e257]: "#Shown Tag b23bcf81"
+        - generic [ref=e258]: 0 posts
+      - link "#Testing 9 posts" [ref=e259] [cursor=pointer]:
+        - /url: /tag/testing
+        - generic [ref=e260]: "#Testing"
+        - generic [ref=e261]: 9 posts
+      - link "#UX 8 posts" [ref=e262] [cursor=pointer]:
+        - /url: /tag/ux
+        - generic [ref=e263]: "#UX"
+        - generic [ref=e264]: 8 posts
+      - link "#media-api-test-17783254 1 post" [ref=e265] [cursor=pointer]:
+        - /url: /tag/media-api-test-17783254
+        - generic [ref=e266]: "#media-api-test-17783254"
+        - generic [ref=e267]: 1 post
+  - contentinfo [ref=e268]:
+    - generic [ref=e269]:
+      - generic [ref=e270]:
+        - link "Blog Website" [ref=e271] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=e272]: Updated from tests
+        - generic "Social links"
+      - generic [ref=e273]:
+        - heading "Explore" [level=2] [ref=e274]
+        - link "All Posts" [ref=e275] [cursor=pointer]:
+          - /url: /posts
+        - link "Categories" [ref=e276] [cursor=pointer]:
+          - /url: /categories
+        - link "Tags" [ref=e277] [cursor=pointer]:
+          - /url: /tags
+        - link "Search" [ref=e278] [cursor=pointer]:
+          - /url: /search
+      - generic [ref=e279]:
+        - heading "Company" [level=2] [ref=e280]
+        - link "About" [ref=e281] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e282] [cursor=pointer]:
+          - /url: /contact
+        - link "Admin Login" [ref=e283] [cursor=pointer]:
+          - /url: /admin/login
+      - generic [ref=e284]:
+        - heading "Legal" [level=2] [ref=e285]
+        - link "Privacy Policy" [ref=e286] [cursor=pointer]:
+          - /url: /privacy
+        - link "Terms" [ref=e287] [cursor=pointer]:
+          - /url: /terms
+        - link "Back to top" [ref=e288] [cursor=pointer]:
+          - /url: "#top"
+          - text: Back to top
+          - img [ref=e289]
+    - generic [ref=e291]:
+      - generic [ref=e292]: © Blog Website
+      - generic [ref=e293]: Built for clear, fast reading.

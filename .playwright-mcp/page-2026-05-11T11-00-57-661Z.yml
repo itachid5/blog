@@ -1,0 +1,636 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e4]:
+      - link "Home" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "All Posts" [ref=e6] [cursor=pointer]:
+        - /url: /posts
+      - link "Categories" [ref=e7] [cursor=pointer]:
+        - /url: /categories
+      - link "Tags" [ref=e8] [cursor=pointer]:
+        - /url: /tags
+      - link "About" [ref=e9] [cursor=pointer]:
+        - /url: /about
+      - link "Contact" [ref=e10] [cursor=pointer]:
+        - /url: /contact
+      - link "Privacy" [ref=e11] [cursor=pointer]:
+        - /url: /privacy
+      - link "Terms" [ref=e12] [cursor=pointer]:
+        - /url: /terms
+      - link "Admin Login" [ref=e13] [cursor=pointer]:
+        - /url: /admin/login
+    - generic [ref=e15]:
+      - textbox "Search posts" [ref=e16]
+      - button "Submit search" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+        - text: Search
+  - complementary [ref=e21]:
+    - button [ref=e22] [cursor=pointer]:
+      - img [ref=e23]
+      - generic [ref=e26]: Close
+    - link [ref=e27] [cursor=pointer]:
+      - /url: /
+      - text: Home
+    - link [ref=e28] [cursor=pointer]:
+      - /url: /posts
+      - text: All Posts
+    - link [ref=e29] [cursor=pointer]:
+      - /url: /categories
+      - text: Categories
+    - link [ref=e30] [cursor=pointer]:
+      - /url: /tags
+      - text: Tags
+    - link [ref=e31] [cursor=pointer]:
+      - /url: /about
+      - text: About
+    - link [ref=e32] [cursor=pointer]:
+      - /url: /contact
+      - text: Contact
+    - link [ref=e33] [cursor=pointer]:
+      - /url: /privacy
+      - text: Privacy
+    - link [ref=e34] [cursor=pointer]:
+      - /url: /terms
+      - text: Terms
+    - link [ref=e35] [cursor=pointer]:
+      - /url: /admin/login
+      - text: Admin Login
+    - heading [level=3] [ref=e36]: Categories
+    - link [ref=e37] [cursor=pointer]:
+      - /url: /category/archive-011e7db8
+      - text: Archive 011e7db8
+    - link [ref=e38] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+      - text: Archive 03ea265b
+    - link [ref=e39] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+      - text: Archive 3be96e1c
+    - link [ref=e40] [cursor=pointer]:
+      - /url: /category/archive-7ed5163d
+      - text: Archive 7ed5163d
+    - link [ref=e41] [cursor=pointer]:
+      - /url: /category/archive-878e572e
+      - text: Archive 878e572e
+    - link [ref=e42] [cursor=pointer]:
+      - /url: /category/archive-906af7b3
+      - text: Archive 906af7b3
+    - link [ref=e43] [cursor=pointer]:
+      - /url: /category/archive-b20abaec
+      - text: Archive b20abaec
+    - link [ref=e44] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+      - text: Archive bcdd9822
+    - link [ref=e45] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+      - text: Archive c06c9518
+    - link [ref=e46] [cursor=pointer]:
+      - /url: /category/archive-cba273d0
+      - text: Archive cba273d0
+    - link [ref=e47] [cursor=pointer]:
+      - /url: /category/archive-f36b1cfb
+      - text: Archive f36b1cfb
+    - link [ref=e48] [cursor=pointer]:
+      - /url: /category/browser-category
+      - text: Browser Category
+    - link [ref=e49] [cursor=pointer]:
+      - /url: /category/design
+      - text: Design
+    - link [ref=e50] [cursor=pointer]:
+      - /url: /category/development
+      - text: Development
+    - link [ref=e51] [cursor=pointer]:
+      - /url: /category/engineering
+      - text: Engineering
+    - link [ref=e52] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+      - text: Media API Category 1108
+    - link [ref=e53] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+      - text: Media API Test Category 17783254
+    - link [ref=e54] [cursor=pointer]:
+      - /url: /category/operations
+      - text: Operations
+    - link [ref=e55] [cursor=pointer]:
+      - /url: /category/product
+      - text: Product
+    - link [ref=e56] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+      - text: Python 0dc25206
+    - link [ref=e57] [cursor=pointer]:
+      - /url: /category/python-0f2b1b0f
+      - text: Python 0f2b1b0f
+    - link [ref=e58] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+      - text: Python 11c0e389
+    - link [ref=e59] [cursor=pointer]:
+      - /url: /category/python-20794c79
+      - text: Python 20794c79
+    - link [ref=e60] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+      - text: Python 2488b0e3
+    - link [ref=e61] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+      - text: Python 2b82d3e6
+    - link [ref=e62] [cursor=pointer]:
+      - /url: /category/python-4d920560
+      - text: Python 4d920560
+    - link [ref=e63] [cursor=pointer]:
+      - /url: /category/python-5063a70e
+      - text: Python 5063a70e
+    - link [ref=e64] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+      - text: Python 6341aab5
+    - link [ref=e65] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+      - text: Python 69cec7ad
+    - link [ref=e66] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+      - text: Python 7bb5438e
+    - link [ref=e67] [cursor=pointer]:
+      - /url: /category/python-884711ec
+      - text: Python 884711ec
+    - link [ref=e68] [cursor=pointer]:
+      - /url: /category/python-bc356bf5
+      - text: Python bc356bf5
+    - link [ref=e69] [cursor=pointer]:
+      - /url: /category/python-bcf1bf29
+      - text: Python bcf1bf29
+    - link [ref=e70] [cursor=pointer]:
+      - /url: /category/python-c4898dba
+      - text: Python c4898dba
+    - link [ref=e71] [cursor=pointer]:
+      - /url: /category/python-dbc719dc
+      - text: Python dbc719dc
+    - link [ref=e72] [cursor=pointer]:
+      - /url: /category/views-4b7e1a2c
+      - text: Views 4b7e1a2c
+    - link [ref=e73] [cursor=pointer]:
+      - /url: /category/views-7401b7f4
+      - text: Views 7401b7f4
+    - link [ref=e74] [cursor=pointer]:
+      - /url: /category/views-8781b2f3
+      - text: Views 8781b2f3
+  - main [ref=e75]:
+    - generic [ref=e76]:
+      - paragraph [ref=e77]: Search
+      - heading "Search" [level=1] [ref=e78]
+      - generic [ref=e79]:
+        - textbox "Search posts" [ref=e80]: demo
+        - button "Search" [ref=e81] [cursor=pointer]
+      - paragraph [ref=e82]: 30 result(s) for “demo”.
+    - generic [ref=e83]:
+      - article [ref=e84]:
+        - img "Building a FastAPI Blog That Feels Fast" [ref=e85]
+        - paragraph [ref=e86]: Development
+        - paragraph [ref=e87]: 242 views · 1 min read · Published 8 minutes ago
+        - heading "Building a FastAPI Blog That Feels Fast" [level=3] [ref=e88]:
+          - link "Building a FastAPI Blog That Feels Fast" [ref=e89] [cursor=pointer]:
+            - /url: /post/building-a-fastapi-blog-that-feels-fast
+        - paragraph [ref=e90]: Demo article 1 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e91]:
+          - link "#FastAPI" [ref=e92] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e93] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e94] [cursor=pointer]:
+          - /url: /post/building-a-fastapi-blog-that-feels-fast
+      - article [ref=e95]:
+        - img "Designing Blog Cards Readers Actually Click" [ref=e96]
+        - paragraph [ref=e97]: Design
+        - paragraph [ref=e98]: 232 views · 1 min read · Published 1 day ago
+        - heading "Designing Blog Cards Readers Actually Click" [level=3] [ref=e99]:
+          - link "Designing Blog Cards Readers Actually Click" [ref=e100] [cursor=pointer]:
+            - /url: /post/designing-blog-cards-readers-actually-click
+        - paragraph [ref=e101]: Demo article 2 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e102]:
+          - link "#Python" [ref=e103] [cursor=pointer]:
+            - /url: /tag/python
+          - link "#Cloud" [ref=e104] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e105] [cursor=pointer]:
+          - /url: /post/designing-blog-cards-readers-actually-click
+      - article [ref=e106]:
+        - img "Designing a Faster Editorial Workflow" [ref=e107]
+        - paragraph [ref=e108]: Product
+        - paragraph [ref=e109]: 185 views · 1 min read · Published 1 day ago
+        - heading "Designing a Faster Editorial Workflow" [level=3] [ref=e110]:
+          - link "Designing a Faster Editorial Workflow" [ref=e111] [cursor=pointer]:
+            - /url: /post/designing-a-faster-editorial-workflow
+        - paragraph [ref=e112]: A practical look at reducing friction in a small publishing stack.
+        - generic [ref=e113]:
+          - link "#UX" [ref=e114] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Launch" [ref=e115] [cursor=pointer]:
+            - /url: /tag/launch
+        - link "Read more" [ref=e116] [cursor=pointer]:
+          - /url: /post/designing-a-faster-editorial-workflow
+      - article [ref=e117]:
+        - img "Practical Deployment Checklist for Small Web Apps" [ref=e118]
+        - paragraph [ref=e119]: Operations
+        - paragraph [ref=e120]: 223 views · 1 min read · Published 2 days ago
+        - heading "Practical Deployment Checklist for Small Web Apps" [level=3] [ref=e121]:
+          - link "Practical Deployment Checklist for Small Web Apps" [ref=e122] [cursor=pointer]:
+            - /url: /post/practical-deployment-checklist-for-small-web-apps
+        - paragraph [ref=e123]: Demo article 3 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e124]:
+          - link "#Cloud" [ref=e125] [cursor=pointer]:
+            - /url: /tag/cloud
+          - link "#Frontend" [ref=e126] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e127] [cursor=pointer]:
+          - /url: /post/practical-deployment-checklist-for-small-web-apps
+      - article [ref=e128]:
+        - img "FastAPI Patterns That Keep Routes Small" [ref=e129]
+        - paragraph [ref=e130]: Engineering
+        - paragraph [ref=e131]: 312 views · 1 min read · Published 2 days ago
+        - heading "FastAPI Patterns That Keep Routes Small" [level=3] [ref=e132]:
+          - link "FastAPI Patterns That Keep Routes Small" [ref=e133] [cursor=pointer]:
+            - /url: /post/fastapi-patterns-that-keep-routes-small
+        - paragraph [ref=e134]: How focused service functions make route handlers easier to test.
+        - generic [ref=e135]:
+          - link "#FastAPI" [ref=e136] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e137] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e138] [cursor=pointer]:
+          - /url: /post/fastapi-patterns-that-keep-routes-small
+      - article [ref=e139]:
+        - img "How to Structure Content for Search and Discovery" [ref=e140]
+        - paragraph [ref=e141]: Development
+        - paragraph [ref=e142]: 214 views · 1 min read · Published 3 days ago
+        - heading "How to Structure Content for Search and Discovery" [level=3] [ref=e143]:
+          - link "How to Structure Content for Search and Discovery" [ref=e144] [cursor=pointer]:
+            - /url: /post/how-to-structure-content-for-search-and-discovery
+        - paragraph [ref=e145]: Demo article 4 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e146]:
+          - link "#Testing" [ref=e147] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Frontend" [ref=e148] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e149] [cursor=pointer]:
+          - /url: /post/how-to-structure-content-for-search-and-discovery
+      - article [ref=e150]:
+        - img "What Makes a Blog Homepage Feel Alive" [ref=e151]
+        - paragraph [ref=e152]: Design
+        - paragraph [ref=e153]: 241 views · 1 min read · Published 3 days ago
+        - heading "What Makes a Blog Homepage Feel Alive" [level=3] [ref=e154]:
+          - link "What Makes a Blog Homepage Feel Alive" [ref=e155] [cursor=pointer]:
+            - /url: /post/what-makes-a-blog-homepage-feel-alive
+        - paragraph [ref=e156]: Balancing featured stories, recency, and discovery modules.
+        - generic [ref=e157]:
+          - link "#UX" [ref=e158] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Frontend" [ref=e159] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e160] [cursor=pointer]:
+          - /url: /post/what-makes-a-blog-homepage-feel-alive
+      - article [ref=e161]:
+        - img "A Simple Guide to Admin Workflows" [ref=e162]
+        - paragraph [ref=e163]: Design
+        - paragraph [ref=e164]: 205 views · 1 min read · Published 4 days ago
+        - heading "A Simple Guide to Admin Workflows" [level=3] [ref=e165]:
+          - link "A Simple Guide to Admin Workflows" [ref=e166] [cursor=pointer]:
+            - /url: /post/a-simple-guide-to-admin-workflows
+        - paragraph [ref=e167]: Demo article 5 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e168]:
+          - link "#Testing" [ref=e169] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Automation" [ref=e170] [cursor=pointer]:
+            - /url: /tag/automation
+        - link "Read more" [ref=e171] [cursor=pointer]:
+          - /url: /post/a-simple-guide-to-admin-workflows
+      - article [ref=e172]:
+        - img "Shipping Search Without Overbuilding It" [ref=e173]
+        - paragraph [ref=e174]: Product
+        - paragraph [ref=e175]: 96 views · 1 min read · Published 4 days ago
+        - heading "Shipping Search Without Overbuilding It" [level=3] [ref=e176]:
+          - link "Shipping Search Without Overbuilding It" [ref=e177] [cursor=pointer]:
+            - /url: /post/shipping-search-without-overbuilding-it
+        - paragraph [ref=e178]: Simple search affordances that cover the most common reader needs.
+        - generic [ref=e179]:
+          - link "#UX" [ref=e180] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Testing" [ref=e181] [cursor=pointer]:
+            - /url: /tag/testing
+        - link "Read more" [ref=e182] [cursor=pointer]:
+          - /url: /post/shipping-search-without-overbuilding-it
+      - article [ref=e183]:
+        - img "Using Categories Without Creating Clutter" [ref=e184]
+        - paragraph [ref=e185]: Operations
+        - paragraph [ref=e186]: 196 views · 1 min read · Published 5 days ago
+        - heading "Using Categories Without Creating Clutter" [level=3] [ref=e187]:
+          - link "Using Categories Without Creating Clutter" [ref=e188] [cursor=pointer]:
+            - /url: /post/using-categories-without-creating-clutter
+        - paragraph [ref=e189]: Demo article 6 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e190]:
+          - link "#FastAPI" [ref=e191] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Automation" [ref=e192] [cursor=pointer]:
+            - /url: /tag/automation
+        - link "Read more" [ref=e193] [cursor=pointer]:
+          - /url: /post/using-categories-without-creating-clutter
+      - article [ref=e194]:
+        - img "The Case for Boring Deployment Checks" [ref=e195]
+        - paragraph [ref=e196]: Operations
+        - paragraph [ref=e197]: 277 views · 1 min read · Published 5 days ago
+        - heading "The Case for Boring Deployment Checks" [level=3] [ref=e198]:
+          - link "The Case for Boring Deployment Checks" [ref=e199] [cursor=pointer]:
+            - /url: /post/the-case-for-boring-deployment-checks
+        - paragraph [ref=e200]: Why health checks, logs, and repeatable commands matter more than cleverness.
+        - generic [ref=e201]:
+          - link "#Testing" [ref=e202] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Cloud" [ref=e203] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e204] [cursor=pointer]:
+          - /url: /post/the-case-for-boring-deployment-checks
+      - article [ref=e205]:
+        - img "Tagging Strategies for Technical Blogs" [ref=e206]
+        - paragraph [ref=e207]: Development
+        - paragraph [ref=e208]: 187 views · 1 min read · Published 6 days ago
+        - heading "Tagging Strategies for Technical Blogs" [level=3] [ref=e209]:
+          - link "Tagging Strategies for Technical Blogs" [ref=e210] [cursor=pointer]:
+            - /url: /post/tagging-strategies-for-technical-blogs
+        - paragraph [ref=e211]: Demo article 7 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e212]:
+          - link "#FastAPI" [ref=e213] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e214] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e215] [cursor=pointer]:
+          - /url: /post/tagging-strategies-for-technical-blogs
+      - article [ref=e216]:
+        - img "A Small Guide to Post Metadata" [ref=e217]
+        - paragraph [ref=e218]: Design
+        - paragraph [ref=e219]: 153 views · 1 min read · Published 6 days ago
+        - heading "A Small Guide to Post Metadata" [level=3] [ref=e220]:
+          - link "A Small Guide to Post Metadata" [ref=e221] [cursor=pointer]:
+            - /url: /post/a-small-guide-to-post-metadata
+        - paragraph [ref=e222]: Dates, read time, categories, tags, and views help readers choose what to open.
+        - generic [ref=e223]:
+          - link "#UX" [ref=e224] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Frontend" [ref=e225] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e226] [cursor=pointer]:
+          - /url: /post/a-small-guide-to-post-metadata
+      - article [ref=e227]:
+        - img "Improving Template Performance With Jinja" [ref=e228]
+        - paragraph [ref=e229]: Design
+        - paragraph [ref=e230]: 178 views · 1 min read · Published 7 days ago
+        - heading "Improving Template Performance With Jinja" [level=3] [ref=e231]:
+          - link "Improving Template Performance With Jinja" [ref=e232] [cursor=pointer]:
+            - /url: /post/improving-template-performance-with-jinja
+        - paragraph [ref=e233]: Demo article 8 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e234]:
+          - link "#Python" [ref=e235] [cursor=pointer]:
+            - /url: /tag/python
+          - link "#Cloud" [ref=e236] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e237] [cursor=pointer]:
+          - /url: /post/improving-template-performance-with-jinja
+      - article [ref=e238]:
+        - img "Keeping Admin Forms Friendly" [ref=e239]
+        - paragraph [ref=e240]: Engineering
+        - paragraph [ref=e241]: 221 views · 1 min read · Published 7 days ago
+        - heading "Keeping Admin Forms Friendly" [level=3] [ref=e242]:
+          - link "Keeping Admin Forms Friendly" [ref=e243] [cursor=pointer]:
+            - /url: /post/keeping-admin-forms-friendly
+        - paragraph [ref=e244]: File uploads and validation states should explain failures clearly.
+        - generic [ref=e245]:
+          - link "#FastAPI" [ref=e246] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#UX" [ref=e247] [cursor=pointer]:
+            - /url: /tag/ux
+        - link "Read more" [ref=e248] [cursor=pointer]:
+          - /url: /post/keeping-admin-forms-friendly
+      - article [ref=e249]:
+        - img "Writing Better Post Summaries" [ref=e250]
+        - paragraph [ref=e251]: Operations
+        - paragraph [ref=e252]: 169 views · 1 min read · Published May 03, 2026
+        - heading "Writing Better Post Summaries" [level=3] [ref=e253]:
+          - link "Writing Better Post Summaries" [ref=e254] [cursor=pointer]:
+            - /url: /post/writing-better-post-summaries
+        - paragraph [ref=e255]: Demo article 9 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e256]:
+          - link "#Cloud" [ref=e257] [cursor=pointer]:
+            - /url: /tag/cloud
+          - link "#Frontend" [ref=e258] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e259] [cursor=pointer]:
+          - /url: /post/writing-better-post-summaries
+      - article [ref=e260]:
+        - img "How Tags Improve Content Discovery" [ref=e261]
+        - paragraph [ref=e262]: Product
+        - paragraph [ref=e263]: 138 views · 1 min read · Published May 02, 2026
+        - heading "How Tags Improve Content Discovery" [level=3] [ref=e264]:
+          - link "How Tags Improve Content Discovery" [ref=e265] [cursor=pointer]:
+            - /url: /post/how-tags-improve-content-discovery
+        - paragraph [ref=e266]: Tags work best when they express recurring themes instead of one-off labels.
+        - generic [ref=e267]:
+          - link "#UX" [ref=e268] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Data" [ref=e269] [cursor=pointer]:
+            - /url: /tag/data
+        - link "Read more" [ref=e270] [cursor=pointer]:
+          - /url: /post/how-tags-improve-content-discovery
+      - article [ref=e271]:
+        - img "Polishing Empty States and Error Pages" [ref=e272]
+        - paragraph [ref=e273]: Development
+        - paragraph [ref=e274]: 160 views · 1 min read · Published May 02, 2026
+        - heading "Polishing Empty States and Error Pages" [level=3] [ref=e275]:
+          - link "Polishing Empty States and Error Pages" [ref=e276] [cursor=pointer]:
+            - /url: /post/polishing-empty-states-and-error-pages
+        - paragraph [ref=e277]: Demo article 10 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e278]:
+          - link "#Testing" [ref=e279] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Frontend" [ref=e280] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e281] [cursor=pointer]:
+          - /url: /post/polishing-empty-states-and-error-pages
+      - article [ref=e282]:
+        - img "Testing Public Pages Like a Reader" [ref=e283]
+        - paragraph [ref=e284]: Engineering
+        - paragraph [ref=e285]: 354 views · 1 min read · Published May 01, 2026
+        - heading "Testing Public Pages Like a Reader" [level=3] [ref=e286]:
+          - link "Testing Public Pages Like a Reader" [ref=e287] [cursor=pointer]:
+            - /url: /post/testing-public-pages-like-a-reader
+        - paragraph [ref=e288]: End-to-end checks catch navigation, image, and layout issues unit tests miss.
+        - generic [ref=e289]:
+          - link "#Testing" [ref=e290] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Frontend" [ref=e291] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e292] [cursor=pointer]:
+          - /url: /post/testing-public-pages-like-a-reader
+      - article [ref=e293]:
+        - img "Testing Public Pages With Realistic Data" [ref=e294]
+        - paragraph [ref=e295]: Design
+        - paragraph [ref=e296]: 151 views · 1 min read · Published May 01, 2026
+        - heading "Testing Public Pages With Realistic Data" [level=3] [ref=e297]:
+          - link "Testing Public Pages With Realistic Data" [ref=e298] [cursor=pointer]:
+            - /url: /post/testing-public-pages-with-realistic-data
+        - paragraph [ref=e299]: Demo article 11 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e300]:
+          - link "#Testing" [ref=e301] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Automation" [ref=e302] [cursor=pointer]:
+            - /url: /tag/automation
+        - link "Read more" [ref=e303] [cursor=pointer]:
+          - /url: /post/testing-public-pages-with-realistic-data
+      - article [ref=e304]:
+        - img "Planning a Lightweight Content Taxonomy" [ref=e305]
+        - paragraph [ref=e306]: Product
+        - paragraph [ref=e307]: 119 views · 1 min read · Published Apr 30, 2026
+        - heading "Planning a Lightweight Content Taxonomy" [level=3] [ref=e308]:
+          - link "Planning a Lightweight Content Taxonomy" [ref=e309] [cursor=pointer]:
+            - /url: /post/planning-a-lightweight-content-taxonomy
+        - paragraph [ref=e310]: A practical structure for categories, tags, and related post journeys.
+        - generic [ref=e311]:
+          - link "#Launch" [ref=e312] [cursor=pointer]:
+            - /url: /tag/launch
+          - link "#Data" [ref=e313] [cursor=pointer]:
+            - /url: /tag/data
+        - link "Read more" [ref=e314] [cursor=pointer]:
+          - /url: /post/planning-a-lightweight-content-taxonomy
+      - article [ref=e315]:
+        - img "Creating a Content Calendar That Ships" [ref=e316]
+        - paragraph [ref=e317]: Operations
+        - paragraph [ref=e318]: 142 views · 1 min read · Published Apr 30, 2026
+        - heading "Creating a Content Calendar That Ships" [level=3] [ref=e319]:
+          - link "Creating a Content Calendar That Ships" [ref=e320] [cursor=pointer]:
+            - /url: /post/creating-a-content-calendar-that-ships
+        - paragraph [ref=e321]: Demo article 12 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e322]:
+          - link "#FastAPI" [ref=e323] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Automation" [ref=e324] [cursor=pointer]:
+            - /url: /tag/automation
+        - link "Read more" [ref=e325] [cursor=pointer]:
+          - /url: /post/creating-a-content-calendar-that-ships
+      - article [ref=e326]:
+        - img "Making Image Uploads Observable" [ref=e327]
+        - paragraph [ref=e328]: Operations
+        - paragraph [ref=e329]: 402 views · 1 min read · Published Apr 29, 2026
+        - heading "Making Image Uploads Observable" [level=3] [ref=e330]:
+          - link "Making Image Uploads Observable" [ref=e331] [cursor=pointer]:
+            - /url: /post/making-image-uploads-observable
+        - paragraph [ref=e332]: Useful logs can make external media failures much easier to diagnose.
+        - generic [ref=e333]:
+          - link "#Testing" [ref=e334] [cursor=pointer]:
+            - /url: /tag/testing
+          - link "#Cloud" [ref=e335] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e336] [cursor=pointer]:
+          - /url: /post/making-image-uploads-observable
+      - article [ref=e337]:
+        - img "Making Featured Posts Stand Out" [ref=e338]
+        - paragraph [ref=e339]: Development
+        - paragraph [ref=e340]: 133 views · 1 min read · Published Apr 29, 2026
+        - heading "Making Featured Posts Stand Out" [level=3] [ref=e341]:
+          - link "Making Featured Posts Stand Out" [ref=e342] [cursor=pointer]:
+            - /url: /post/making-featured-posts-stand-out
+        - paragraph [ref=e343]: Demo article 13 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e344]:
+          - link "#FastAPI" [ref=e345] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e346] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e347] [cursor=pointer]:
+          - /url: /post/making-featured-posts-stand-out
+      - article [ref=e348]:
+        - img "Responsive Cards That Carry Their Weight" [ref=e349]
+        - paragraph [ref=e350]: Design
+        - paragraph [ref=e351]: 288 views · 1 min read · Published Apr 28, 2026
+        - heading "Responsive Cards That Carry Their Weight" [level=3] [ref=e352]:
+          - link "Responsive Cards That Carry Their Weight" [ref=e353] [cursor=pointer]:
+            - /url: /post/responsive-cards-that-carry-their-weight
+        - paragraph [ref=e354]: Post cards should communicate topic, timing, popularity, and next action.
+        - generic [ref=e355]:
+          - link "#UX" [ref=e356] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Frontend" [ref=e357] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e358] [cursor=pointer]:
+          - /url: /post/responsive-cards-that-carry-their-weight
+      - article [ref=e359]:
+        - img "Search UX Patterns for Editorial Sites" [ref=e360]
+        - paragraph [ref=e361]: Design
+        - paragraph [ref=e362]: 124 views · 1 min read · Published Apr 28, 2026
+        - heading "Search UX Patterns for Editorial Sites" [level=3] [ref=e363]:
+          - link "Search UX Patterns for Editorial Sites" [ref=e364] [cursor=pointer]:
+            - /url: /post/search-ux-patterns-for-editorial-sites
+        - paragraph [ref=e365]: Demo article 14 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e366]:
+          - link "#Python" [ref=e367] [cursor=pointer]:
+            - /url: /tag/python
+          - link "#Cloud" [ref=e368] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e369] [cursor=pointer]:
+          - /url: /post/search-ux-patterns-for-editorial-sites
+      - article [ref=e370]:
+        - img "When to Refresh Data After a Write" [ref=e371]
+        - paragraph [ref=e372]: Engineering
+        - paragraph [ref=e373]: 199 views · 1 min read · Published Apr 27, 2026
+        - heading "When to Refresh Data After a Write" [level=3] [ref=e374]:
+          - link "When to Refresh Data After a Write" [ref=e375] [cursor=pointer]:
+            - /url: /post/when-to-refresh-data-after-a-write
+        - paragraph [ref=e376]: Refreshing ORM objects after counters change avoids stale UI details.
+        - generic [ref=e377]:
+          - link "#Python" [ref=e378] [cursor=pointer]:
+            - /url: /tag/python
+          - link "#Testing" [ref=e379] [cursor=pointer]:
+            - /url: /tag/testing
+        - link "Read more" [ref=e380] [cursor=pointer]:
+          - /url: /post/when-to-refresh-data-after-a-write
+      - article [ref=e381]:
+        - img "Keeping a Blog Maintainable Over Time" [ref=e382]
+        - paragraph [ref=e383]: Operations
+        - paragraph [ref=e384]: 115 views · 1 min read · Published Apr 27, 2026
+        - heading "Keeping a Blog Maintainable Over Time" [level=3] [ref=e385]:
+          - link "Keeping a Blog Maintainable Over Time" [ref=e386] [cursor=pointer]:
+            - /url: /post/keeping-a-blog-maintainable-over-time
+        - paragraph [ref=e387]: Demo article 15 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e388]:
+          - link "#Cloud" [ref=e389] [cursor=pointer]:
+            - /url: /tag/cloud
+          - link "#Frontend" [ref=e390] [cursor=pointer]:
+            - /url: /tag/frontend
+        - link "Read more" [ref=e391] [cursor=pointer]:
+          - /url: /post/keeping-a-blog-maintainable-over-time
+      - article [ref=e392]:
+        - img "What Trending Lists Should Optimize For" [ref=e393]
+        - paragraph [ref=e394]: Product
+        - paragraph [ref=e395]: 468 views · 1 min read · Published Apr 26, 2026
+        - heading "What Trending Lists Should Optimize For" [level=3] [ref=e396]:
+          - link "What Trending Lists Should Optimize For" [ref=e397] [cursor=pointer]:
+            - /url: /post/what-trending-lists-should-optimize-for
+        - paragraph [ref=e398]: Popularity modules are most useful when they reveal genuine reader interest.
+        - generic [ref=e399]:
+          - link "#UX" [ref=e400] [cursor=pointer]:
+            - /url: /tag/ux
+          - link "#Data" [ref=e401] [cursor=pointer]:
+            - /url: /tag/data
+        - link "Read more" [ref=e402] [cursor=pointer]:
+          - /url: /post/what-trending-lists-should-optimize-for
+      - article [ref=e403]:
+        - img "A Calm Launch Checklist for Small Apps" [ref=e404]
+        - paragraph [ref=e405]: Operations
+        - paragraph [ref=e406]: 176 views · 1 min read · Published Apr 25, 2026
+        - heading "A Calm Launch Checklist for Small Apps" [level=3] [ref=e407]:
+          - link "A Calm Launch Checklist for Small Apps" [ref=e408] [cursor=pointer]:
+            - /url: /post/a-calm-launch-checklist-for-small-apps
+        - paragraph [ref=e409]: A compact checklist for routes, data, media, and browser verification.
+        - generic [ref=e410]:
+          - link "#Launch" [ref=e411] [cursor=pointer]:
+            - /url: /tag/launch
+          - link "#Cloud" [ref=e412] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e413] [cursor=pointer]:
+          - /url: /post/a-calm-launch-checklist-for-small-apps
+  - contentinfo [ref=e414]:
+    - paragraph [ref=e415]: Updated from tests
+    - paragraph [ref=e416]: © Blog Website

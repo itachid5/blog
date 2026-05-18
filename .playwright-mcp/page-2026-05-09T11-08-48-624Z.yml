@@ -1,0 +1,68 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: Tags
+      - generic [ref=e16]: admin@example.com
+    - generic [ref=e17]:
+      - heading "Add Tag" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Name
+          - textbox "Name" [ref=e21]
+        - button "Add Tag" [ref=e22] [cursor=pointer]
+    - generic [ref=e23]:
+      - heading "All Tags" [level=2] [ref=e24]
+      - table [ref=e25]:
+        - rowgroup [ref=e26]:
+          - row "Name Slug" [ref=e27]:
+            - columnheader "Name" [ref=e28]
+            - columnheader "Slug" [ref=e29]
+            - columnheader [ref=e30]
+          - row "Browser Tag browser-tag Delete" [ref=e31]:
+            - cell "Browser Tag" [ref=e32]
+            - cell "browser-tag" [ref=e33]
+            - cell "Delete" [ref=e34]:
+              - button "Delete" [ref=e36] [cursor=pointer]
+          - row "FastAPI 20794c79 fastapi-20794c79 Delete" [ref=e37]:
+            - cell "FastAPI 20794c79" [ref=e38]
+            - cell "fastapi-20794c79" [ref=e39]
+            - cell "Delete" [ref=e40]:
+              - button "Delete" [ref=e42] [cursor=pointer]
+          - row "FastAPI 4d920560 fastapi-4d920560 Delete" [ref=e43]:
+            - cell "FastAPI 4d920560" [ref=e44]
+            - cell "fastapi-4d920560" [ref=e45]
+            - cell "Delete" [ref=e46]:
+              - button "Delete" [ref=e48] [cursor=pointer]
+          - row "FastAPI 6341aab5 fastapi-6341aab5 Delete" [ref=e49]:
+            - cell "FastAPI 6341aab5" [ref=e50]
+            - cell "fastapi-6341aab5" [ref=e51]
+            - cell "Delete" [ref=e52]:
+              - button "Delete" [ref=e54] [cursor=pointer]
+          - row "FastAPI 69cec7ad fastapi-69cec7ad Delete" [ref=e55]:
+            - cell "FastAPI 69cec7ad" [ref=e56]
+            - cell "fastapi-69cec7ad" [ref=e57]
+            - cell "Delete" [ref=e58]:
+              - button "Delete" [ref=e60] [cursor=pointer]
+          - row "Media API Tag 1108 media-api-tag-1108 Delete" [ref=e61]:
+            - cell "Media API Tag 1108" [ref=e62]
+            - cell "media-api-tag-1108" [ref=e63]
+            - cell "Delete" [ref=e64]:
+              - button "Delete" [ref=e66] [cursor=pointer]

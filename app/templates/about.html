@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block title %}{{ title }} - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}{% block content %}<section class="page-card"><h1>{{ title }}</h1><div class="content">{{ content | replace('\n', '<br>') | safe }}</div></section>{% endblock %}

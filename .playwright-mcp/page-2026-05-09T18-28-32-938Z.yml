@@ -1,0 +1,205 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - button "Open admin menu" [ref=e15] [cursor=pointer]: Menu
+      - strong [ref=e16]: Categories
+    - generic [ref=e17]:
+      - heading "Add Category" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Name
+          - textbox "Name" [ref=e21]
+        - generic [ref=e22]:
+          - text: Description
+          - textbox "Description" [ref=e23]
+        - button "Add Category" [ref=e24] [cursor=pointer]
+    - generic [ref=e25]:
+      - heading "All Categories" [level=2] [ref=e26]
+      - table [ref=e27]:
+        - rowgroup [ref=e28]:
+          - row "Name Archive 011e7db8 Slug archive-011e7db8 Description Test category Actions Delete" [ref=e29]:
+            - cell "Name Archive 011e7db8" [ref=e30]
+            - cell "Slug archive-011e7db8" [ref=e31]
+            - cell "Description Test category" [ref=e32]
+            - cell "Actions Delete" [ref=e33]:
+              - text: Actions
+              - button "Delete" [ref=e35] [cursor=pointer]
+          - row "Name Archive 03ea265b Slug archive-03ea265b Description Test category Actions Delete" [ref=e36]:
+            - cell "Name Archive 03ea265b" [ref=e37]
+            - cell "Slug archive-03ea265b" [ref=e38]
+            - cell "Description Test category" [ref=e39]
+            - cell "Actions Delete" [ref=e40]:
+              - text: Actions
+              - button "Delete" [ref=e42] [cursor=pointer]
+          - row "Name Archive 3be96e1c Slug archive-3be96e1c Description Test category Actions Delete" [ref=e43]:
+            - cell "Name Archive 3be96e1c" [ref=e44]
+            - cell "Slug archive-3be96e1c" [ref=e45]
+            - cell "Description Test category" [ref=e46]
+            - cell "Actions Delete" [ref=e47]:
+              - text: Actions
+              - button "Delete" [ref=e49] [cursor=pointer]
+          - row "Name Archive 906af7b3 Slug archive-906af7b3 Description Test category Actions Delete" [ref=e50]:
+            - cell "Name Archive 906af7b3" [ref=e51]
+            - cell "Slug archive-906af7b3" [ref=e52]
+            - cell "Description Test category" [ref=e53]
+            - cell "Actions Delete" [ref=e54]:
+              - text: Actions
+              - button "Delete" [ref=e56] [cursor=pointer]
+          - row "Name Archive b20abaec Slug archive-b20abaec Description Test category Actions Delete" [ref=e57]:
+            - cell "Name Archive b20abaec" [ref=e58]
+            - cell "Slug archive-b20abaec" [ref=e59]
+            - cell "Description Test category" [ref=e60]
+            - cell "Actions Delete" [ref=e61]:
+              - text: Actions
+              - button "Delete" [ref=e63] [cursor=pointer]
+          - row "Name Archive bcdd9822 Slug archive-bcdd9822 Description Test category Actions Delete" [ref=e64]:
+            - cell "Name Archive bcdd9822" [ref=e65]
+            - cell "Slug archive-bcdd9822" [ref=e66]
+            - cell "Description Test category" [ref=e67]
+            - cell "Actions Delete" [ref=e68]:
+              - text: Actions
+              - button "Delete" [ref=e70] [cursor=pointer]
+          - row "Name Archive c06c9518 Slug archive-c06c9518 Description Test category Actions Delete" [ref=e71]:
+            - cell "Name Archive c06c9518" [ref=e72]
+            - cell "Slug archive-c06c9518" [ref=e73]
+            - cell "Description Test category" [ref=e74]
+            - cell "Actions Delete" [ref=e75]:
+              - text: Actions
+              - button "Delete" [ref=e77] [cursor=pointer]
+          - row "Name Archive cba273d0 Slug archive-cba273d0 Description Test category Actions Delete" [ref=e78]:
+            - cell "Name Archive cba273d0" [ref=e79]
+            - cell "Slug archive-cba273d0" [ref=e80]
+            - cell "Description Test category" [ref=e81]
+            - cell "Actions Delete" [ref=e82]:
+              - text: Actions
+              - button "Delete" [ref=e84] [cursor=pointer]
+          - row "Name Browser Category Slug browser-category Description Created during Playwright verification. Actions Delete" [ref=e85]:
+            - cell "Name Browser Category" [ref=e86]
+            - cell "Slug browser-category" [ref=e87]
+            - cell "Description Created during Playwright verification." [ref=e88]
+            - cell "Actions Delete" [ref=e89]:
+              - text: Actions
+              - button "Delete" [ref=e91] [cursor=pointer]
+          - row "Name Media API Category 1108 Slug media-api-category-1108 Description Category created during media API verification. Actions Delete" [ref=e92]:
+            - cell "Name Media API Category 1108" [ref=e93]
+            - cell "Slug media-api-category-1108" [ref=e94]
+            - cell "Description Category created during media API verification." [ref=e95]
+            - cell "Actions Delete" [ref=e96]:
+              - text: Actions
+              - button "Delete" [ref=e98] [cursor=pointer]
+          - row "Name Media API Test Category 17783254 Slug media-api-test-category-17783254 Description Created during media API browser test Actions Delete" [ref=e99]:
+            - cell "Name Media API Test Category 17783254" [ref=e100]
+            - cell "Slug media-api-test-category-17783254" [ref=e101]
+            - cell "Description Created during media API browser test" [ref=e102]
+            - cell "Actions Delete" [ref=e103]:
+              - text: Actions
+              - button "Delete" [ref=e105] [cursor=pointer]
+          - row "Name Python 0dc25206 Slug python-0dc25206 Description Python category Actions Delete" [ref=e106]:
+            - cell "Name Python 0dc25206" [ref=e107]
+            - cell "Slug python-0dc25206" [ref=e108]
+            - cell "Description Python category" [ref=e109]
+            - cell "Actions Delete" [ref=e110]:
+              - text: Actions
+              - button "Delete" [ref=e112] [cursor=pointer]
+          - row "Name Python 11c0e389 Slug python-11c0e389 Description Test category Actions Delete" [ref=e113]:
+            - cell "Name Python 11c0e389" [ref=e114]
+            - cell "Slug python-11c0e389" [ref=e115]
+            - cell "Description Test category" [ref=e116]
+            - cell "Actions Delete" [ref=e117]:
+              - text: Actions
+              - button "Delete" [ref=e119] [cursor=pointer]
+          - row "Name Python 20794c79 Slug python-20794c79 Description Python category Actions Delete" [ref=e120]:
+            - cell "Name Python 20794c79" [ref=e121]
+            - cell "Slug python-20794c79" [ref=e122]
+            - cell "Description Python category" [ref=e123]
+            - cell "Actions Delete" [ref=e124]:
+              - text: Actions
+              - button "Delete" [ref=e126] [cursor=pointer]
+          - row "Name Python 2488b0e3 Slug python-2488b0e3 Description Test category Actions Delete" [ref=e127]:
+            - cell "Name Python 2488b0e3" [ref=e128]
+            - cell "Slug python-2488b0e3" [ref=e129]
+            - cell "Description Test category" [ref=e130]
+            - cell "Actions Delete" [ref=e131]:
+              - text: Actions
+              - button "Delete" [ref=e133] [cursor=pointer]
+          - row "Name Python 2b82d3e6 Slug python-2b82d3e6 Description Test category Actions Delete" [ref=e134]:
+            - cell "Name Python 2b82d3e6" [ref=e135]
+            - cell "Slug python-2b82d3e6" [ref=e136]
+            - cell "Description Test category" [ref=e137]
+            - cell "Actions Delete" [ref=e138]:
+              - text: Actions
+              - button "Delete" [ref=e140] [cursor=pointer]
+          - row "Name Python 4d920560 Slug python-4d920560 Description Python category Actions Delete" [ref=e141]:
+            - cell "Name Python 4d920560" [ref=e142]
+            - cell "Slug python-4d920560" [ref=e143]
+            - cell "Description Python category" [ref=e144]
+            - cell "Actions Delete" [ref=e145]:
+              - text: Actions
+              - button "Delete" [ref=e147] [cursor=pointer]
+          - row "Name Python 5063a70e Slug python-5063a70e Description Test category Actions Delete" [ref=e148]:
+            - cell "Name Python 5063a70e" [ref=e149]
+            - cell "Slug python-5063a70e" [ref=e150]
+            - cell "Description Test category" [ref=e151]
+            - cell "Actions Delete" [ref=e152]:
+              - text: Actions
+              - button "Delete" [ref=e154] [cursor=pointer]
+          - row "Name Python 6341aab5 Slug python-6341aab5 Description Python category Actions Delete" [ref=e155]:
+            - cell "Name Python 6341aab5" [ref=e156]
+            - cell "Slug python-6341aab5" [ref=e157]
+            - cell "Description Python category" [ref=e158]
+            - cell "Actions Delete" [ref=e159]:
+              - text: Actions
+              - button "Delete" [ref=e161] [cursor=pointer]
+          - row "Name Python 69cec7ad Slug python-69cec7ad Description Python category Actions Delete" [ref=e162]:
+            - cell "Name Python 69cec7ad" [ref=e163]
+            - cell "Slug python-69cec7ad" [ref=e164]
+            - cell "Description Python category" [ref=e165]
+            - cell "Actions Delete" [ref=e166]:
+              - text: Actions
+              - button "Delete" [ref=e168] [cursor=pointer]
+          - row "Name Python 7bb5438e Slug python-7bb5438e Description Test category Actions Delete" [ref=e169]:
+            - cell "Name Python 7bb5438e" [ref=e170]
+            - cell "Slug python-7bb5438e" [ref=e171]
+            - cell "Description Test category" [ref=e172]
+            - cell "Actions Delete" [ref=e173]:
+              - text: Actions
+              - button "Delete" [ref=e175] [cursor=pointer]
+          - row "Name Python bc356bf5 Slug python-bc356bf5 Description Test category Actions Delete" [ref=e176]:
+            - cell "Name Python bc356bf5" [ref=e177]
+            - cell "Slug python-bc356bf5" [ref=e178]
+            - cell "Description Test category" [ref=e179]
+            - cell "Actions Delete" [ref=e180]:
+              - text: Actions
+              - button "Delete" [ref=e182] [cursor=pointer]
+          - row "Name Python bcf1bf29 Slug python-bcf1bf29 Description Test category Actions Delete" [ref=e183]:
+            - cell "Name Python bcf1bf29" [ref=e184]
+            - cell "Slug python-bcf1bf29" [ref=e185]
+            - cell "Description Test category" [ref=e186]
+            - cell "Actions Delete" [ref=e187]:
+              - text: Actions
+              - button "Delete" [ref=e189] [cursor=pointer]
+          - row "Name Python c4898dba Slug python-c4898dba Description Test category Actions Delete" [ref=e190]:
+            - cell "Name Python c4898dba" [ref=e191]
+            - cell "Slug python-c4898dba" [ref=e192]
+            - cell "Description Test category" [ref=e193]
+            - cell "Actions Delete" [ref=e194]:
+              - text: Actions
+              - button "Delete" [ref=e196] [cursor=pointer]

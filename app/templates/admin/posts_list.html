@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Posts{% endblock %}
+{% block header %}Posts{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Editorial queue</p>
+      <h2>Posts</h2>
+    </div>
+    <a class="button" href="/admin/posts/create">New Post</a>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Category</th><th>Status</th><th>Views</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for post in posts %}
+      <tr>
+        <td data-label="Title"><strong>{{ post.title }}</strong></td>
+        <td data-label="Category">{{ post.category.name if post.category else 'Uncategorized' }}</td>
+        <td data-label="Status"><span class="badge {{ post.status }}">{{ post.status }}</span></td>
+        <td data-label="Views">{{ format_views_count(post.views_count) }}</td>
+        <td data-label="Actions">
+          <div class="actions">
+            <a class="button secondary-button" href="/admin/posts/{{ post.id }}/edit">Edit</a>
+            <form method="post" action="/admin/posts/{{ post.id }}/delete" class="inline" data-confirm><button class="link-button">Delete</button></form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="5" class="empty-state">No posts yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

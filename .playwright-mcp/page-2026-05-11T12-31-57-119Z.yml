@@ -1,0 +1,529 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - button "Switch to dark mode" [ref=e5] [cursor=pointer]:
+        - img [ref=e7]
+        - img [ref=e14]
+        - generic [ref=e16]: Dark Mode
+      - button "Open search" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - button "Open menu" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e23]: Menu
+  - complementary [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: Navigation
+        - heading [level=2] [ref=e28]: Blog Website
+      - button [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+    - navigation [ref=e33]:
+      - link [ref=e34] [cursor=pointer]:
+        - /url: /
+        - img [ref=e35]
+        - generic [ref=e39]: Home
+      - link [ref=e40] [cursor=pointer]:
+        - /url: /posts
+        - img [ref=e41]
+        - generic [ref=e43]: All Posts
+      - button [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+        - generic [ref=e51]: Categories
+        - img [ref=e53]
+      - button [ref=e56] [cursor=pointer]:
+        - img [ref=e57]
+        - generic [ref=e59]: Tags
+        - img [ref=e61]
+      - link [ref=e63] [cursor=pointer]:
+        - /url: /about
+        - img [ref=e64]
+        - generic [ref=e67]: About
+      - link [ref=e68] [cursor=pointer]:
+        - /url: /contact
+        - img [ref=e69]
+        - generic [ref=e72]: Contact
+      - link [ref=e73] [cursor=pointer]:
+        - /url: /privacy
+        - img [ref=e74]
+        - generic [ref=e76]: Privacy Policy
+      - link [ref=e77] [cursor=pointer]:
+        - /url: /terms
+        - img [ref=e78]
+        - generic [ref=e81]: Terms
+      - link [ref=e82] [cursor=pointer]:
+        - /url: /admin/login
+        - img [ref=e83]
+        - generic [ref=e86]: Admin Login
+      - button [ref=e87] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e90]: Dark Mode
+  - main [ref=e91]:
+    - generic [ref=e92]:
+      - paragraph [ref=e93]: Topics
+      - heading "Categories" [level=1] [ref=e94]
+      - paragraph [ref=e95]: Browse the main sections of the blog.
+    - generic [ref=e96]:
+      - article [ref=e97]:
+        - paragraph [ref=e98]: 12 posts
+        - heading "Archive 011e7db8" [level=2] [ref=e99]:
+          - link "Archive 011e7db8" [ref=e100] [cursor=pointer]:
+            - /url: /category/archive-011e7db8
+        - paragraph [ref=e101]: Test category
+        - link "View category" [ref=e102] [cursor=pointer]:
+          - /url: /category/archive-011e7db8
+      - article [ref=e103]:
+        - paragraph [ref=e104]: 12 posts
+        - heading "Archive 03ea265b" [level=2] [ref=e105]:
+          - link "Archive 03ea265b" [ref=e106] [cursor=pointer]:
+            - /url: /category/archive-03ea265b
+        - paragraph [ref=e107]: Test category
+        - link "View category" [ref=e108] [cursor=pointer]:
+          - /url: /category/archive-03ea265b
+      - article [ref=e109]:
+        - paragraph [ref=e110]: 12 posts
+        - heading "Archive 0441965f" [level=2] [ref=e111]:
+          - link "Archive 0441965f" [ref=e112] [cursor=pointer]:
+            - /url: /category/archive-0441965f
+        - paragraph [ref=e113]: Test category
+        - link "View category" [ref=e114] [cursor=pointer]:
+          - /url: /category/archive-0441965f
+      - article [ref=e115]:
+        - paragraph [ref=e116]: 12 posts
+        - heading "Archive 3be96e1c" [level=2] [ref=e117]:
+          - link "Archive 3be96e1c" [ref=e118] [cursor=pointer]:
+            - /url: /category/archive-3be96e1c
+        - paragraph [ref=e119]: Test category
+        - link "View category" [ref=e120] [cursor=pointer]:
+          - /url: /category/archive-3be96e1c
+      - article [ref=e121]:
+        - paragraph [ref=e122]: 12 posts
+        - heading "Archive 7ed5163d" [level=2] [ref=e123]:
+          - link "Archive 7ed5163d" [ref=e124] [cursor=pointer]:
+            - /url: /category/archive-7ed5163d
+        - paragraph [ref=e125]: Test category
+        - link "View category" [ref=e126] [cursor=pointer]:
+          - /url: /category/archive-7ed5163d
+      - article [ref=e127]:
+        - paragraph [ref=e128]: 12 posts
+        - heading "Archive 878e572e" [level=2] [ref=e129]:
+          - link "Archive 878e572e" [ref=e130] [cursor=pointer]:
+            - /url: /category/archive-878e572e
+        - paragraph [ref=e131]: Test category
+        - link "View category" [ref=e132] [cursor=pointer]:
+          - /url: /category/archive-878e572e
+      - article [ref=e133]:
+        - paragraph [ref=e134]: 0 posts
+        - heading "Archive 906af7b3" [level=2] [ref=e135]:
+          - link "Archive 906af7b3" [ref=e136] [cursor=pointer]:
+            - /url: /category/archive-906af7b3
+        - paragraph [ref=e137]: Test category
+        - link "View category" [ref=e138] [cursor=pointer]:
+          - /url: /category/archive-906af7b3
+      - article [ref=e139]:
+        - paragraph [ref=e140]: 12 posts
+        - heading "Archive a13ea975" [level=2] [ref=e141]:
+          - link "Archive a13ea975" [ref=e142] [cursor=pointer]:
+            - /url: /category/archive-a13ea975
+        - paragraph [ref=e143]: Test category
+        - link "View category" [ref=e144] [cursor=pointer]:
+          - /url: /category/archive-a13ea975
+      - article [ref=e145]:
+        - paragraph [ref=e146]: 12 posts
+        - heading "Archive b20abaec" [level=2] [ref=e147]:
+          - link "Archive b20abaec" [ref=e148] [cursor=pointer]:
+            - /url: /category/archive-b20abaec
+        - paragraph [ref=e149]: Test category
+        - link "View category" [ref=e150] [cursor=pointer]:
+          - /url: /category/archive-b20abaec
+      - article [ref=e151]:
+        - paragraph [ref=e152]: 12 posts
+        - heading "Archive bcdd9822" [level=2] [ref=e153]:
+          - link "Archive bcdd9822" [ref=e154] [cursor=pointer]:
+            - /url: /category/archive-bcdd9822
+        - paragraph [ref=e155]: Test category
+        - link "View category" [ref=e156] [cursor=pointer]:
+          - /url: /category/archive-bcdd9822
+      - article [ref=e157]:
+        - paragraph [ref=e158]: 12 posts
+        - heading "Archive c06c9518" [level=2] [ref=e159]:
+          - link "Archive c06c9518" [ref=e160] [cursor=pointer]:
+            - /url: /category/archive-c06c9518
+        - paragraph [ref=e161]: Test category
+        - link "View category" [ref=e162] [cursor=pointer]:
+          - /url: /category/archive-c06c9518
+      - article [ref=e163]:
+        - paragraph [ref=e164]: 12 posts
+        - heading "Archive cba273d0" [level=2] [ref=e165]:
+          - link "Archive cba273d0" [ref=e166] [cursor=pointer]:
+            - /url: /category/archive-cba273d0
+        - paragraph [ref=e167]: Test category
+        - link "View category" [ref=e168] [cursor=pointer]:
+          - /url: /category/archive-cba273d0
+      - article [ref=e169]:
+        - paragraph [ref=e170]: 12 posts
+        - heading "Archive f36b1cfb" [level=2] [ref=e171]:
+          - link "Archive f36b1cfb" [ref=e172] [cursor=pointer]:
+            - /url: /category/archive-f36b1cfb
+        - paragraph [ref=e173]: Test category
+        - link "View category" [ref=e174] [cursor=pointer]:
+          - /url: /category/archive-f36b1cfb
+      - article [ref=e175]:
+        - paragraph [ref=e176]: 12 posts
+        - heading "Archive f6a4dc2f" [level=2] [ref=e177]:
+          - link "Archive f6a4dc2f" [ref=e178] [cursor=pointer]:
+            - /url: /category/archive-f6a4dc2f
+        - paragraph [ref=e179]: Test category
+        - link "View category" [ref=e180] [cursor=pointer]:
+          - /url: /category/archive-f6a4dc2f
+      - article [ref=e181]:
+        - paragraph [ref=e182]: 3 posts
+        - heading "Browser Category" [level=2] [ref=e183]:
+          - link "Browser Category" [ref=e184] [cursor=pointer]:
+            - /url: /category/browser-category
+        - paragraph [ref=e185]: Created during Playwright verification.
+        - link "View category" [ref=e186] [cursor=pointer]:
+          - /url: /category/browser-category
+      - article [ref=e187]:
+        - paragraph [ref=e188]: 8 posts
+        - heading "Design" [level=2] [ref=e189]:
+          - link "Design" [ref=e190] [cursor=pointer]:
+            - /url: /category/design
+        - paragraph [ref=e191]: Interface polish, content structure, and visual systems.
+        - link "View category" [ref=e192] [cursor=pointer]:
+          - /url: /category/design
+      - article [ref=e193]:
+        - paragraph [ref=e194]: 5 posts
+        - heading "Development" [level=2] [ref=e195]:
+          - link "Development" [ref=e196] [cursor=pointer]:
+            - /url: /category/development
+        - paragraph [ref=e197]: Practical engineering tutorials and platform notes.
+        - link "View category" [ref=e198] [cursor=pointer]:
+          - /url: /category/development
+      - article [ref=e199]:
+        - paragraph [ref=e200]: 4 posts
+        - heading "Engineering" [level=2] [ref=e201]:
+          - link "Engineering" [ref=e202] [cursor=pointer]:
+            - /url: /category/engineering
+        - paragraph [ref=e203]: Architecture notes, implementation details, and practical software decisions.
+        - link "View category" [ref=e204] [cursor=pointer]:
+          - /url: /category/engineering
+      - article [ref=e205]:
+        - paragraph [ref=e206]: 0 posts
+        - heading "Hidden Category a35591fa" [level=2] [ref=e207]:
+          - link "Hidden Category a35591fa" [ref=e208] [cursor=pointer]:
+            - /url: /category/hidden-category-a35591fa
+        - paragraph [ref=e209]: Hidden
+        - link "View category" [ref=e210] [cursor=pointer]:
+          - /url: /category/hidden-category-a35591fa
+      - article [ref=e211]:
+        - paragraph [ref=e212]: 0 posts
+        - heading "Hidden Category b23bcf81" [level=2] [ref=e213]:
+          - link "Hidden Category b23bcf81" [ref=e214] [cursor=pointer]:
+            - /url: /category/hidden-category-b23bcf81
+        - paragraph [ref=e215]: Hidden
+        - link "View category" [ref=e216] [cursor=pointer]:
+          - /url: /category/hidden-category-b23bcf81
+      - article [ref=e217]:
+        - paragraph [ref=e218]: 1 post
+        - heading "Media API Category 1108" [level=2] [ref=e219]:
+          - link "Media API Category 1108" [ref=e220] [cursor=pointer]:
+            - /url: /category/media-api-category-1108
+        - paragraph [ref=e221]: Category created during media API verification.
+        - link "View category" [ref=e222] [cursor=pointer]:
+          - /url: /category/media-api-category-1108
+      - article [ref=e223]:
+        - paragraph [ref=e224]: 1 post
+        - heading "Media API Test Category 17783254" [level=2] [ref=e225]:
+          - link "Media API Test Category 17783254" [ref=e226] [cursor=pointer]:
+            - /url: /category/media-api-test-category-17783254
+        - paragraph [ref=e227]: Created during media API browser test
+        - link "View category" [ref=e228] [cursor=pointer]:
+          - /url: /category/media-api-test-category-17783254
+      - article [ref=e229]:
+        - paragraph [ref=e230]: 0 posts
+        - heading "Menu Category 179f3a04" [level=2] [ref=e231]:
+          - link "Menu Category 179f3a04" [ref=e232] [cursor=pointer]:
+            - /url: /category/menu-category-179f3a04
+        - paragraph [ref=e233]: Hidden
+        - link "View category" [ref=e234] [cursor=pointer]:
+          - /url: /category/menu-category-179f3a04
+      - article [ref=e235]:
+        - paragraph [ref=e236]: 0 posts
+        - heading "Menu Category e01dc0e4" [level=2] [ref=e237]:
+          - link "Menu Category e01dc0e4" [ref=e238] [cursor=pointer]:
+            - /url: /category/menu-category-e01dc0e4
+        - paragraph [ref=e239]: Hidden
+        - link "View category" [ref=e240] [cursor=pointer]:
+          - /url: /category/menu-category-e01dc0e4
+      - article [ref=e241]:
+        - paragraph [ref=e242]: 8 posts
+        - heading "Operations" [level=2] [ref=e243]:
+          - link "Operations" [ref=e244] [cursor=pointer]:
+            - /url: /category/operations
+        - paragraph [ref=e245]: Deployment, reliability, and maintenance lessons.
+        - link "View category" [ref=e246] [cursor=pointer]:
+          - /url: /category/operations
+      - article [ref=e247]:
+        - paragraph [ref=e248]: 5 posts
+        - heading "Product" [level=2] [ref=e249]:
+          - link "Product" [ref=e250] [cursor=pointer]:
+            - /url: /category/product
+        - paragraph [ref=e251]: Product thinking, launch notes, and user-centered tradeoffs.
+        - link "View category" [ref=e252] [cursor=pointer]:
+          - /url: /category/product
+      - article [ref=e253]:
+        - paragraph [ref=e254]: 1 post
+        - heading "Python 0dc25206" [level=2] [ref=e255]:
+          - link "Python 0dc25206" [ref=e256] [cursor=pointer]:
+            - /url: /category/python-0dc25206
+        - paragraph [ref=e257]: Python category
+        - link "View category" [ref=e258] [cursor=pointer]:
+          - /url: /category/python-0dc25206
+      - article [ref=e259]:
+        - paragraph [ref=e260]: 1 post
+        - heading "Python 0f2b1b0f" [level=2] [ref=e261]:
+          - link "Python 0f2b1b0f" [ref=e262] [cursor=pointer]:
+            - /url: /category/python-0f2b1b0f
+        - paragraph [ref=e263]: Test category
+        - link "View category" [ref=e264] [cursor=pointer]:
+          - /url: /category/python-0f2b1b0f
+      - article [ref=e265]:
+        - paragraph [ref=e266]: 1 post
+        - heading "Python 11c0e389" [level=2] [ref=e267]:
+          - link "Python 11c0e389" [ref=e268] [cursor=pointer]:
+            - /url: /category/python-11c0e389
+        - paragraph [ref=e269]: Test category
+        - link "View category" [ref=e270] [cursor=pointer]:
+          - /url: /category/python-11c0e389
+      - article [ref=e271]:
+        - paragraph [ref=e272]: 0 posts
+        - heading "Python 20794c79" [level=2] [ref=e273]:
+          - link "Python 20794c79" [ref=e274] [cursor=pointer]:
+            - /url: /category/python-20794c79
+        - paragraph [ref=e275]: Python category
+        - link "View category" [ref=e276] [cursor=pointer]:
+          - /url: /category/python-20794c79
+      - article [ref=e277]:
+        - paragraph [ref=e278]: 1 post
+        - heading "Python 2488b0e3" [level=2] [ref=e279]:
+          - link "Python 2488b0e3" [ref=e280] [cursor=pointer]:
+            - /url: /category/python-2488b0e3
+        - paragraph [ref=e281]: Test category
+        - link "View category" [ref=e282] [cursor=pointer]:
+          - /url: /category/python-2488b0e3
+      - article [ref=e283]:
+        - paragraph [ref=e284]: 1 post
+        - heading "Python 2b82d3e6" [level=2] [ref=e285]:
+          - link "Python 2b82d3e6" [ref=e286] [cursor=pointer]:
+            - /url: /category/python-2b82d3e6
+        - paragraph [ref=e287]: Test category
+        - link "View category" [ref=e288] [cursor=pointer]:
+          - /url: /category/python-2b82d3e6
+      - article [ref=e289]:
+        - paragraph [ref=e290]: 1 post
+        - heading "Python 4d920560" [level=2] [ref=e291]:
+          - link "Python 4d920560" [ref=e292] [cursor=pointer]:
+            - /url: /category/python-4d920560
+        - paragraph [ref=e293]: Python category
+        - link "View category" [ref=e294] [cursor=pointer]:
+          - /url: /category/python-4d920560
+      - article [ref=e295]:
+        - paragraph [ref=e296]: 1 post
+        - heading "Python 5063a70e" [level=2] [ref=e297]:
+          - link "Python 5063a70e" [ref=e298] [cursor=pointer]:
+            - /url: /category/python-5063a70e
+        - paragraph [ref=e299]: Test category
+        - link "View category" [ref=e300] [cursor=pointer]:
+          - /url: /category/python-5063a70e
+      - article [ref=e301]:
+        - paragraph [ref=e302]: 1 post
+        - heading "Python 5ed139e3" [level=2] [ref=e303]:
+          - link "Python 5ed139e3" [ref=e304] [cursor=pointer]:
+            - /url: /category/python-5ed139e3
+        - paragraph [ref=e305]: Test category
+        - link "View category" [ref=e306] [cursor=pointer]:
+          - /url: /category/python-5ed139e3
+      - article [ref=e307]:
+        - paragraph [ref=e308]: 1 post
+        - heading "Python 6341aab5" [level=2] [ref=e309]:
+          - link "Python 6341aab5" [ref=e310] [cursor=pointer]:
+            - /url: /category/python-6341aab5
+        - paragraph [ref=e311]: Python category
+        - link "View category" [ref=e312] [cursor=pointer]:
+          - /url: /category/python-6341aab5
+      - article [ref=e313]:
+        - paragraph [ref=e314]: 1 post
+        - heading "Python 69cec7ad" [level=2] [ref=e315]:
+          - link "Python 69cec7ad" [ref=e316] [cursor=pointer]:
+            - /url: /category/python-69cec7ad
+        - paragraph [ref=e317]: Python category
+        - link "View category" [ref=e318] [cursor=pointer]:
+          - /url: /category/python-69cec7ad
+      - article [ref=e319]:
+        - paragraph [ref=e320]: 1 post
+        - heading "Python 7bb5438e" [level=2] [ref=e321]:
+          - link "Python 7bb5438e" [ref=e322] [cursor=pointer]:
+            - /url: /category/python-7bb5438e
+        - paragraph [ref=e323]: Test category
+        - link "View category" [ref=e324] [cursor=pointer]:
+          - /url: /category/python-7bb5438e
+      - article [ref=e325]:
+        - paragraph [ref=e326]: 1 post
+        - heading "Python 884711ec" [level=2] [ref=e327]:
+          - link "Python 884711ec" [ref=e328] [cursor=pointer]:
+            - /url: /category/python-884711ec
+        - paragraph [ref=e329]: Test category
+        - link "View category" [ref=e330] [cursor=pointer]:
+          - /url: /category/python-884711ec
+      - article [ref=e331]:
+        - paragraph [ref=e332]: 1 post
+        - heading "Python a2023e38" [level=2] [ref=e333]:
+          - link "Python a2023e38" [ref=e334] [cursor=pointer]:
+            - /url: /category/python-a2023e38
+        - paragraph [ref=e335]: Test category
+        - link "View category" [ref=e336] [cursor=pointer]:
+          - /url: /category/python-a2023e38
+      - article [ref=e337]:
+        - paragraph [ref=e338]: 0 posts
+        - heading "Python bc356bf5" [level=2] [ref=e339]:
+          - link "Python bc356bf5" [ref=e340] [cursor=pointer]:
+            - /url: /category/python-bc356bf5
+        - paragraph [ref=e341]: Test category
+        - link "View category" [ref=e342] [cursor=pointer]:
+          - /url: /category/python-bc356bf5
+      - article [ref=e343]:
+        - paragraph [ref=e344]: 1 post
+        - heading "Python bcf1bf29" [level=2] [ref=e345]:
+          - link "Python bcf1bf29" [ref=e346] [cursor=pointer]:
+            - /url: /category/python-bcf1bf29
+        - paragraph [ref=e347]: Test category
+        - link "View category" [ref=e348] [cursor=pointer]:
+          - /url: /category/python-bcf1bf29
+      - article [ref=e349]:
+        - paragraph [ref=e350]: 1 post
+        - heading "Python c4898dba" [level=2] [ref=e351]:
+          - link "Python c4898dba" [ref=e352] [cursor=pointer]:
+            - /url: /category/python-c4898dba
+        - paragraph [ref=e353]: Test category
+        - link "View category" [ref=e354] [cursor=pointer]:
+          - /url: /category/python-c4898dba
+      - article [ref=e355]:
+        - paragraph [ref=e356]: 1 post
+        - heading "Python dbc719dc" [level=2] [ref=e357]:
+          - link "Python dbc719dc" [ref=e358] [cursor=pointer]:
+            - /url: /category/python-dbc719dc
+        - paragraph [ref=e359]: Test category
+        - link "View category" [ref=e360] [cursor=pointer]:
+          - /url: /category/python-dbc719dc
+      - article [ref=e361]:
+        - paragraph [ref=e362]: 1 post
+        - heading "Python f45b7b34" [level=2] [ref=e363]:
+          - link "Python f45b7b34" [ref=e364] [cursor=pointer]:
+            - /url: /category/python-f45b7b34
+        - paragraph [ref=e365]: Test category
+        - link "View category" [ref=e366] [cursor=pointer]:
+          - /url: /category/python-f45b7b34
+      - article [ref=e367]:
+        - paragraph [ref=e368]: 0 posts
+        - heading "Shown Category a35591fa" [level=2] [ref=e369]:
+          - link "Shown Category a35591fa" [ref=e370] [cursor=pointer]:
+            - /url: /category/shown-category-a35591fa
+        - paragraph [ref=e371]: Visible
+        - link "View category" [ref=e372] [cursor=pointer]:
+          - /url: /category/shown-category-a35591fa
+      - article [ref=e373]:
+        - paragraph [ref=e374]: 0 posts
+        - heading "Shown Category b23bcf81" [level=2] [ref=e375]:
+          - link "Shown Category b23bcf81" [ref=e376] [cursor=pointer]:
+            - /url: /category/shown-category-b23bcf81
+        - paragraph [ref=e377]: Visible
+        - link "View category" [ref=e378] [cursor=pointer]:
+          - /url: /category/shown-category-b23bcf81
+      - article [ref=e379]:
+        - paragraph [ref=e380]: 2 posts
+        - heading "Views 4b7e1a2c" [level=2] [ref=e381]:
+          - link "Views 4b7e1a2c" [ref=e382] [cursor=pointer]:
+            - /url: /category/views-4b7e1a2c
+        - paragraph [ref=e383]: Test category
+        - link "View category" [ref=e384] [cursor=pointer]:
+          - /url: /category/views-4b7e1a2c
+      - article [ref=e385]:
+        - paragraph [ref=e386]: 2 posts
+        - heading "Views 52fe71a0" [level=2] [ref=e387]:
+          - link "Views 52fe71a0" [ref=e388] [cursor=pointer]:
+            - /url: /category/views-52fe71a0
+        - paragraph [ref=e389]: Test category
+        - link "View category" [ref=e390] [cursor=pointer]:
+          - /url: /category/views-52fe71a0
+      - article [ref=e391]:
+        - paragraph [ref=e392]: 2 posts
+        - heading "Views 7401b7f4" [level=2] [ref=e393]:
+          - link "Views 7401b7f4" [ref=e394] [cursor=pointer]:
+            - /url: /category/views-7401b7f4
+        - paragraph [ref=e395]: Test category
+        - link "View category" [ref=e396] [cursor=pointer]:
+          - /url: /category/views-7401b7f4
+      - article [ref=e397]:
+        - paragraph [ref=e398]: 2 posts
+        - heading "Views 8781b2f3" [level=2] [ref=e399]:
+          - link "Views 8781b2f3" [ref=e400] [cursor=pointer]:
+            - /url: /category/views-8781b2f3
+        - paragraph [ref=e401]: Test category
+        - link "View category" [ref=e402] [cursor=pointer]:
+          - /url: /category/views-8781b2f3
+      - article [ref=e403]:
+        - paragraph [ref=e404]: 2 posts
+        - heading "Views f1a4b8b2" [level=2] [ref=e405]:
+          - link "Views f1a4b8b2" [ref=e406] [cursor=pointer]:
+            - /url: /category/views-f1a4b8b2
+        - paragraph [ref=e407]: Test category
+        - link "View category" [ref=e408] [cursor=pointer]:
+          - /url: /category/views-f1a4b8b2
+      - article [ref=e409]:
+        - paragraph [ref=e410]: 2 posts
+        - heading "Views f84bba81" [level=2] [ref=e411]:
+          - link "Views f84bba81" [ref=e412] [cursor=pointer]:
+            - /url: /category/views-f84bba81
+        - paragraph [ref=e413]: Test category
+        - link "View category" [ref=e414] [cursor=pointer]:
+          - /url: /category/views-f84bba81
+  - contentinfo [ref=e415]:
+    - generic [ref=e416]:
+      - generic [ref=e417]:
+        - link "Blog Website" [ref=e418] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=e419]: Updated from tests
+        - generic "Social links"
+      - generic [ref=e420]:
+        - heading "Explore" [level=2] [ref=e421]
+        - link "All Posts" [ref=e422] [cursor=pointer]:
+          - /url: /posts
+        - link "Categories" [ref=e423] [cursor=pointer]:
+          - /url: /categories
+        - link "Tags" [ref=e424] [cursor=pointer]:
+          - /url: /tags
+        - link "Search" [ref=e425] [cursor=pointer]:
+          - /url: /search
+      - generic [ref=e426]:
+        - heading "Company" [level=2] [ref=e427]
+        - link "About" [ref=e428] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e429] [cursor=pointer]:
+          - /url: /contact
+        - link "Admin Login" [ref=e430] [cursor=pointer]:
+          - /url: /admin/login
+      - generic [ref=e431]:
+        - heading "Legal" [level=2] [ref=e432]
+        - link "Privacy Policy" [ref=e433] [cursor=pointer]:
+          - /url: /privacy
+        - link "Terms" [ref=e434] [cursor=pointer]:
+          - /url: /terms
+        - link "Back to top" [ref=e435] [cursor=pointer]:
+          - /url: "#top"
+          - text: Back to top
+          - img [ref=e436]
+    - generic [ref=e438]:
+      - generic [ref=e439]: © Blog Website
+      - generic [ref=e440]: Built for clear, fast reading.

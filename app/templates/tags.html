@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Tags - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}
+{% block content %}
+<section class="page-card archive-hero">
+  <p class="eyebrow">Tags</p>
+  <h1>Explore Tags</h1>
+  <p>Follow specific ideas, series, and themes across posts.</p>
+</section>
+<section class="taxonomy-grid tag-cloud-page">
+  {% for tag, post_count in tag_items %}
+  <a class="taxonomy-card tag-card" href="/tag/{{ tag.slug }}">
+    <span>#{{ tag.name }}</span>
+    <small>{{ post_count }} post{{ '' if post_count == 1 else 's' }}</small>
+  </a>
+  {% else %}
+  <p class="empty-state">No tags yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

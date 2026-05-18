@@ -1,0 +1,347 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e4]:
+      - link "Home" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "All Posts" [ref=e6] [cursor=pointer]:
+        - /url: /posts
+      - link "Categories" [ref=e7] [cursor=pointer]:
+        - /url: /categories
+      - link "Tags" [ref=e8] [cursor=pointer]:
+        - /url: /tags
+      - link "About" [ref=e9] [cursor=pointer]:
+        - /url: /about
+      - link "Contact" [ref=e10] [cursor=pointer]:
+        - /url: /contact
+      - link "Privacy" [ref=e11] [cursor=pointer]:
+        - /url: /privacy
+      - link "Terms" [ref=e12] [cursor=pointer]:
+        - /url: /terms
+      - link "Admin Login" [ref=e13] [cursor=pointer]:
+        - /url: /admin/login
+    - generic [ref=e15]:
+      - textbox "Search posts" [ref=e16]
+      - button "Submit search" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+        - text: Search
+  - complementary [ref=e21]:
+    - button [ref=e22] [cursor=pointer]:
+      - img [ref=e23]
+      - generic [ref=e26]: Close
+    - link [ref=e27] [cursor=pointer]:
+      - /url: /
+      - text: Home
+    - link [ref=e28] [cursor=pointer]:
+      - /url: /posts
+      - text: All Posts
+    - link [ref=e29] [cursor=pointer]:
+      - /url: /categories
+      - text: Categories
+    - link [ref=e30] [cursor=pointer]:
+      - /url: /tags
+      - text: Tags
+    - link [ref=e31] [cursor=pointer]:
+      - /url: /about
+      - text: About
+    - link [ref=e32] [cursor=pointer]:
+      - /url: /contact
+      - text: Contact
+    - link [ref=e33] [cursor=pointer]:
+      - /url: /privacy
+      - text: Privacy
+    - link [ref=e34] [cursor=pointer]:
+      - /url: /terms
+      - text: Terms
+    - link [ref=e35] [cursor=pointer]:
+      - /url: /admin/login
+      - text: Admin Login
+    - heading [level=3] [ref=e36]: Categories
+    - link [ref=e37] [cursor=pointer]:
+      - /url: /category/archive-011e7db8
+      - text: Archive 011e7db8
+    - link [ref=e38] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+      - text: Archive 03ea265b
+    - link [ref=e39] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+      - text: Archive 3be96e1c
+    - link [ref=e40] [cursor=pointer]:
+      - /url: /category/archive-7ed5163d
+      - text: Archive 7ed5163d
+    - link [ref=e41] [cursor=pointer]:
+      - /url: /category/archive-878e572e
+      - text: Archive 878e572e
+    - link [ref=e42] [cursor=pointer]:
+      - /url: /category/archive-906af7b3
+      - text: Archive 906af7b3
+    - link [ref=e43] [cursor=pointer]:
+      - /url: /category/archive-b20abaec
+      - text: Archive b20abaec
+    - link [ref=e44] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+      - text: Archive bcdd9822
+    - link [ref=e45] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+      - text: Archive c06c9518
+    - link [ref=e46] [cursor=pointer]:
+      - /url: /category/archive-cba273d0
+      - text: Archive cba273d0
+    - link [ref=e47] [cursor=pointer]:
+      - /url: /category/archive-f36b1cfb
+      - text: Archive f36b1cfb
+    - link [ref=e48] [cursor=pointer]:
+      - /url: /category/browser-category
+      - text: Browser Category
+    - link [ref=e49] [cursor=pointer]:
+      - /url: /category/design
+      - text: Design
+    - link [ref=e50] [cursor=pointer]:
+      - /url: /category/development
+      - text: Development
+    - link [ref=e51] [cursor=pointer]:
+      - /url: /category/engineering
+      - text: Engineering
+    - link [ref=e52] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+      - text: Media API Category 1108
+    - link [ref=e53] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+      - text: Media API Test Category 17783254
+    - link [ref=e54] [cursor=pointer]:
+      - /url: /category/operations
+      - text: Operations
+    - link [ref=e55] [cursor=pointer]:
+      - /url: /category/product
+      - text: Product
+    - link [ref=e56] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+      - text: Python 0dc25206
+    - link [ref=e57] [cursor=pointer]:
+      - /url: /category/python-0f2b1b0f
+      - text: Python 0f2b1b0f
+    - link [ref=e58] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+      - text: Python 11c0e389
+    - link [ref=e59] [cursor=pointer]:
+      - /url: /category/python-20794c79
+      - text: Python 20794c79
+    - link [ref=e60] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+      - text: Python 2488b0e3
+    - link [ref=e61] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+      - text: Python 2b82d3e6
+    - link [ref=e62] [cursor=pointer]:
+      - /url: /category/python-4d920560
+      - text: Python 4d920560
+    - link [ref=e63] [cursor=pointer]:
+      - /url: /category/python-5063a70e
+      - text: Python 5063a70e
+    - link [ref=e64] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+      - text: Python 6341aab5
+    - link [ref=e65] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+      - text: Python 69cec7ad
+    - link [ref=e66] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+      - text: Python 7bb5438e
+    - link [ref=e67] [cursor=pointer]:
+      - /url: /category/python-884711ec
+      - text: Python 884711ec
+    - link [ref=e68] [cursor=pointer]:
+      - /url: /category/python-bc356bf5
+      - text: Python bc356bf5
+    - link [ref=e69] [cursor=pointer]:
+      - /url: /category/python-bcf1bf29
+      - text: Python bcf1bf29
+    - link [ref=e70] [cursor=pointer]:
+      - /url: /category/python-c4898dba
+      - text: Python c4898dba
+    - link [ref=e71] [cursor=pointer]:
+      - /url: /category/python-dbc719dc
+      - text: Python dbc719dc
+    - link [ref=e72] [cursor=pointer]:
+      - /url: /category/views-4b7e1a2c
+      - text: Views 4b7e1a2c
+    - link [ref=e73] [cursor=pointer]:
+      - /url: /category/views-7401b7f4
+      - text: Views 7401b7f4
+    - link [ref=e74] [cursor=pointer]:
+      - /url: /category/views-8781b2f3
+      - text: Views 8781b2f3
+  - main [ref=e75]:
+    - generic [ref=e76]:
+      - paragraph [ref=e77]: Blog Archive
+      - heading "All Posts" [level=1] [ref=e78]
+      - paragraph [ref=e79]: Browse every published article, guide, and story.
+    - generic [ref=e80]:
+      - article [ref=e81]:
+        - img "Building a FastAPI Blog That Feels Fast" [ref=e82]
+        - paragraph [ref=e83]: Development
+        - paragraph [ref=e84]: 241 views · 1 min read · Published 7 minutes ago
+        - heading "Building a FastAPI Blog That Feels Fast" [level=3] [ref=e85]:
+          - link "Building a FastAPI Blog That Feels Fast" [ref=e86] [cursor=pointer]:
+            - /url: /post/building-a-fastapi-blog-that-feels-fast
+        - paragraph [ref=e87]: Demo article 1 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e88]:
+          - link "#FastAPI" [ref=e89] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e90] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e91] [cursor=pointer]:
+          - /url: /post/building-a-fastapi-blog-that-feels-fast
+      - article [ref=e92]:
+        - img "Designing Blog Cards Readers Actually Click" [ref=e93]
+        - paragraph [ref=e94]: Design
+        - paragraph [ref=e95]: 232 views · 1 min read · Published 1 day ago
+        - heading "Designing Blog Cards Readers Actually Click" [level=3] [ref=e96]:
+          - link "Designing Blog Cards Readers Actually Click" [ref=e97] [cursor=pointer]:
+            - /url: /post/designing-blog-cards-readers-actually-click
+        - paragraph [ref=e98]: Demo article 2 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e99]:
+          - link "#Python" [ref=e100] [cursor=pointer]:
+            - /url: /tag/python
+          - link "#Cloud" [ref=e101] [cursor=pointer]:
+            - /url: /tag/cloud
+        - link "Read more" [ref=e102] [cursor=pointer]:
+          - /url: /post/designing-blog-cards-readers-actually-click
+      - article [ref=e103]:
+        - img "Archive Post 11 7ed5163d" [ref=e104]
+        - paragraph [ref=e105]: Archive 7ed5163d
+        - paragraph [ref=e106]: 1 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 11 7ed5163d" [level=3] [ref=e107]:
+          - link "Archive Post 11 7ed5163d" [ref=e108] [cursor=pointer]:
+            - /url: /post/archive-post-11-7ed5163d
+        - paragraph [ref=e109]: Archive summary 11 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e111] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e112] [cursor=pointer]:
+          - /url: /post/archive-post-11-7ed5163d
+      - article [ref=e113]:
+        - img "Archive Post 10 7ed5163d" [ref=e114]
+        - paragraph [ref=e115]: Archive 7ed5163d
+        - paragraph [ref=e116]: 0 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 10 7ed5163d" [level=3] [ref=e117]:
+          - link "Archive Post 10 7ed5163d" [ref=e118] [cursor=pointer]:
+            - /url: /post/archive-post-10-7ed5163d
+        - paragraph [ref=e119]: Archive summary 10 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e121] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e122] [cursor=pointer]:
+          - /url: /post/archive-post-10-7ed5163d
+      - article [ref=e123]:
+        - img "Archive Post 09 7ed5163d" [ref=e124]
+        - paragraph [ref=e125]: Archive 7ed5163d
+        - paragraph [ref=e126]: 0 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 09 7ed5163d" [level=3] [ref=e127]:
+          - link "Archive Post 09 7ed5163d" [ref=e128] [cursor=pointer]:
+            - /url: /post/archive-post-09-7ed5163d
+        - paragraph [ref=e129]: Archive summary 09 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e131] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e132] [cursor=pointer]:
+          - /url: /post/archive-post-09-7ed5163d
+      - article [ref=e133]:
+        - img "Archive Post 08 7ed5163d" [ref=e134]
+        - paragraph [ref=e135]: Archive 7ed5163d
+        - paragraph [ref=e136]: 0 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 08 7ed5163d" [level=3] [ref=e137]:
+          - link "Archive Post 08 7ed5163d" [ref=e138] [cursor=pointer]:
+            - /url: /post/archive-post-08-7ed5163d
+        - paragraph [ref=e139]: Archive summary 08 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e141] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e142] [cursor=pointer]:
+          - /url: /post/archive-post-08-7ed5163d
+      - article [ref=e143]:
+        - img "Archive Post 07 7ed5163d" [ref=e144]
+        - paragraph [ref=e145]: Archive 7ed5163d
+        - paragraph [ref=e146]: 1 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 07 7ed5163d" [level=3] [ref=e147]:
+          - link "Archive Post 07 7ed5163d" [ref=e148] [cursor=pointer]:
+            - /url: /post/archive-post-07-7ed5163d
+        - paragraph [ref=e149]: Archive summary 07 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e151] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e152] [cursor=pointer]:
+          - /url: /post/archive-post-07-7ed5163d
+      - article [ref=e153]:
+        - img "Archive Post 06 7ed5163d" [ref=e154]
+        - paragraph [ref=e155]: Archive 7ed5163d
+        - paragraph [ref=e156]: 1 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 06 7ed5163d" [level=3] [ref=e157]:
+          - link "Archive Post 06 7ed5163d" [ref=e158] [cursor=pointer]:
+            - /url: /post/archive-post-06-7ed5163d
+        - paragraph [ref=e159]: Archive summary 06 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e161] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e162] [cursor=pointer]:
+          - /url: /post/archive-post-06-7ed5163d
+      - article [ref=e163]:
+        - img "Archive Post 05 7ed5163d" [ref=e164]
+        - paragraph [ref=e165]: Archive 7ed5163d
+        - paragraph [ref=e166]: 0 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 05 7ed5163d" [level=3] [ref=e167]:
+          - link "Archive Post 05 7ed5163d" [ref=e168] [cursor=pointer]:
+            - /url: /post/archive-post-05-7ed5163d
+        - paragraph [ref=e169]: Archive summary 05 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e171] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e172] [cursor=pointer]:
+          - /url: /post/archive-post-05-7ed5163d
+      - article [ref=e173]:
+        - img "Archive Post 04 7ed5163d" [ref=e174]
+        - paragraph [ref=e175]: Archive 7ed5163d
+        - paragraph [ref=e176]: 0 views · 1 min read · Published 1 day ago
+        - heading "Archive Post 04 7ed5163d" [level=3] [ref=e177]:
+          - link "Archive Post 04 7ed5163d" [ref=e178] [cursor=pointer]:
+            - /url: /post/archive-post-04-7ed5163d
+        - paragraph [ref=e179]: Archive summary 04 7ed5163d.
+        - link "#Related 7ed5163d" [ref=e181] [cursor=pointer]:
+          - /url: /tag/related-7ed5163d
+        - link "Read more" [ref=e182] [cursor=pointer]:
+          - /url: /post/archive-post-04-7ed5163d
+    - navigation "All posts pagination" [ref=e183]:
+      - generic [ref=e184]: "1"
+      - link "2" [ref=e185] [cursor=pointer]:
+        - /url: /posts?page=2
+      - link "3" [ref=e186] [cursor=pointer]:
+        - /url: /posts?page=3
+      - link "4" [ref=e187] [cursor=pointer]:
+        - /url: /posts?page=4
+      - link "5" [ref=e188] [cursor=pointer]:
+        - /url: /posts?page=5
+      - link "6" [ref=e189] [cursor=pointer]:
+        - /url: /posts?page=6
+      - link "7" [ref=e190] [cursor=pointer]:
+        - /url: /posts?page=7
+      - link "8" [ref=e191] [cursor=pointer]:
+        - /url: /posts?page=8
+      - link "9" [ref=e192] [cursor=pointer]:
+        - /url: /posts?page=9
+      - link "10" [ref=e193] [cursor=pointer]:
+        - /url: /posts?page=10
+      - link "11" [ref=e194] [cursor=pointer]:
+        - /url: /posts?page=11
+      - link "12" [ref=e195] [cursor=pointer]:
+        - /url: /posts?page=12
+      - link "13" [ref=e196] [cursor=pointer]:
+        - /url: /posts?page=13
+      - link "14" [ref=e197] [cursor=pointer]:
+        - /url: /posts?page=14
+      - link "15" [ref=e198] [cursor=pointer]:
+        - /url: /posts?page=15
+      - link "16" [ref=e199] [cursor=pointer]:
+        - /url: /posts?page=16
+      - link "17" [ref=e200] [cursor=pointer]:
+        - /url: /posts?page=17
+      - link "18" [ref=e201] [cursor=pointer]:
+        - /url: /posts?page=18
+      - link "Next" [ref=e202] [cursor=pointer]:
+        - /url: /posts?page=2
+  - contentinfo [ref=e203]:
+    - paragraph [ref=e204]: Updated from tests
+    - paragraph [ref=e205]: © Blog Website

@@ -1,0 +1,56 @@
+{% extends "admin/base.html" %}
+{% block title %}Media Library{% endblock %}
+{% block header %}Media Library{% endblock %}
+{% block content %}
+<section class="panel media-upload-panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Reusable assets</p>
+      <h2>Media Library</h2>
+    </div>
+  </div>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="/admin/media/upload" enctype="multipart/form-data" class="form-grid compact media-upload-form">
+    <label>Upload file<input type="file" name="file" required></label>
+    <button>Upload Media</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-heading media-toolbar">
+    <div>
+      <p class="eyebrow">{{ media_items|length }} item{{ '' if media_items|length == 1 else 's' }}</p>
+      <h2>Library</h2>
+    </div>
+    <form method="get" action="/admin/media" class="media-filters">
+      <input name="q" value="{{ q }}" placeholder="Search media">
+      <select name="resource_type">
+        <option value="">All types</option>
+        {% for option in ['image', 'video', 'audio', 'raw'] %}<option value="{{ option }}" {% if resource_type == option %}selected{% endif %}>{{ option|title }}</option>{% endfor %}
+      </select>
+      <button>Filter</button>
+    </form>
+  </div>
+  <div class="media-grid">
+    {% for item in media_items %}
+    <article class="media-card" data-media-card data-media-type="{{ item.resource_type }}">
+      <div class="media-preview">
+        {% if item.resource_type == 'image' %}<img src="{{ item.secure_url }}" alt="{{ item.alt_text or item.original_filename }}">{% else %}<span class="media-icon">{{ item.resource_type|upper }}</span>{% endif %}
+      </div>
+      <div class="media-body">
+        <h3>{{ item.title or item.original_filename }}</h3>
+        <p>{{ item.resource_type }}{% if item.format %} · {{ item.format }}{% endif %}{% if item.bytes %} · {{ format_file_size(item.bytes) }}{% endif %}</p>
+        <p class="media-url">{{ item.secure_url }}</p>
+        <div class="actions">
+          <button type="button" class="secondary-button" data-copy-value="{{ item.secure_url }}">Copy URL</button>
+          <a class="button ghost-button" href="{{ item.secure_url }}" target="_blank" rel="noopener">Open</a>
+          <form method="post" action="/admin/media/{{ item.id }}/delete" class="inline" data-confirm><button class="link-button">Remove from library</button></form>
+        </div>
+      </div>
+    </article>
+    {% else %}
+    <p class="empty-state">No media yet. Upload a file to start building your reusable library.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

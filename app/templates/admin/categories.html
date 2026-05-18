@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Categories{% endblock %}
+{% block header %}Categories{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Navigation groups</p>
+      <h2>Add Category</h2>
+    </div>
+  </div>
+  <form method="post" class="form-grid compact taxonomy-form">
+    <label>Name<input name="name" required></label>
+    <label>Description<textarea name="description" rows="2"></textarea></label>
+    <label>Menu Order<input type="number" name="menu_order" value="0"></label>
+    <label class="check"><input type="checkbox" name="show_in_menu" value="true"> Show in Menu</label>
+    <button>Add Category</button>
+  </form>
+</section>
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Taxonomy</p>
+      <h2>All Categories</h2>
+    </div>
+  </div>
+  <table class="categories-table taxonomy-admin-table">
+    <thead>
+      <tr><th>Name</th><th>Slug</th><th>Description</th><th>Show in Menu</th><th>Order</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for category in categories %}
+      <tr>
+        <td data-label="Name"><input form="category-{{ category.id }}-form" name="name" value="{{ category.name }}" required></td>
+        <td data-label="Slug"><strong>{{ category.slug }}</strong></td>
+        <td data-label="Description"><textarea form="category-{{ category.id }}-form" name="description" rows="2">{{ category.description }}</textarea></td>
+        <td data-label="Show in Menu"><label class="check compact-check"><input form="category-{{ category.id }}-form" type="checkbox" name="show_in_menu" value="true" {% if category.show_in_menu %}checked{% endif %}> Visible</label></td>
+        <td data-label="Order"><input form="category-{{ category.id }}-form" type="number" name="menu_order" value="{{ category.menu_order }}"></td>
+        <td data-label="Actions">
+          <div class="actions">
+            <form id="category-{{ category.id }}-form" method="post" action="/admin/categories/{{ category.id }}/update"><button>Update</button></form>
+            <form method="post" action="/admin/categories/{{ category.id }}/delete" data-confirm><button class="link-button">Delete</button></form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="6" class="empty-state">No categories yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Categories - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}
+{% block content %}
+<section class="page-card archive-hero">
+  <p class="eyebrow">Topics</p>
+  <h1>Categories</h1>
+  <p>Browse the main sections of the blog.</p>
+</section>
+<section class="taxonomy-grid">
+  {% for category, post_count in category_items %}
+  <article class="taxonomy-card">
+    <p class="meta">{{ post_count }} post{{ '' if post_count == 1 else 's' }}</p>
+    <h2><a href="/category/{{ category.slug }}">{{ category.name }}</a></h2>
+    {% if category.description %}<p>{{ category.description }}</p>{% endif %}
+    <a class="read-more" href="/category/{{ category.slug }}">View category</a>
+  </article>
+  {% else %}
+  <p class="empty-state">No categories yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

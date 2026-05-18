@@ -1,0 +1,324 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - button "Open search" [ref=e5] [cursor=pointer]:
+        - img [ref=e6]
+      - button "Open menu" [ref=e9] [cursor=pointer]:
+        - img [ref=e10]
+        - generic [ref=e11]: Menu
+  - complementary [ref=e12]:
+    - button [ref=e13] [cursor=pointer]:
+      - img [ref=e14]
+      - generic [ref=e17]: Close
+    - link [ref=e18] [cursor=pointer]:
+      - /url: /
+      - text: Home
+    - link [ref=e19] [cursor=pointer]:
+      - /url: /posts
+      - text: All Posts
+    - link [ref=e20] [cursor=pointer]:
+      - /url: /categories
+      - text: Categories
+    - link [ref=e21] [cursor=pointer]:
+      - /url: /tags
+      - text: Tags
+    - link [ref=e22] [cursor=pointer]:
+      - /url: /about
+      - text: About
+    - link [ref=e23] [cursor=pointer]:
+      - /url: /contact
+      - text: Contact
+    - link [ref=e24] [cursor=pointer]:
+      - /url: /privacy
+      - text: Privacy
+    - link [ref=e25] [cursor=pointer]:
+      - /url: /terms
+      - text: Terms
+    - link [ref=e26] [cursor=pointer]:
+      - /url: /admin/login
+      - text: Admin Login
+    - heading [level=3] [ref=e27]: Categories
+    - link [ref=e28] [cursor=pointer]:
+      - /url: /category/archive-011e7db8
+      - text: Archive 011e7db8
+    - link [ref=e29] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+      - text: Archive 03ea265b
+    - link [ref=e30] [cursor=pointer]:
+      - /url: /category/archive-0441965f
+      - text: Archive 0441965f
+    - link [ref=e31] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+      - text: Archive 3be96e1c
+    - link [ref=e32] [cursor=pointer]:
+      - /url: /category/archive-7ed5163d
+      - text: Archive 7ed5163d
+    - link [ref=e33] [cursor=pointer]:
+      - /url: /category/archive-878e572e
+      - text: Archive 878e572e
+    - link [ref=e34] [cursor=pointer]:
+      - /url: /category/archive-906af7b3
+      - text: Archive 906af7b3
+    - link [ref=e35] [cursor=pointer]:
+      - /url: /category/archive-b20abaec
+      - text: Archive b20abaec
+    - link [ref=e36] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+      - text: Archive bcdd9822
+    - link [ref=e37] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+      - text: Archive c06c9518
+    - link [ref=e38] [cursor=pointer]:
+      - /url: /category/archive-cba273d0
+      - text: Archive cba273d0
+    - link [ref=e39] [cursor=pointer]:
+      - /url: /category/archive-f36b1cfb
+      - text: Archive f36b1cfb
+    - link [ref=e40] [cursor=pointer]:
+      - /url: /category/browser-category
+      - text: Browser Category
+    - link [ref=e41] [cursor=pointer]:
+      - /url: /category/design
+      - text: Design
+    - link [ref=e42] [cursor=pointer]:
+      - /url: /category/development
+      - text: Development
+    - link [ref=e43] [cursor=pointer]:
+      - /url: /category/engineering
+      - text: Engineering
+    - link [ref=e44] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+      - text: Media API Category 1108
+    - link [ref=e45] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+      - text: Media API Test Category 17783254
+    - link [ref=e46] [cursor=pointer]:
+      - /url: /category/operations
+      - text: Operations
+    - link [ref=e47] [cursor=pointer]:
+      - /url: /category/product
+      - text: Product
+    - link [ref=e48] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+      - text: Python 0dc25206
+    - link [ref=e49] [cursor=pointer]:
+      - /url: /category/python-0f2b1b0f
+      - text: Python 0f2b1b0f
+    - link [ref=e50] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+      - text: Python 11c0e389
+    - link [ref=e51] [cursor=pointer]:
+      - /url: /category/python-20794c79
+      - text: Python 20794c79
+    - link [ref=e52] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+      - text: Python 2488b0e3
+    - link [ref=e53] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+      - text: Python 2b82d3e6
+    - link [ref=e54] [cursor=pointer]:
+      - /url: /category/python-4d920560
+      - text: Python 4d920560
+    - link [ref=e55] [cursor=pointer]:
+      - /url: /category/python-5063a70e
+      - text: Python 5063a70e
+    - link [ref=e56] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+      - text: Python 6341aab5
+    - link [ref=e57] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+      - text: Python 69cec7ad
+    - link [ref=e58] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+      - text: Python 7bb5438e
+    - link [ref=e59] [cursor=pointer]:
+      - /url: /category/python-884711ec
+      - text: Python 884711ec
+    - link [ref=e60] [cursor=pointer]:
+      - /url: /category/python-a2023e38
+      - text: Python a2023e38
+    - link [ref=e61] [cursor=pointer]:
+      - /url: /category/python-bc356bf5
+      - text: Python bc356bf5
+    - link [ref=e62] [cursor=pointer]:
+      - /url: /category/python-bcf1bf29
+      - text: Python bcf1bf29
+    - link [ref=e63] [cursor=pointer]:
+      - /url: /category/python-c4898dba
+      - text: Python c4898dba
+    - link [ref=e64] [cursor=pointer]:
+      - /url: /category/python-dbc719dc
+      - text: Python dbc719dc
+    - link [ref=e65] [cursor=pointer]:
+      - /url: /category/views-4b7e1a2c
+      - text: Views 4b7e1a2c
+    - link [ref=e66] [cursor=pointer]:
+      - /url: /category/views-7401b7f4
+      - text: Views 7401b7f4
+    - link [ref=e67] [cursor=pointer]:
+      - /url: /category/views-8781b2f3
+      - text: Views 8781b2f3
+    - link [ref=e68] [cursor=pointer]:
+      - /url: /category/views-f84bba81
+      - text: Views f84bba81
+  - main [ref=e69]:
+    - generic [ref=e70]:
+      - paragraph [ref=e71]: Blog Archive
+      - heading "All Posts" [level=1] [ref=e72]
+      - paragraph [ref=e73]: Browse every published article, guide, and story.
+    - generic [ref=e74]:
+      - article [ref=e75]:
+        - paragraph [ref=e76]: Archive 0441965f
+        - paragraph [ref=e77]: 1 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 11 0441965f" [level=3] [ref=e78]:
+          - link "Archive Post 11 0441965f" [ref=e79] [cursor=pointer]:
+            - /url: /post/archive-post-11-0441965f
+        - paragraph [ref=e80]: Archive summary 11 0441965f.
+        - link "#Related 0441965f" [ref=e82] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e83] [cursor=pointer]:
+          - /url: /post/archive-post-11-0441965f
+      - article [ref=e84]:
+        - paragraph [ref=e85]: Archive 0441965f
+        - paragraph [ref=e86]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 10 0441965f" [level=3] [ref=e87]:
+          - link "Archive Post 10 0441965f" [ref=e88] [cursor=pointer]:
+            - /url: /post/archive-post-10-0441965f
+        - paragraph [ref=e89]: Archive summary 10 0441965f.
+        - link "#Related 0441965f" [ref=e91] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e92] [cursor=pointer]:
+          - /url: /post/archive-post-10-0441965f
+      - article [ref=e93]:
+        - paragraph [ref=e94]: Archive 0441965f
+        - paragraph [ref=e95]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 09 0441965f" [level=3] [ref=e96]:
+          - link "Archive Post 09 0441965f" [ref=e97] [cursor=pointer]:
+            - /url: /post/archive-post-09-0441965f
+        - paragraph [ref=e98]: Archive summary 09 0441965f.
+        - link "#Related 0441965f" [ref=e100] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e101] [cursor=pointer]:
+          - /url: /post/archive-post-09-0441965f
+      - article [ref=e102]:
+        - paragraph [ref=e103]: Archive 0441965f
+        - paragraph [ref=e104]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 08 0441965f" [level=3] [ref=e105]:
+          - link "Archive Post 08 0441965f" [ref=e106] [cursor=pointer]:
+            - /url: /post/archive-post-08-0441965f
+        - paragraph [ref=e107]: Archive summary 08 0441965f.
+        - link "#Related 0441965f" [ref=e109] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e110] [cursor=pointer]:
+          - /url: /post/archive-post-08-0441965f
+      - article [ref=e111]:
+        - paragraph [ref=e112]: Archive 0441965f
+        - paragraph [ref=e113]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 07 0441965f" [level=3] [ref=e114]:
+          - link "Archive Post 07 0441965f" [ref=e115] [cursor=pointer]:
+            - /url: /post/archive-post-07-0441965f
+        - paragraph [ref=e116]: Archive summary 07 0441965f.
+        - link "#Related 0441965f" [ref=e118] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e119] [cursor=pointer]:
+          - /url: /post/archive-post-07-0441965f
+      - article [ref=e120]:
+        - paragraph [ref=e121]: Archive 0441965f
+        - paragraph [ref=e122]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 06 0441965f" [level=3] [ref=e123]:
+          - link "Archive Post 06 0441965f" [ref=e124] [cursor=pointer]:
+            - /url: /post/archive-post-06-0441965f
+        - paragraph [ref=e125]: Archive summary 06 0441965f.
+        - link "#Related 0441965f" [ref=e127] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e128] [cursor=pointer]:
+          - /url: /post/archive-post-06-0441965f
+      - article [ref=e129]:
+        - paragraph [ref=e130]: Archive 0441965f
+        - paragraph [ref=e131]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 05 0441965f" [level=3] [ref=e132]:
+          - link "Archive Post 05 0441965f" [ref=e133] [cursor=pointer]:
+            - /url: /post/archive-post-05-0441965f
+        - paragraph [ref=e134]: Archive summary 05 0441965f.
+        - link "#Related 0441965f" [ref=e136] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e137] [cursor=pointer]:
+          - /url: /post/archive-post-05-0441965f
+      - article [ref=e138]:
+        - paragraph [ref=e139]: Archive 0441965f
+        - paragraph [ref=e140]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 04 0441965f" [level=3] [ref=e141]:
+          - link "Archive Post 04 0441965f" [ref=e142] [cursor=pointer]:
+            - /url: /post/archive-post-04-0441965f
+        - paragraph [ref=e143]: Archive summary 04 0441965f.
+        - link "#Related 0441965f" [ref=e145] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e146] [cursor=pointer]:
+          - /url: /post/archive-post-04-0441965f
+      - article [ref=e147]:
+        - paragraph [ref=e148]: Archive 0441965f
+        - paragraph [ref=e149]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 03 0441965f" [level=3] [ref=e150]:
+          - link "Archive Post 03 0441965f" [ref=e151] [cursor=pointer]:
+            - /url: /post/archive-post-03-0441965f
+        - paragraph [ref=e152]: Archive summary 03 0441965f.
+        - link "#Related 0441965f" [ref=e154] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e155] [cursor=pointer]:
+          - /url: /post/archive-post-03-0441965f
+      - article [ref=e156]:
+        - paragraph [ref=e157]: Archive 0441965f
+        - paragraph [ref=e158]: 0 views · 1 min read · Published 19 minutes ago
+        - heading "Archive Post 02 0441965f" [level=3] [ref=e159]:
+          - link "Archive Post 02 0441965f" [ref=e160] [cursor=pointer]:
+            - /url: /post/archive-post-02-0441965f
+        - paragraph [ref=e161]: Archive summary 02 0441965f.
+        - link "#Related 0441965f" [ref=e163] [cursor=pointer]:
+          - /url: /tag/related-0441965f
+        - link "Read more" [ref=e164] [cursor=pointer]:
+          - /url: /post/archive-post-02-0441965f
+    - navigation "All posts pagination" [ref=e165]:
+      - generic [ref=e166]: "1"
+      - link "2" [ref=e167] [cursor=pointer]:
+        - /url: /posts?page=2
+      - link "3" [ref=e168] [cursor=pointer]:
+        - /url: /posts?page=3
+      - link "4" [ref=e169] [cursor=pointer]:
+        - /url: /posts?page=4
+      - link "5" [ref=e170] [cursor=pointer]:
+        - /url: /posts?page=5
+      - link "6" [ref=e171] [cursor=pointer]:
+        - /url: /posts?page=6
+      - link "7" [ref=e172] [cursor=pointer]:
+        - /url: /posts?page=7
+      - link "8" [ref=e173] [cursor=pointer]:
+        - /url: /posts?page=8
+      - link "9" [ref=e174] [cursor=pointer]:
+        - /url: /posts?page=9
+      - link "10" [ref=e175] [cursor=pointer]:
+        - /url: /posts?page=10
+      - link "11" [ref=e176] [cursor=pointer]:
+        - /url: /posts?page=11
+      - link "12" [ref=e177] [cursor=pointer]:
+        - /url: /posts?page=12
+      - link "13" [ref=e178] [cursor=pointer]:
+        - /url: /posts?page=13
+      - link "14" [ref=e179] [cursor=pointer]:
+        - /url: /posts?page=14
+      - link "15" [ref=e180] [cursor=pointer]:
+        - /url: /posts?page=15
+      - link "16" [ref=e181] [cursor=pointer]:
+        - /url: /posts?page=16
+      - link "17" [ref=e182] [cursor=pointer]:
+        - /url: /posts?page=17
+      - link "18" [ref=e183] [cursor=pointer]:
+        - /url: /posts?page=18
+      - link "19" [ref=e184] [cursor=pointer]:
+        - /url: /posts?page=19
+      - link "Next" [ref=e185] [cursor=pointer]:
+        - /url: /posts?page=2
+  - contentinfo [ref=e186]:
+    - paragraph [ref=e187]: Updated from tests
+    - paragraph [ref=e188]: © Blog Website

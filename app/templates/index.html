@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Home - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}
+{% block content %}
+<section class="hero">
+  {% if featured_post %}
+  <article class="featured-card">
+    {% if featured_post.featured_image_url %}<img src="{{ featured_post.featured_image_url }}" alt="{{ featured_post.title }}">{% endif %}
+    <span>Featured</span>
+    <p class="post-card-meta">{{ format_views_count(featured_post.views_count) }} · {{ estimate_read_time(featured_post.content) }} min read{% if featured_post.published_at %} · Published {{ published_time_label(featured_post.published_at) }}{% endif %}</p>
+    <h2><a href="/post/{{ featured_post.slug }}">{{ featured_post.title }}</a></h2>
+    <p>{{ featured_post.summary }}</p>
+    <a class="read-more" href="/post/{{ featured_post.slug }}">Read featured post</a>
+  </article>
+  {% endif %}
+</section>
+<section class="section-grid">
+  <div>
+    <div class="section-heading"><h2>Latest Posts</h2><a class="button-link" href="/posts">View All Posts</a></div>
+    <div class="post-grid">
+      {% for post in latest_posts %}
+      <article class="post-card">
+        {% if post.featured_image_url %}<img src="{{ post.featured_image_url }}" alt="{{ post.title }}">{% endif %}
+        <p class="meta">{{ post.category.name if post.category else 'Uncategorized' }}</p>
+        <p class="post-card-meta">{{ format_views_count(post.views_count) }} · {{ estimate_read_time(post.content) }} min read{% if post.published_at %} · Published {{ published_time_label(post.published_at) }}{% endif %}</p>
+        <h3><a href="/post/{{ post.slug }}">{{ post.title }}</a></h3>
+        <p>{{ post.summary }}</p>
+        <a class="read-more" href="/post/{{ post.slug }}">Read more</a>
+      </article>
+      {% else %}
+      <p class="empty-state">No published posts yet. Log in to the admin panel to create one.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <aside class="sidebar">
+    <h2>Trending</h2>
+    {% for post in trending_posts %}
+    <a class="trend" href="/post/{{ post.slug }}">
+      {% if post.featured_image_url %}<img src="{{ post.featured_image_url }}" alt="{{ post.title }}">{% endif %}
+      <strong>{{ post.title }}</strong>
+      <span>{{ format_views_count(post.views_count) }} · {{ estimate_read_time(post.content) }} min read</span>
+    </a>
+    {% else %}
+    <p class="empty-state">No trending posts yet.</p>
+    {% endfor %}
+    <h2>Categories</h2><div class="chips">{% for category in categories %}<a href="/category/{{ category.slug }}">{{ category.name }}</a>{% endfor %}</div>
+    <h2>Tags</h2><div class="chips">{% for tag in tags %}<a href="/tag/{{ tag.slug }}">#{{ tag.name }}</a>{% endfor %}</div>
+  </aside>
+</section>
+{% endblock %}

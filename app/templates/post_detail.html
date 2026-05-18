@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}
+{% block content %}
+<article class="article-detail">
+  {% if post.featured_image_url %}<img class="article-image" src="{{ post.featured_image_url }}" alt="{{ post.title }}">{% endif %}
+  <p class="meta">{{ post.category.name if post.category else 'Uncategorized' }} · {{ format_views_count(post.views_count) }} · {{ estimate_read_time(post.content) }} min read{% if post.published_at %} · {{ post.published_at.strftime('%b %d, %Y') }}{% endif %}</p>
+  <h1>{{ post.title }}</h1>
+  <p class="summary">{{ post.summary }}</p>
+  <div class="content">{{ post.content | replace('\n', '<br>') | safe }}</div>
+  <div class="chips">{% for tag in post.tags %}<a href="/tag/{{ tag.slug }}">#{{ tag.name }}</a>{% endfor %}</div>
+</article>
+<section class="related">
+  <h2>Related Posts</h2>
+  <div class="post-grid">
+    {% for post in related_posts %}
+    <article class="post-card">
+      {% if post.featured_image_url %}<img src="{{ post.featured_image_url }}" alt="{{ post.title }}">{% endif %}
+      <p class="meta">{{ post.category.name if post.category else 'Uncategorized' }}</p>
+      <p class="post-card-meta">{{ format_views_count(post.views_count) }} · {{ estimate_read_time(post.content) }} min read{% if post.published_at %} · Published {{ published_time_label(post.published_at) }}{% endif %}</p>
+      <h3><a href="/post/{{ post.slug }}">{{ post.title }}</a></h3>
+      <p>{{ post.summary }}</p>
+      <a class="read-more" href="/post/{{ post.slug }}">Read the post</a>
+    </article>
+    {% else %}
+    <p class="empty-state">No related posts yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

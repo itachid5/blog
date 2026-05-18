@@ -1,0 +1,178 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - button "Open admin menu" [ref=e15] [cursor=pointer]: Menu
+      - strong [ref=e16]: Tags
+    - generic [ref=e17]:
+      - heading "Add Tag" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Name
+          - textbox "Name" [ref=e21]
+        - button "Add Tag" [ref=e22] [cursor=pointer]
+    - generic [ref=e23]:
+      - heading "All Tags" [level=2] [ref=e24]
+      - table [ref=e25]:
+        - rowgroup [ref=e26]:
+          - row "Name Browser Tag Slug browser-tag Actions Delete" [ref=e27]:
+            - cell "Name Browser Tag" [ref=e28]
+            - cell "Slug browser-tag" [ref=e29]
+            - cell "Actions Delete" [ref=e30]:
+              - text: Actions
+              - button "Delete" [ref=e32] [cursor=pointer]
+          - row "Name FastAPI 0dc25206 Slug fastapi-0dc25206 Actions Delete" [ref=e33]:
+            - cell "Name FastAPI 0dc25206" [ref=e34]
+            - cell "Slug fastapi-0dc25206" [ref=e35]
+            - cell "Actions Delete" [ref=e36]:
+              - text: Actions
+              - button "Delete" [ref=e38] [cursor=pointer]
+          - row "Name FastAPI 11c0e389 Slug fastapi-11c0e389 Actions Delete" [ref=e39]:
+            - cell "Name FastAPI 11c0e389" [ref=e40]
+            - cell "Slug fastapi-11c0e389" [ref=e41]
+            - cell "Actions Delete" [ref=e42]:
+              - text: Actions
+              - button "Delete" [ref=e44] [cursor=pointer]
+          - row "Name FastAPI 20794c79 Slug fastapi-20794c79 Actions Delete" [ref=e45]:
+            - cell "Name FastAPI 20794c79" [ref=e46]
+            - cell "Slug fastapi-20794c79" [ref=e47]
+            - cell "Actions Delete" [ref=e48]:
+              - text: Actions
+              - button "Delete" [ref=e50] [cursor=pointer]
+          - row "Name FastAPI 2488b0e3 Slug fastapi-2488b0e3 Actions Delete" [ref=e51]:
+            - cell "Name FastAPI 2488b0e3" [ref=e52]
+            - cell "Slug fastapi-2488b0e3" [ref=e53]
+            - cell "Actions Delete" [ref=e54]:
+              - text: Actions
+              - button "Delete" [ref=e56] [cursor=pointer]
+          - row "Name FastAPI 2b82d3e6 Slug fastapi-2b82d3e6 Actions Delete" [ref=e57]:
+            - cell "Name FastAPI 2b82d3e6" [ref=e58]
+            - cell "Slug fastapi-2b82d3e6" [ref=e59]
+            - cell "Actions Delete" [ref=e60]:
+              - text: Actions
+              - button "Delete" [ref=e62] [cursor=pointer]
+          - row "Name FastAPI 4d920560 Slug fastapi-4d920560 Actions Delete" [ref=e63]:
+            - cell "Name FastAPI 4d920560" [ref=e64]
+            - cell "Slug fastapi-4d920560" [ref=e65]
+            - cell "Actions Delete" [ref=e66]:
+              - text: Actions
+              - button "Delete" [ref=e68] [cursor=pointer]
+          - row "Name FastAPI 5063a70e Slug fastapi-5063a70e Actions Delete" [ref=e69]:
+            - cell "Name FastAPI 5063a70e" [ref=e70]
+            - cell "Slug fastapi-5063a70e" [ref=e71]
+            - cell "Actions Delete" [ref=e72]:
+              - text: Actions
+              - button "Delete" [ref=e74] [cursor=pointer]
+          - row "Name FastAPI 6341aab5 Slug fastapi-6341aab5 Actions Delete" [ref=e75]:
+            - cell "Name FastAPI 6341aab5" [ref=e76]
+            - cell "Slug fastapi-6341aab5" [ref=e77]
+            - cell "Actions Delete" [ref=e78]:
+              - text: Actions
+              - button "Delete" [ref=e80] [cursor=pointer]
+          - row "Name FastAPI 69cec7ad Slug fastapi-69cec7ad Actions Delete" [ref=e81]:
+            - cell "Name FastAPI 69cec7ad" [ref=e82]
+            - cell "Slug fastapi-69cec7ad" [ref=e83]
+            - cell "Actions Delete" [ref=e84]:
+              - text: Actions
+              - button "Delete" [ref=e86] [cursor=pointer]
+          - row "Name FastAPI 7bb5438e Slug fastapi-7bb5438e Actions Delete" [ref=e87]:
+            - cell "Name FastAPI 7bb5438e" [ref=e88]
+            - cell "Slug fastapi-7bb5438e" [ref=e89]
+            - cell "Actions Delete" [ref=e90]:
+              - text: Actions
+              - button "Delete" [ref=e92] [cursor=pointer]
+          - row "Name FastAPI bc356bf5 Slug fastapi-bc356bf5 Actions Delete" [ref=e93]:
+            - cell "Name FastAPI bc356bf5" [ref=e94]
+            - cell "Slug fastapi-bc356bf5" [ref=e95]
+            - cell "Actions Delete" [ref=e96]:
+              - text: Actions
+              - button "Delete" [ref=e98] [cursor=pointer]
+          - row "Name FastAPI bcf1bf29 Slug fastapi-bcf1bf29 Actions Delete" [ref=e99]:
+            - cell "Name FastAPI bcf1bf29" [ref=e100]
+            - cell "Slug fastapi-bcf1bf29" [ref=e101]
+            - cell "Actions Delete" [ref=e102]:
+              - text: Actions
+              - button "Delete" [ref=e104] [cursor=pointer]
+          - row "Name FastAPI c4898dba Slug fastapi-c4898dba Actions Delete" [ref=e105]:
+            - cell "Name FastAPI c4898dba" [ref=e106]
+            - cell "Slug fastapi-c4898dba" [ref=e107]
+            - cell "Actions Delete" [ref=e108]:
+              - text: Actions
+              - button "Delete" [ref=e110] [cursor=pointer]
+          - row "Name Media API Tag 1108 Slug media-api-tag-1108 Actions Delete" [ref=e111]:
+            - cell "Name Media API Tag 1108" [ref=e112]
+            - cell "Slug media-api-tag-1108" [ref=e113]
+            - cell "Actions Delete" [ref=e114]:
+              - text: Actions
+              - button "Delete" [ref=e116] [cursor=pointer]
+          - row "Name Related 011e7db8 Slug related-011e7db8 Actions Delete" [ref=e117]:
+            - cell "Name Related 011e7db8" [ref=e118]
+            - cell "Slug related-011e7db8" [ref=e119]
+            - cell "Actions Delete" [ref=e120]:
+              - text: Actions
+              - button "Delete" [ref=e122] [cursor=pointer]
+          - row "Name Related 03ea265b Slug related-03ea265b Actions Delete" [ref=e123]:
+            - cell "Name Related 03ea265b" [ref=e124]
+            - cell "Slug related-03ea265b" [ref=e125]
+            - cell "Actions Delete" [ref=e126]:
+              - text: Actions
+              - button "Delete" [ref=e128] [cursor=pointer]
+          - row "Name Related 3be96e1c Slug related-3be96e1c Actions Delete" [ref=e129]:
+            - cell "Name Related 3be96e1c" [ref=e130]
+            - cell "Slug related-3be96e1c" [ref=e131]
+            - cell "Actions Delete" [ref=e132]:
+              - text: Actions
+              - button "Delete" [ref=e134] [cursor=pointer]
+          - row "Name Related 906af7b3 Slug related-906af7b3 Actions Delete" [ref=e135]:
+            - cell "Name Related 906af7b3" [ref=e136]
+            - cell "Slug related-906af7b3" [ref=e137]
+            - cell "Actions Delete" [ref=e138]:
+              - text: Actions
+              - button "Delete" [ref=e140] [cursor=pointer]
+          - row "Name Related b20abaec Slug related-b20abaec Actions Delete" [ref=e141]:
+            - cell "Name Related b20abaec" [ref=e142]
+            - cell "Slug related-b20abaec" [ref=e143]
+            - cell "Actions Delete" [ref=e144]:
+              - text: Actions
+              - button "Delete" [ref=e146] [cursor=pointer]
+          - row "Name Related bcdd9822 Slug related-bcdd9822 Actions Delete" [ref=e147]:
+            - cell "Name Related bcdd9822" [ref=e148]
+            - cell "Slug related-bcdd9822" [ref=e149]
+            - cell "Actions Delete" [ref=e150]:
+              - text: Actions
+              - button "Delete" [ref=e152] [cursor=pointer]
+          - row "Name Related c06c9518 Slug related-c06c9518 Actions Delete" [ref=e153]:
+            - cell "Name Related c06c9518" [ref=e154]
+            - cell "Slug related-c06c9518" [ref=e155]
+            - cell "Actions Delete" [ref=e156]:
+              - text: Actions
+              - button "Delete" [ref=e158] [cursor=pointer]
+          - row "Name Related cba273d0 Slug related-cba273d0 Actions Delete" [ref=e159]:
+            - cell "Name Related cba273d0" [ref=e160]
+            - cell "Slug related-cba273d0" [ref=e161]
+            - cell "Actions Delete" [ref=e162]:
+              - text: Actions
+              - button "Delete" [ref=e164] [cursor=pointer]
+          - row "Name media-api-test-17783254 Slug media-api-test-17783254 Actions Delete" [ref=e165]:
+            - cell "Name media-api-test-17783254" [ref=e166]
+            - cell "Slug media-api-test-17783254" [ref=e167]
+            - cell "Actions Delete" [ref=e168]:
+              - text: Actions
+              - button "Delete" [ref=e170] [cursor=pointer]

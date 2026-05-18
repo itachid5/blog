@@ -1,0 +1,125 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - button "Switch to dark mode" [ref=e5] [cursor=pointer]:
+        - img [ref=e7]
+        - img [ref=e14]
+        - generic [ref=e16]: Dark Mode
+      - button "Open search" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - button "Open menu" [expanded] [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e23]: Menu
+  - complementary [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: Navigation
+        - heading "Blog Website" [level=2] [ref=e131]
+      - button "Close menu" [ref=e132] [cursor=pointer]:
+        - img [ref=e30]
+    - navigation "Site menu" [ref=e133]:
+      - link "Home" [ref=e134] [cursor=pointer]:
+        - /url: /
+        - img [ref=e35]
+        - generic [ref=e39]: Home
+      - link "All Posts" [ref=e135] [cursor=pointer]:
+        - /url: /posts
+        - img [ref=e41]
+        - generic [ref=e43]: All Posts
+      - generic [ref=e44]:
+        - button "Categories" [expanded] [ref=e136] [cursor=pointer]:
+          - img [ref=e46]
+          - generic [ref=e51]: Categories
+          - img [ref=e53]
+        - generic [ref=e55]:
+          - link "Shown Category a35591fa" [ref=e137] [cursor=pointer]:
+            - /url: /category/shown-category-a35591fa
+          - link "Shown Category b23bcf81" [ref=e138] [cursor=pointer]:
+            - /url: /category/shown-category-b23bcf81
+          - link "View All Categories" [ref=e139] [cursor=pointer]:
+            - /url: /categories
+            - text: View All Categories
+            - img [ref=e59]
+      - generic [ref=e61]:
+        - button "Tags" [expanded] [active] [ref=e140] [cursor=pointer]:
+          - img [ref=e63]
+          - generic [ref=e65]: Tags
+          - img [ref=e67]
+        - generic [ref=e147]:
+          - link "#Shown Tag a35591fa" [ref=e148] [cursor=pointer]:
+            - /url: /tag/shown-tag-a35591fa
+          - link "#Shown Tag b23bcf81" [ref=e149] [cursor=pointer]:
+            - /url: /tag/shown-tag-b23bcf81
+          - link "View All Tags" [ref=e150] [cursor=pointer]:
+            - /url: /tags
+            - text: View All Tags
+            - img [ref=e151]
+      - link "About" [ref=e141] [cursor=pointer]:
+        - /url: /about
+        - img [ref=e70]
+        - generic [ref=e73]: About
+      - link "Contact" [ref=e142] [cursor=pointer]:
+        - /url: /contact
+        - img [ref=e75]
+        - generic [ref=e78]: Contact
+      - link "Privacy Policy" [ref=e143] [cursor=pointer]:
+        - /url: /privacy
+        - img [ref=e80]
+        - generic [ref=e82]: Privacy Policy
+      - link "Terms" [ref=e144] [cursor=pointer]:
+        - /url: /terms
+        - img [ref=e84]
+        - generic [ref=e87]: Terms
+      - link "Admin Login" [ref=e145] [cursor=pointer]:
+        - /url: /admin/login
+        - img [ref=e89]
+        - generic [ref=e92]: Admin Login
+      - button "Switch to dark mode" [ref=e146] [cursor=pointer]:
+        - img [ref=e94]
+        - generic [ref=e96]: Dark Mode
+  - main [ref=e97]:
+    - generic [ref=e98]:
+      - paragraph [ref=e99]: Category
+      - heading "Shown Category a35591fa" [level=1] [ref=e100]
+      - paragraph [ref=e101]: Visible
+    - paragraph [ref=e103]: No posts in this category yet.
+  - contentinfo [ref=e104]:
+    - generic [ref=e105]:
+      - generic [ref=e106]:
+        - link "Blog Website" [ref=e107] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=e108]: Updated from tests
+        - generic "Social links"
+      - generic [ref=e109]:
+        - heading "Explore" [level=2] [ref=e110]
+        - link "All Posts" [ref=e111] [cursor=pointer]:
+          - /url: /posts
+        - link "Categories" [ref=e112] [cursor=pointer]:
+          - /url: /categories
+        - link "Tags" [ref=e113] [cursor=pointer]:
+          - /url: /tags
+        - link "Search" [ref=e114] [cursor=pointer]:
+          - /url: /search
+      - generic [ref=e115]:
+        - heading "Company" [level=2] [ref=e116]
+        - link "About" [ref=e117] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e118] [cursor=pointer]:
+          - /url: /contact
+        - link "Admin Login" [ref=e119] [cursor=pointer]:
+          - /url: /admin/login
+      - generic [ref=e120]:
+        - heading "Legal" [level=2] [ref=e121]
+        - link "Privacy Policy" [ref=e122] [cursor=pointer]:
+          - /url: /privacy
+        - link "Terms" [ref=e123] [cursor=pointer]:
+          - /url: /terms
+        - link "Back to top" [ref=e124] [cursor=pointer]:
+          - /url: "#top"
+          - text: Back to top
+          - img [ref=e125]
+    - generic [ref=e127]:
+      - generic [ref=e128]: © Blog Website
+      - generic [ref=e129]: Built for clear, fast reading.

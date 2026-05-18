@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}#{{ tag.name }} - {{ settings.get('site_name', 'Blog Website') }}{% endblock %}
+{% block content %}
+<section class="page-card archive-hero">
+  <p class="eyebrow">Tag</p>
+  <h1>#{{ tag.name }}</h1>
+  <p>Posts tagged with {{ tag.name }}.</p>
+</section>
+<div class="post-grid list-page">
+  {% for post in posts %}
+  <article class="post-card">
+    {% if post.featured_image_url %}<img src="{{ post.featured_image_url }}" alt="{{ post.title }}">{% endif %}
+    <p class="meta">{{ post.category.name if post.category else 'Uncategorized' }}</p>
+    <p class="post-card-meta">{{ format_views_count(post.views_count) }} · {{ estimate_read_time(post.content) }} min read{% if post.published_at %} · Published {{ published_time_label(post.published_at) }}{% endif %}</p>
+    <h3><a href="/post/{{ post.slug }}">{{ post.title }}</a></h3>
+    <p>{{ post.summary }}</p>
+    {% if post.tags %}<div class="chips post-tags">{% for tag in post.tags %}<a href="/tag/{{ tag.slug }}">#{{ tag.name }}</a>{% endfor %}</div>{% endif %}
+    <a class="read-more" href="/post/{{ post.slug }}">Read more</a>
+  </article>
+  {% else %}
+  <p class="empty-state">No posts with this tag yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

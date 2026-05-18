@@ -1,0 +1,69 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: Create Post
+      - generic [ref=e16]: admin@example.com
+    - generic [ref=e17]:
+      - heading "Create Post" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Title
+          - textbox "Title" [ref=e21]: Media API Upload Verification 1108
+        - generic [ref=e22]:
+          - text: Slug
+          - textbox "Slug" [ref=e23]: media-api-upload-verification-1108
+        - generic [ref=e24]:
+          - text: Summary
+          - textbox "Summary" [ref=e25]: Verifying the new media API featured image upload.
+        - generic [ref=e26]:
+          - text: Content
+          - textbox "Content" [ref=e27]: This post verifies that the blog admin can upload a featured image through the new media API and render it on public pages.
+        - generic [ref=e28]:
+          - text: Category
+          - combobox "Category" [ref=e29]:
+            - option "Uncategorized"
+            - option "Browser Category"
+            - option "Media API Category 1108" [selected]
+            - option "Python 20794c79"
+            - option "Python 4d920560"
+            - option "Python 6341aab5"
+            - option "Python 69cec7ad"
+        - generic [ref=e30]:
+          - text: Tags
+          - listbox "Tags" [ref=e31]:
+            - option "Browser Tag" [ref=e32]
+            - option "FastAPI 20794c79" [ref=e33]
+            - option "FastAPI 4d920560" [ref=e34]
+            - option "FastAPI 6341aab5" [ref=e35]
+            - option "FastAPI 69cec7ad" [ref=e36]
+            - option "Media API Tag 1108" [selected] [ref=e37]
+        - generic [ref=e38]:
+          - text: Status
+          - combobox "Status" [ref=e39]:
+            - option "Draft"
+            - option "Published" [selected]
+        - generic [ref=e40]:
+          - checkbox "Featured post" [checked] [active] [ref=e41]
+          - text: Featured post
+        - generic [ref=e42]:
+          - text: Featured Image
+          - button "Featured Image" [ref=e43]
+        - button "Save Post" [ref=e44] [cursor=pointer]

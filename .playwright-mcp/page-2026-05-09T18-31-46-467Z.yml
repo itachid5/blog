@@ -1,0 +1,106 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - button "Open admin menu" [ref=e15] [cursor=pointer]: Menu
+      - strong [ref=e16]: Dashboard
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - strong [ref=e19]: "100"
+        - text: Total Posts
+      - generic [ref=e20]:
+        - strong [ref=e21]: "100"
+        - text: Published
+      - generic [ref=e22]:
+        - strong [ref=e23]: "0"
+        - text: Drafts
+      - generic [ref=e24]:
+        - strong [ref=e25]: "24"
+        - text: Categories
+      - generic [ref=e26]:
+        - strong [ref=e27]: "24"
+        - text: Tags
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Recent Posts" [level=2] [ref=e30]
+        - link "Create Post" [ref=e31] [cursor=pointer]:
+          - /url: /admin/posts/create
+      - table [ref=e32]:
+        - rowgroup [ref=e33]:
+          - row "Title Archive Post 11 cba273d0 Status published Views 1 Action Edit" [ref=e34]:
+            - cell "Title Archive Post 11 cba273d0" [ref=e35]
+            - cell "Status published" [ref=e36]:
+              - text: Status
+              - generic [ref=e37]: published
+            - cell "Views 1" [ref=e38]
+            - cell "Action Edit" [ref=e39]:
+              - text: Action
+              - link "Edit" [ref=e40] [cursor=pointer]:
+                - /url: /admin/posts/100/edit
+          - row "Title Archive Post 10 cba273d0 Status published Views 0 Action Edit" [ref=e41]:
+            - cell "Title Archive Post 10 cba273d0" [ref=e42]
+            - cell "Status published" [ref=e43]:
+              - text: Status
+              - generic [ref=e44]: published
+            - cell "Views 0" [ref=e45]
+            - cell "Action Edit" [ref=e46]:
+              - text: Action
+              - link "Edit" [ref=e47] [cursor=pointer]:
+                - /url: /admin/posts/99/edit
+          - row "Title Archive Post 09 cba273d0 Status published Views 2 Action Edit" [ref=e48]:
+            - cell "Title Archive Post 09 cba273d0" [ref=e49]
+            - cell "Status published" [ref=e50]:
+              - text: Status
+              - generic [ref=e51]: published
+            - cell "Views 2" [ref=e52]
+            - cell "Action Edit" [ref=e53]:
+              - text: Action
+              - link "Edit" [ref=e54] [cursor=pointer]:
+                - /url: /admin/posts/98/edit
+          - row "Title Archive Post 08 cba273d0 Status published Views 0 Action Edit" [ref=e55]:
+            - cell "Title Archive Post 08 cba273d0" [ref=e56]
+            - cell "Status published" [ref=e57]:
+              - text: Status
+              - generic [ref=e58]: published
+            - cell "Views 0" [ref=e59]
+            - cell "Action Edit" [ref=e60]:
+              - text: Action
+              - link "Edit" [ref=e61] [cursor=pointer]:
+                - /url: /admin/posts/97/edit
+          - row "Title Archive Post 07 cba273d0 Status published Views 0 Action Edit" [ref=e62]:
+            - cell "Title Archive Post 07 cba273d0" [ref=e63]
+            - cell "Status published" [ref=e64]:
+              - text: Status
+              - generic [ref=e65]: published
+            - cell "Views 0" [ref=e66]
+            - cell "Action Edit" [ref=e67]:
+              - text: Action
+              - link "Edit" [ref=e68] [cursor=pointer]:
+                - /url: /admin/posts/96/edit
+          - row "Title Archive Post 06 cba273d0 Status published Views 0 Action Edit" [ref=e69]:
+            - cell "Title Archive Post 06 cba273d0" [ref=e70]
+            - cell "Status published" [ref=e71]:
+              - text: Status
+              - generic [ref=e72]: published
+            - cell "Views 0" [ref=e73]
+            - cell "Action Edit" [ref=e74]:
+              - text: Action
+              - link "Edit" [ref=e75] [cursor=pointer]:
+                - /url: /admin/posts/95/edit

@@ -1,0 +1,86 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: Dashboard
+      - generic [ref=e16]: admin@example.com
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - strong [ref=e19]: "5"
+        - text: Total Posts
+      - generic [ref=e20]:
+        - strong [ref=e21]: "5"
+        - text: Published
+      - generic [ref=e22]:
+        - strong [ref=e23]: "0"
+        - text: Drafts
+      - generic [ref=e24]:
+        - strong [ref=e25]: "5"
+        - text: Categories
+      - generic [ref=e26]:
+        - strong [ref=e27]: "5"
+        - text: Tags
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Recent Posts" [level=2] [ref=e30]
+        - link "Create Post" [ref=e31] [cursor=pointer]:
+          - /url: /admin/posts/create
+      - table [ref=e32]:
+        - rowgroup [ref=e33]:
+          - row "Title Status Views Action" [ref=e34]:
+            - columnheader "Title" [ref=e35]
+            - columnheader "Status" [ref=e36]
+            - columnheader "Views" [ref=e37]
+            - columnheader "Action" [ref=e38]
+          - row "Testing FastAPI Blog 69cec7ad published 1 Edit" [ref=e39]:
+            - cell "Testing FastAPI Blog 69cec7ad" [ref=e40]
+            - cell "published" [ref=e41]
+            - cell "1" [ref=e42]
+            - cell "Edit" [ref=e43]:
+              - link "Edit" [ref=e44] [cursor=pointer]:
+                - /url: /admin/posts/5/edit
+          - row "Testing FastAPI Blog 20794c79 published 1 Edit" [ref=e45]:
+            - cell "Testing FastAPI Blog 20794c79" [ref=e46]
+            - cell "published" [ref=e47]
+            - cell "1" [ref=e48]
+            - cell "Edit" [ref=e49]:
+              - link "Edit" [ref=e50] [cursor=pointer]:
+                - /url: /admin/posts/4/edit
+          - row "Browser Verified Blog Post published 1 Edit" [ref=e51]:
+            - cell "Browser Verified Blog Post" [ref=e52]
+            - cell "published" [ref=e53]
+            - cell "1" [ref=e54]
+            - cell "Edit" [ref=e55]:
+              - link "Edit" [ref=e56] [cursor=pointer]:
+                - /url: /admin/posts/3/edit
+          - row "Testing FastAPI Blog 4d920560 published 1 Edit" [ref=e57]:
+            - cell "Testing FastAPI Blog 4d920560" [ref=e58]
+            - cell "published" [ref=e59]
+            - cell "1" [ref=e60]
+            - cell "Edit" [ref=e61]:
+              - link "Edit" [ref=e62] [cursor=pointer]:
+                - /url: /admin/posts/2/edit
+          - row "Testing FastAPI Blog 6341aab5 published 1 Edit" [ref=e63]:
+            - cell "Testing FastAPI Blog 6341aab5" [ref=e64]
+            - cell "published" [ref=e65]
+            - cell "1" [ref=e66]
+            - cell "Edit" [ref=e67]:
+              - link "Edit" [ref=e68] [cursor=pointer]:
+                - /url: /admin/posts/1/edit

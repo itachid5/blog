@@ -1,0 +1,45 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - heading "Blog Website" [level=2] [ref=e4]
+    - link "Dashboard" [ref=e5] [cursor=pointer]:
+      - /url: /admin/dashboard
+    - link "Posts" [ref=e6] [cursor=pointer]:
+      - /url: /admin/posts
+    - link "Categories" [ref=e7] [cursor=pointer]:
+      - /url: /admin/categories
+    - link "Tags" [ref=e8] [cursor=pointer]:
+      - /url: /admin/tags
+    - link "Pages" [ref=e9] [cursor=pointer]:
+      - /url: /admin/pages
+    - link "Settings" [ref=e10] [cursor=pointer]:
+      - /url: /admin/settings
+    - link "View Site" [ref=e11] [cursor=pointer]:
+      - /url: /
+    - link "Logout" [ref=e12] [cursor=pointer]:
+      - /url: /admin/logout
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - button "Open admin menu" [ref=e15] [cursor=pointer]: Menu
+      - strong [ref=e16]: Settings
+    - generic [ref=e17]:
+      - heading "Site Settings" [level=2] [ref=e18]
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - text: Site Name
+          - textbox "Site Name" [ref=e21]: Blog Website
+        - generic [ref=e22]:
+          - text: Description
+          - textbox "Description" [ref=e23]: Updated from tests
+        - generic [ref=e24]:
+          - text: Logo URL
+          - textbox "Logo URL" [ref=e25]
+        - generic [ref=e26]:
+          - text: Twitter URL
+          - textbox "Twitter URL" [ref=e27]
+        - generic [ref=e28]:
+          - text: GitHub URL
+          - textbox "GitHub URL" [ref=e29]
+        - generic [ref=e30]:
+          - text: LinkedIn URL
+          - textbox "LinkedIn URL" [ref=e31]
+        - button "Save Settings" [ref=e32] [cursor=pointer]

@@ -1,0 +1,258 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Blog Website" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e4]:
+      - link "Home" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "All Posts" [ref=e6] [cursor=pointer]:
+        - /url: /posts
+      - link "Categories" [ref=e7] [cursor=pointer]:
+        - /url: /categories
+      - link "Tags" [ref=e8] [cursor=pointer]:
+        - /url: /tags
+      - link "About" [ref=e9] [cursor=pointer]:
+        - /url: /about
+      - link "Contact" [ref=e10] [cursor=pointer]:
+        - /url: /contact
+      - link "Privacy" [ref=e11] [cursor=pointer]:
+        - /url: /privacy
+      - link "Terms" [ref=e12] [cursor=pointer]:
+        - /url: /terms
+      - link "Admin Login" [ref=e13] [cursor=pointer]:
+        - /url: /admin/login
+    - generic [ref=e15]:
+      - textbox "Search posts" [ref=e16]
+      - button "Submit search" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+        - text: Search
+  - complementary [ref=e21]:
+    - button [ref=e22] [cursor=pointer]:
+      - img [ref=e23]
+      - generic [ref=e26]: Close
+    - link [ref=e27] [cursor=pointer]:
+      - /url: /
+      - text: Home
+    - link [ref=e28] [cursor=pointer]:
+      - /url: /posts
+      - text: All Posts
+    - link [ref=e29] [cursor=pointer]:
+      - /url: /categories
+      - text: Categories
+    - link [ref=e30] [cursor=pointer]:
+      - /url: /tags
+      - text: Tags
+    - link [ref=e31] [cursor=pointer]:
+      - /url: /about
+      - text: About
+    - link [ref=e32] [cursor=pointer]:
+      - /url: /contact
+      - text: Contact
+    - link [ref=e33] [cursor=pointer]:
+      - /url: /privacy
+      - text: Privacy
+    - link [ref=e34] [cursor=pointer]:
+      - /url: /terms
+      - text: Terms
+    - link [ref=e35] [cursor=pointer]:
+      - /url: /admin/login
+      - text: Admin Login
+    - heading [level=3] [ref=e36]: Categories
+    - link [ref=e37] [cursor=pointer]:
+      - /url: /category/archive-011e7db8
+      - text: Archive 011e7db8
+    - link [ref=e38] [cursor=pointer]:
+      - /url: /category/archive-03ea265b
+      - text: Archive 03ea265b
+    - link [ref=e39] [cursor=pointer]:
+      - /url: /category/archive-3be96e1c
+      - text: Archive 3be96e1c
+    - link [ref=e40] [cursor=pointer]:
+      - /url: /category/archive-7ed5163d
+      - text: Archive 7ed5163d
+    - link [ref=e41] [cursor=pointer]:
+      - /url: /category/archive-878e572e
+      - text: Archive 878e572e
+    - link [ref=e42] [cursor=pointer]:
+      - /url: /category/archive-906af7b3
+      - text: Archive 906af7b3
+    - link [ref=e43] [cursor=pointer]:
+      - /url: /category/archive-b20abaec
+      - text: Archive b20abaec
+    - link [ref=e44] [cursor=pointer]:
+      - /url: /category/archive-bcdd9822
+      - text: Archive bcdd9822
+    - link [ref=e45] [cursor=pointer]:
+      - /url: /category/archive-c06c9518
+      - text: Archive c06c9518
+    - link [ref=e46] [cursor=pointer]:
+      - /url: /category/archive-cba273d0
+      - text: Archive cba273d0
+    - link [ref=e47] [cursor=pointer]:
+      - /url: /category/archive-f36b1cfb
+      - text: Archive f36b1cfb
+    - link [ref=e48] [cursor=pointer]:
+      - /url: /category/browser-category
+      - text: Browser Category
+    - link [ref=e49] [cursor=pointer]:
+      - /url: /category/design
+      - text: Design
+    - link [ref=e50] [cursor=pointer]:
+      - /url: /category/development
+      - text: Development
+    - link [ref=e51] [cursor=pointer]:
+      - /url: /category/engineering
+      - text: Engineering
+    - link [ref=e52] [cursor=pointer]:
+      - /url: /category/media-api-category-1108
+      - text: Media API Category 1108
+    - link [ref=e53] [cursor=pointer]:
+      - /url: /category/media-api-test-category-17783254
+      - text: Media API Test Category 17783254
+    - link [ref=e54] [cursor=pointer]:
+      - /url: /category/operations
+      - text: Operations
+    - link [ref=e55] [cursor=pointer]:
+      - /url: /category/product
+      - text: Product
+    - link [ref=e56] [cursor=pointer]:
+      - /url: /category/python-0dc25206
+      - text: Python 0dc25206
+    - link [ref=e57] [cursor=pointer]:
+      - /url: /category/python-0f2b1b0f
+      - text: Python 0f2b1b0f
+    - link [ref=e58] [cursor=pointer]:
+      - /url: /category/python-11c0e389
+      - text: Python 11c0e389
+    - link [ref=e59] [cursor=pointer]:
+      - /url: /category/python-20794c79
+      - text: Python 20794c79
+    - link [ref=e60] [cursor=pointer]:
+      - /url: /category/python-2488b0e3
+      - text: Python 2488b0e3
+    - link [ref=e61] [cursor=pointer]:
+      - /url: /category/python-2b82d3e6
+      - text: Python 2b82d3e6
+    - link [ref=e62] [cursor=pointer]:
+      - /url: /category/python-4d920560
+      - text: Python 4d920560
+    - link [ref=e63] [cursor=pointer]:
+      - /url: /category/python-5063a70e
+      - text: Python 5063a70e
+    - link [ref=e64] [cursor=pointer]:
+      - /url: /category/python-6341aab5
+      - text: Python 6341aab5
+    - link [ref=e65] [cursor=pointer]:
+      - /url: /category/python-69cec7ad
+      - text: Python 69cec7ad
+    - link [ref=e66] [cursor=pointer]:
+      - /url: /category/python-7bb5438e
+      - text: Python 7bb5438e
+    - link [ref=e67] [cursor=pointer]:
+      - /url: /category/python-884711ec
+      - text: Python 884711ec
+    - link [ref=e68] [cursor=pointer]:
+      - /url: /category/python-bc356bf5
+      - text: Python bc356bf5
+    - link [ref=e69] [cursor=pointer]:
+      - /url: /category/python-bcf1bf29
+      - text: Python bcf1bf29
+    - link [ref=e70] [cursor=pointer]:
+      - /url: /category/python-c4898dba
+      - text: Python c4898dba
+    - link [ref=e71] [cursor=pointer]:
+      - /url: /category/python-dbc719dc
+      - text: Python dbc719dc
+    - link [ref=e72] [cursor=pointer]:
+      - /url: /category/views-4b7e1a2c
+      - text: Views 4b7e1a2c
+    - link [ref=e73] [cursor=pointer]:
+      - /url: /category/views-7401b7f4
+      - text: Views 7401b7f4
+    - link [ref=e74] [cursor=pointer]:
+      - /url: /category/views-8781b2f3
+      - text: Views 8781b2f3
+  - main [ref=e75]:
+    - generic [ref=e76]:
+      - paragraph [ref=e77]: Category
+      - heading "Development" [level=1] [ref=e78]
+      - paragraph [ref=e79]: Practical engineering tutorials and platform notes.
+    - generic [ref=e80]:
+      - article [ref=e81]:
+        - img "Building a FastAPI Blog That Feels Fast" [ref=e82]
+        - paragraph [ref=e83]: Development
+        - paragraph [ref=e84]: 242 views · 1 min read · Published 7 minutes ago
+        - heading "Building a FastAPI Blog That Feels Fast" [level=3] [ref=e85]:
+          - link "Building a FastAPI Blog That Feels Fast" [ref=e86] [cursor=pointer]:
+            - /url: /post/building-a-fastapi-blog-that-feels-fast
+        - paragraph [ref=e87]: Demo article 1 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e88]:
+          - link "#FastAPI" [ref=e89] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e90] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e91] [cursor=pointer]:
+          - /url: /post/building-a-fastapi-blog-that-feels-fast
+      - article [ref=e92]:
+        - img "How to Structure Content for Search and Discovery" [ref=e93]
+        - paragraph [ref=e94]: Development
+        - paragraph [ref=e95]: 214 views · 1 min read · Published 3 days ago
+        - heading "How to Structure Content for Search and Discovery" [level=3] [ref=e96]:
+          - link "How to Structure Content for Search and Discovery" [ref=e97] [cursor=pointer]:
+            - /url: /post/how-to-structure-content-for-search-and-discovery
+        - paragraph [ref=e98]: Demo article 4 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e99]:
+          - link "#Frontend" [ref=e100] [cursor=pointer]:
+            - /url: /tag/frontend
+          - link "#Testing" [ref=e101] [cursor=pointer]:
+            - /url: /tag/testing
+        - link "Read more" [ref=e102] [cursor=pointer]:
+          - /url: /post/how-to-structure-content-for-search-and-discovery
+      - article [ref=e103]:
+        - img "Tagging Strategies for Technical Blogs" [ref=e104]
+        - paragraph [ref=e105]: Development
+        - paragraph [ref=e106]: 187 views · 1 min read · Published 6 days ago
+        - heading "Tagging Strategies for Technical Blogs" [level=3] [ref=e107]:
+          - link "Tagging Strategies for Technical Blogs" [ref=e108] [cursor=pointer]:
+            - /url: /post/tagging-strategies-for-technical-blogs
+        - paragraph [ref=e109]: Demo article 7 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e110]:
+          - link "#FastAPI" [ref=e111] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e112] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e113] [cursor=pointer]:
+          - /url: /post/tagging-strategies-for-technical-blogs
+      - article [ref=e114]:
+        - img "Polishing Empty States and Error Pages" [ref=e115]
+        - paragraph [ref=e116]: Development
+        - paragraph [ref=e117]: 160 views · 1 min read · Published May 02, 2026
+        - heading "Polishing Empty States and Error Pages" [level=3] [ref=e118]:
+          - link "Polishing Empty States and Error Pages" [ref=e119] [cursor=pointer]:
+            - /url: /post/polishing-empty-states-and-error-pages
+        - paragraph [ref=e120]: Demo article 10 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e121]:
+          - link "#Frontend" [ref=e122] [cursor=pointer]:
+            - /url: /tag/frontend
+          - link "#Testing" [ref=e123] [cursor=pointer]:
+            - /url: /tag/testing
+        - link "Read more" [ref=e124] [cursor=pointer]:
+          - /url: /post/polishing-empty-states-and-error-pages
+      - article [ref=e125]:
+        - img "Making Featured Posts Stand Out" [ref=e126]
+        - paragraph [ref=e127]: Development
+        - paragraph [ref=e128]: 133 views · 1 min read · Published Apr 29, 2026
+        - heading "Making Featured Posts Stand Out" [level=3] [ref=e129]:
+          - link "Making Featured Posts Stand Out" [ref=e130] [cursor=pointer]:
+            - /url: /post/making-featured-posts-stand-out
+        - paragraph [ref=e131]: Demo article 13 with a unique uploaded featured image for blog card testing.
+        - generic [ref=e132]:
+          - link "#FastAPI" [ref=e133] [cursor=pointer]:
+            - /url: /tag/fastapi
+          - link "#Python" [ref=e134] [cursor=pointer]:
+            - /url: /tag/python
+        - link "Read more" [ref=e135] [cursor=pointer]:
+          - /url: /post/making-featured-posts-stand-out
+  - contentinfo [ref=e136]:
+    - paragraph [ref=e137]: Updated from tests
+    - paragraph [ref=e138]: © Blog Website
