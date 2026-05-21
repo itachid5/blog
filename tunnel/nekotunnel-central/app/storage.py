@@ -123,10 +123,7 @@ class PostgresConnection:
 
     @staticmethod
     def convert_sql(sql: str) -> str:
-        converted = sql.replace("ORDER BY datetime(created_at) DESC, id DESC", "ORDER BY created_at DESC, id DESC")
-        converted = converted.replace("ORDER BY datetime(sessions.started_at) DESC", "ORDER BY sessions.started_at DESC")
-        converted = converted.replace("ORDER BY datetime(last_heartbeat_at) DESC", "ORDER BY last_heartbeat_at DESC")
-        converted = converted.replace("?", "%s")
+        converted = sql.replace("?", "%s")
         return converted
 
 
@@ -283,6 +280,14 @@ class SQLiteStore:
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         return conn
+
+    def order_by_timestamp(self, column: str, direction: str = "DESC") -> str:
+        direction = direction.upper()
+        if direction not in {"ASC", "DESC"}:
+            raise ValueError("direction must be ASC or DESC")
+        if self.database_type == "postgres":
+            return f"NULLIF({column}, '')::timestamptz {direction} NULLS LAST"
+        return f"datetime({column}) {direction}"
 
     def table_columns(self, conn, table_name: str) -> set[str]:
         return {row[1] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
@@ -495,7 +500,7 @@ class SQLiteStore:
 
     def list_logs(self) -> list[AuditLog]:
         with self.connect() as conn:
-            rows = conn.execute("SELECT * FROM audit_logs ORDER BY datetime(created_at) DESC, id DESC").fetchall()
+            rows = conn.execute(f"SELECT * FROM audit_logs ORDER BY {self.order_by_timestamp('created_at')}, id DESC").fetchall()
         return [AuditLog(**dict(row)) for row in rows]
 
     def add_provision_log(
@@ -551,26 +556,26 @@ class SQLiteStore:
         with self.connect() as conn:
             if filter_value in {"success", "failed", "running"}:
                 rows = conn.execute(
-                    "SELECT * FROM provision_logs WHERE status = ? ORDER BY datetime(created_at) DESC, id DESC",
+                    f"SELECT * FROM provision_logs WHERE status = ? ORDER BY {self.order_by_timestamp('created_at')}, id DESC",
                     (filter_value,),
                 ).fetchall()
             elif filter_value in {"create_project", "project_created", "create_service", "deploy_service", "redeploy_service", "refresh_tcp", "write_files"}:
                 action = "create_project" if filter_value in {"create_project", "project_created"} else filter_value
                 rows = conn.execute(
-                    "SELECT * FROM provision_logs WHERE action = ? ORDER BY datetime(created_at) DESC, id DESC",
+                    f"SELECT * FROM provision_logs WHERE action = ? ORDER BY {self.order_by_timestamp('created_at')}, id DESC",
                     (action,),
                 ).fetchall()
             else:
-                rows = conn.execute("SELECT * FROM provision_logs ORDER BY datetime(created_at) DESC, id DESC").fetchall()
+                rows = conn.execute(f"SELECT * FROM provision_logs ORDER BY {self.order_by_timestamp('created_at')}, id DESC").fetchall()
         return [ProvisionLog(**dict(row)) for row in rows]
 
     def latest_successful_project_stdout(self, project_name: str) -> str:
         with self.connect() as conn:
             row = conn.execute(
-                """
+                f"""
                 SELECT stdout FROM provision_logs
                 WHERE project_name = ? AND action = 'railway_project_create' AND status = 'success'
-                ORDER BY datetime(created_at) DESC, id DESC
+                ORDER BY {self.order_by_timestamp('created_at')}, id DESC
                 LIMIT 1
                 """,
                 (project_name,),
@@ -650,10 +655,10 @@ class SQLiteStore:
     def latest_cli_login_attempt(self, account_id: int) -> RailwayCliLogin | None:
         with self.connect() as conn:
             row = conn.execute(
-                """
+                f"""
                 SELECT * FROM railway_cli_logins
                 WHERE account_id = ?
-                ORDER BY datetime(started_at) DESC, id DESC
+                ORDER BY {self.order_by_timestamp('started_at')}, id DESC
                 LIMIT 1
                 """,
                 (account_id,),
@@ -987,10 +992,10 @@ class SQLiteStore:
     def latest_tcp_auto_enable_result(self) -> str:
         with self.connect() as conn:
             row = conn.execute(
-                """
+                f"""
                 SELECT status, error, stdout FROM provision_logs
                 WHERE action IN ('tcp_discover_ids', 'tcp_auto_enable_attempt')
-                ORDER BY datetime(created_at) DESC, id DESC
+                ORDER BY {self.order_by_timestamp('created_at')}, id DESC
                 LIMIT 1
                 """
             ).fetchone()
@@ -1342,13 +1347,13 @@ class SQLiteStore:
     def list_sessions(self) -> list[TunnelSession]:
         with self.connect() as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT sessions.*, users.name AS user_name,
                        slots.project_name || '/' || slots.service_name AS slot_label
                 FROM sessions
                 LEFT JOIN users ON users.id = sessions.user_id
                 LEFT JOIN slots ON slots.id = sessions.slot_id
-                ORDER BY datetime(sessions.started_at) DESC
+                ORDER BY {self.order_by_timestamp('sessions.started_at')}
                 """
             ).fetchall()
         return [TunnelSession(**dict(row)) for row in rows]
