@@ -1,0 +1,16 @@
+serverAddr = "kodama.proxy.rlwy.net"
+serverPort = 53367
+
+[auth]
+method = "token"
+token = "frp_tBshRCNEFDrJ_qKeSQXml_NqoQO0y26YSZxm1VlDrBo"
+
+[transport]
+tls.enable = true
+
+[[proxies]]
+name = "nekotunnel-8_oZl0yP"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = 6000

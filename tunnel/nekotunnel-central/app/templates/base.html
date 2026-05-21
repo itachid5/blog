@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ settings.app_name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav class="topnav">
+    <a class="brand" href="/">NekoTunnel Central</a>
+    <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">Menu</button>
+    <div class="nav-links">
+      <a href="/" class="{% if current_path == '/' %}active{% endif %}">Dashboard</a>
+      <a href="/railway-accounts" class="{% if current_path == '/railway-accounts' %}active{% endif %}">Railway Accounts</a>
+      <a href="/projects" class="{% if current_path == '/projects' %}active{% endif %}">Projects</a>
+      <a href="/slots" class="{% if current_path == '/slots' %}active{% endif %}">Slots</a>
+      <a href="/users" class="{% if current_path == '/users' %}active{% endif %}">Users</a>
+      <a href="/sessions" class="{% if current_path == '/sessions' %}active{% endif %}">Sessions</a>
+      <a href="/logs" class="{% if current_path == '/logs' %}active{% endif %}">Logs</a>
+      <a href="/provision-logs" class="{% if current_path == '/provision-logs' %}active{% endif %}">Provision Logs</a>
+      <a href="/settings" class="{% if current_path == '/settings' %}active{% endif %}">Settings</a>
+      <form method="post" action="/logout" class="logout-form"><button type="submit">Logout</button></form>
+    </div>
+  </nav>
+  <main class="container">
+    {% for flash in flashes %}
+      <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

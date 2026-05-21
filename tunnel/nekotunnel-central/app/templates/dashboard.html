@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Dashboard</h1>
+  <p class="muted">Placeholder operational overview for the base server.</p>
+</section>
+<section class="cards">
+  <article class="card"><span>Total Railway Accounts</span><strong>{{ stats.total_accounts }}</strong></article>
+  <article class="card"><span>Total Slots</span><strong>{{ stats.total_slots }}</strong></article>
+  <article class="card"><span>Free Slots</span><strong>{{ stats.free_slots }}</strong></article>
+  <article class="card"><span>Busy Slots</span><strong>{{ stats.busy_slots }}</strong></article>
+  <article class="card"><span>Active Sessions</span><strong>{{ stats.active_sessions }}</strong></article>
+  <article class="card danger-card"><span>Failed Slots</span><strong>{{ stats.failed_slots }}</strong></article>
+</section>
+{% endblock %}

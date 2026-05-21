@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Sessions</h1>
+  <p class="muted">Live and historical tunnel sessions, including active, closed, and expired allocations.</p>
+</section>
+<div class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Session ID</th><th>User</th><th>Slot</th><th>Status</th><th>Proxy</th><th>Client</th><th>Started At</th><th>Last Heartbeat</th><th>Ended At</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for session in sessions %}
+        <tr>
+          <td><code>{{ session.id }}</code></td>
+          <td>{{ session.user }}</td>
+          <td>{{ session.slot }}</td>
+          <td><span class="badge status-{{ session.status }}">{{ session.status }}</span></td>
+          <td>{{ session.proxy_name or '-' }}</td>
+          <td>{{ session.client_info or '-' }}</td>
+          <td>{{ session.started_at }}</td>
+          <td>{{ session.last_heartbeat }}</td>
+          <td>{{ session.ended_at or '-' }}</td>
+          <td class="actions"><form method="post" action="/sessions/{{ session.id }}/force-close"><button type="submit">Force Close</button></form></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="10" class="empty">No active or historical sessions yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

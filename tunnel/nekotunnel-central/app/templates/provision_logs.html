@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Provision Logs</h1>
+  <p class="muted">Railway project creation, service creation, and deploy attempts. Tokens are masked before logs are saved.</p>
+</section>
+<div class="panel">
+  <div class="actions">
+    {% for status in ["all", "create_project", "create_service", "deploy_service", "refresh_tcp", "failed", "success"] %}
+      <a class="button-link {% if selected_status == status %}active{% endif %}" href="/provision-logs?status={{ status }}">{{ status|title }}</a>
+    {% endfor %}
+  </div>
+</div>
+<div class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th><th>Action</th><th>Railway Account</th><th>Slot</th><th>Project</th><th>Service</th><th>Status</th><th>Command / Method</th><th>stdout</th><th>stderr</th><th>Error</th><th>Duration</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for log in provision_logs %}
+        <tr>
+          <td>{{ log.created_at }}</td>
+          <td><code>{{ log.action }}</code></td>
+          <td>{{ log.account_label or account_label(accounts, log.account_id) }}</td>
+          <td>{{ log.slot_id or '-' }}</td>
+          <td>{{ log.project_name }}</td>
+          <td>{{ log.service_name or '-' }}</td>
+          <td><span class="badge status-{{ log.status }}">{{ log.status }}</span></td>
+          <td><details><summary>View command</summary><pre>{{ log.command }}</pre></details></td>
+          <td><details><summary>View stdout</summary><pre>{{ log.stdout or '-' }}</pre></details></td>
+          <td><details><summary>View stderr</summary><pre>{{ log.stderr or '-' }}</pre></details></td>
+          <td><details><summary>View error</summary><pre>{{ log.error or '-' }}</pre></details></td>
+          <td>{{ log.duration_ms }} ms</td>
+          <td class="actions">
+            <details><summary>View full log</summary><pre>Command:
+{{ log.command }}
+
+stdout:
+{{ log.stdout or '-' }}
+
+stderr:
+{{ log.stderr or '-' }}
+
+error:
+{{ log.error or '-' }}</pre></details>
+            <form method="post" action="/provision-logs/{{ log.id }}/delete"><button class="danger" type="submit">Delete log</button></form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="13" class="empty">No provision logs yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+bindAddr = "127.0.0.1"
+bindPort = 7000
+
+proxyBindAddr = "127.0.0.1"
+
+auth.method = "token"
+auth.token = "frp_QVoblnuvlnr-4SJhiUMeMoH5pjrKQ7LNttCAoZB43p0"
+
+[transport]
+heartbeatTimeout = 90
+tcpMux = true
+tcpMuxKeepaliveInterval = 30
+tcpKeepalive = 7200
+tls.force = true
+
+[[allowPorts]]
+single = 6000

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Users</h1>
+  <p class="muted">Create placeholder user tokens. Full tokens are shown once only.</p>
+</section>
+<div class="panel">
+  <h2>Create User Token</h2>
+  <form method="post" action="/users" class="grid-form">
+    <label>Name<input name="name" required placeholder="alice"></label>
+    <label>Max Active Sessions<input name="max_sessions" type="number" min="1" value="1" required></label>
+    <button class="primary" type="submit">Create token</button>
+  </form>
+</div>
+<div class="panel">
+  <h2>User Install Commands</h2>
+  <p class="muted">Replace <code>PUBLIC_URL</code> with this dashboard's public URL and <code>USER_TOKEN</code> with the full token shown immediately after creation.</p>
+
+  <h3>Install</h3>
+  <h4>Linux SSH</h4>
+  <pre>curl -fsSL -H "bypass-tunnel-reminder: true" https://PUBLIC_URL/install.sh | bash
+nekotunnel token USER_TOKEN --api https://PUBLIC_URL</pre>
+
+  <h4>Windows RDP</h4>
+  <pre>iwr -UseBasicParsing -Headers @{"bypass-tunnel-reminder"="true"} https://PUBLIC_URL/install.ps1 | iex
+nekotunnel token USER_TOKEN --api https://PUBLIC_URL</pre>
+
+  <h3>Temporary foreground mode</h3>
+  <h4>Linux</h4>
+  <pre>nekotunnel tcp 22</pre>
+  <p>Connect:</p>
+  <pre>ssh username@SERVER_ADDR -p SERVER_PORT</pre>
+
+  <h4>Windows</h4>
+  <pre>nekotunnel tcp 3389</pre>
+  <p>Connect:</p>
+  <pre>mstsc /v:SERVER_ADDR:SERVER_PORT</pre>
+  <p class="muted small">On Windows, Remote Desktop must be enabled and allowed in Firewall. If RDP is not enabled, nekotunnel can connect but RDP will not respond.</p>
+
+  <h3>Background mode</h3>
+  <h4>Linux</h4>
+  <pre>nekotunnel start tcp 22
+nekotunnel status
+nekotunnel logs
+nekotunnel stop</pre>
+
+  <h4>Windows</h4>
+  <pre>nekotunnel start tcp 3389
+nekotunnel status
+nekotunnel logs
+nekotunnel stop</pre>
+
+  <h3>Backward-compatible Linux one-shot</h3>
+  <pre>curl -fsSL -H "bypass-tunnel-reminder: true" https://PUBLIC_URL/install.sh | bash -s -- tcp 22 USER_TOKEN https://PUBLIC_URL</pre>
+  <p class="muted small">The client downloads frpc v0.57.0 automatically from this NekoTunnel Central server if it is missing.</p>
+</div>
+<div class="panel">
+  <h2>User Tokens</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Token Prefix</th><th>Status</th><th>Max Sessions</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for user in users %}
+        <tr>
+          <td>{{ user.name }}</td>
+          <td><code>{{ user.token_prefix }}</code></td>
+          <td><span class="badge">{{ user.status }}</span></td>
+          <td>{{ user.max_sessions }}</td>
+          <td class="actions">
+            <form method="post" action="/users/{{ user.id }}/disable"><button type="submit">Disable</button></form>
+            <form method="post" action="/users/{{ user.id }}/delete"><button class="danger" type="submit">Delete</button></form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="empty">No users yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

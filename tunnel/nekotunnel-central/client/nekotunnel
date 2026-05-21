@@ -1,0 +1,650 @@
+#!/usr/bin/env bash
+exec python3 - "$@" <<'PY'
+import json
+import os
+import platform
+import shutil
+import signal
+import stat
+import subprocess
+import sys
+import tarfile
+import tempfile
+import threading
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+FRPC_VERSION = "0.57.0"
+APP_DIR = Path.home() / ".nekotunnel"
+CONFIG_PATH = APP_DIR / "config"
+STATE_PATH = APP_DIR / "state"
+PID_PATH = APP_DIR / "nekotunnel.pid"
+LOG_PATH = APP_DIR / "nekotunnel.log"
+SERVICE_PATH = Path.home() / ".config" / "systemd" / "user" / "nekotunnel.service"
+SERVICE_STOPPING = False
+
+
+class StopRequested(Exception):
+    pass
+
+
+def usage() -> int:
+    print("Usage:")
+    print("  nekotunnel token <USER_TOKEN> --api <API_URL>")
+    print("  nekotunnel login <USER_TOKEN> --api <API_URL>")
+    print("  nekotunnel tcp <local_port>")
+    print("  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL>")
+    print("  nekotunnel start tcp <local_port>")
+    print("  nekotunnel stop")
+    print("  nekotunnel restart")
+    print("  nekotunnel status")
+    print("  nekotunnel logs")
+    print("  nekotunnel logout")
+    return 2
+
+
+def dependency_help() -> str:
+    return "\n".join(
+        [
+            "Install missing dependencies with one of:",
+            "  apt: sudo apt update && sudo apt install -y curl tar gzip",
+            "  apk: sudo apk add --no-cache curl tar gzip",
+            "  yum: sudo yum install -y curl tar gzip",
+            "  pkg: sudo pkg install -y curl tar gzip",
+        ]
+    )
+
+
+def require_tools() -> bool:
+    missing = [tool for tool in ("tar", "gzip") if shutil.which(tool) is None]
+    if missing:
+        print(f"Missing required tools: {', '.join(missing)}")
+        print(dependency_help())
+        return False
+    return True
+
+
+def app_dir() -> Path:
+    APP_DIR.mkdir(parents=True, exist_ok=True)
+    return APP_DIR
+
+
+def shell_quote(value: str) -> str:
+    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def shell_unquote(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+        value = value[1:-1]
+    return value.replace('\\"', '"').replace('\\\\', '\\')
+
+
+def write_config(config: dict[str, str]) -> None:
+    app_dir()
+    lines = [f"{key}={shell_quote(value)}" for key, value in config.items() if value]
+    CONFIG_PATH.write_text("\n".join(lines) + ("\n" if lines else ""))
+    CONFIG_PATH.chmod(0o600)
+
+
+def save_config(api_url: str, token: str) -> None:
+    config = load_config()
+    config["API_URL"] = api_url.rstrip("/")
+    config["USER_TOKEN"] = token
+    write_config(config)
+
+
+def save_background_port(local_port: int) -> None:
+    config = load_config()
+    config["BACKGROUND_PORT"] = str(local_port)
+    write_config(config)
+
+
+def load_config() -> dict[str, str]:
+    if not CONFIG_PATH.exists():
+        return {}
+    config: dict[str, str] = {}
+    for line in CONFIG_PATH.read_text().splitlines():
+        if not line or line.strip().startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        config[key.strip()] = shell_unquote(value)
+    return config
+
+
+def clear_config() -> None:
+    if CONFIG_PATH.exists():
+        CONFIG_PATH.unlink()
+
+
+def mask_token(token: str) -> str:
+    if not token:
+        return "not configured"
+    if len(token) <= 10:
+        return token[:3] + "..."
+    return token[:7] + "..." + token[-4:]
+
+
+def save_state(state: dict) -> None:
+    app_dir()
+    STATE_PATH.write_text(json.dumps(state, indent=2))
+    STATE_PATH.chmod(0o600)
+
+
+def load_state() -> dict | None:
+    if not STATE_PATH.exists():
+        return None
+    try:
+        return json.loads(STATE_PATH.read_text())
+    except json.JSONDecodeError:
+        return {"error": "state file is not valid JSON"}
+
+
+def clear_state() -> None:
+    if STATE_PATH.exists():
+        STATE_PATH.unlink()
+
+
+def command_for_port(local_port: int, server_addr: str, server_port: int | str) -> str:
+    if local_port == 22:
+        return f"SSH command: ssh username@{server_addr} -p {server_port}"
+    if local_port == 3389:
+        return f"RDP command: mstsc /v:{server_addr}:{server_port}"
+    return f"Connect to {server_addr}:{server_port}"
+
+
+def frpc_archive_name() -> str:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    if system != "linux":
+        raise RuntimeError(f"Unsupported OS for automatic frpc download: {platform.system()}")
+    if machine in {"x86_64", "amd64"}:
+        arch = "amd64"
+    elif machine in {"aarch64", "arm64"}:
+        arch = "arm64"
+    else:
+        raise RuntimeError(f"Unsupported CPU architecture for automatic frpc download: {platform.machine()}")
+    return f"frp_{FRPC_VERSION}_linux_{arch}.tar.gz"
+
+
+def request_headers(extra: dict[str, str] | None = None) -> dict[str, str]:
+    headers = {"User-Agent": f"nekotunnel/{FRPC_VERSION}", "bypass-tunnel-reminder": "true"}
+    if extra:
+        headers.update(extra)
+    return headers
+
+
+def download_file(url: str, destination: Path) -> None:
+    request = urllib.request.Request(url, headers=request_headers())
+    with urllib.request.urlopen(request, timeout=120) as response:
+        destination.write_bytes(response.read())
+
+
+def ensure_frpc(api_url: str) -> Path:
+    if not require_tools():
+        raise RuntimeError("Missing required dependencies.")
+
+    base_dir = app_dir()
+    bin_dir = base_dir / f"frpc-{FRPC_VERSION}"
+    frpc_path = bin_dir / "frpc"
+    if frpc_path.exists():
+        frpc_path.chmod(frpc_path.stat().st_mode | stat.S_IXUSR)
+        return frpc_path
+
+    archive_name = frpc_archive_name()
+    cache_dir = base_dir / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = cache_dir / archive_name
+    if not archive_path.exists():
+        frpc_url = api_url.rstrip("/") + f"/client/frpc/{archive_name}"
+        print(f"Downloading frpc v{FRPC_VERSION} from NekoTunnel Central...", flush=True)
+        download_file(frpc_url, archive_path)
+
+    with tempfile.TemporaryDirectory(prefix="nekotunnel-frpc-") as tmp:
+        tmp_path = Path(tmp)
+        with tarfile.open(archive_path, "r:gz") as archive:
+            root = tmp_path.resolve()
+            for member in archive.getmembers():
+                target = (tmp_path / member.name).resolve()
+                if target != root and not str(target).startswith(str(root) + os.sep):
+                    raise RuntimeError("Downloaded frpc archive contains an unsafe path.")
+            archive.extractall(tmp_path)
+        matches = [path for path in tmp_path.rglob("frpc") if path.is_file()]
+        if not matches:
+            raise RuntimeError("Downloaded frpc archive did not contain an frpc binary.")
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(matches[0], frpc_path)
+    frpc_path.chmod(frpc_path.stat().st_mode | stat.S_IXUSR)
+    return frpc_path
+
+
+def post_json(api_url: str, path: str, payload: dict) -> tuple[int, dict | None, str]:
+    url = api_url.rstrip("/") + path
+    body = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(url, data=body, headers=request_headers({"Content-Type": "application/json"}), method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            text = response.read().decode("utf-8")
+            return response.status, json.loads(text), text
+    except urllib.error.HTTPError as exc:
+        text = exc.read().decode("utf-8")
+        try:
+            return exc.code, json.loads(text), text
+        except json.JSONDecodeError:
+            return exc.code, None, text
+
+
+def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> None:
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        "\n".join(
+            [
+                f'serverAddr = "{allocation["server_addr"]}"',
+                f'serverPort = {allocation["server_port"]}',
+                "",
+                "[auth]",
+                'method = "token"',
+                f'token = "{allocation["frp_token"]}"',
+                "",
+                "[transport]",
+                "tls.enable = true",
+                "",
+                "[[proxies]]",
+                f'name = "{allocation["proxy_name"]}"',
+                'type = "tcp"',
+                'localIP = "127.0.0.1"',
+                f"localPort = {local_port}",
+                f'remotePort = {int(allocation["remote_port"])}',
+                "",
+            ]
+        )
+    )
+    config_path.chmod(0o600)
+
+
+def heartbeat_loop(api_url: str, token: str, session_id: str, interval: int, stop_event: threading.Event) -> None:
+    while not stop_event.wait(interval):
+        status, data, body = post_json(api_url, "/api/heartbeat", {"token": token, "session_id": session_id})
+        if not data or not data.get("ok"):
+            print(f"Heartbeat failed with HTTP {status}: {body}", flush=True)
+            stop_event.set()
+            return
+
+
+def disconnect(api_url: str, token: str, session_id: str) -> bool:
+    try:
+        post_json(api_url, "/api/disconnect", {"token": token, "session_id": session_id})
+        return True
+    except Exception as exc:
+        print(f"Disconnect failed: {exc}", flush=True)
+        return False
+
+
+def disconnect_saved_state() -> bool:
+    state = load_state()
+    if not state or "error" in state:
+        return True
+    config = load_config()
+    api_url = config.get("API_URL", "").rstrip("/")
+    token = config.get("USER_TOKEN", "")
+    session_id = state.get("session_id")
+    if api_url and token and session_id:
+        ok = disconnect(api_url, token, str(session_id))
+        if ok:
+            clear_state()
+        return ok
+    clear_state()
+    return True
+
+
+def parse_login(args: list[str]) -> tuple[str, str] | None:
+    if len(args) != 3 or args[1] != "--api":
+        return None
+    return args[2].rstrip("/"), args[0]
+
+
+def parse_port(value: str) -> int:
+    try:
+        local_port = int(value)
+    except ValueError as exc:
+        raise ValueError("local_port must be an integer from 1 to 65535") from exc
+    if local_port < 1 or local_port > 65535:
+        raise ValueError("local_port must be an integer from 1 to 65535")
+    return local_port
+
+
+def resolve_credentials(args: list[str]) -> tuple[int, str, str]:
+    service_args = [arg for arg in args if arg != "--foreground-service"]
+    if len(service_args) == 1:
+        local_port = parse_port(service_args[0])
+        config = load_config()
+        api_url = config.get("API_URL", "").rstrip("/")
+        token = config.get("USER_TOKEN", "")
+        if not api_url or not token:
+            raise RuntimeError("No token/API configured. Run: nekotunnel token USER_TOKEN --api API_URL")
+        return local_port, token, api_url
+    if len(service_args) == 3:
+        return parse_port(service_args[0]), service_args[1], service_args[2].rstrip("/")
+    raise ValueError("Invalid tcp usage.")
+
+
+def systemd_available() -> bool:
+    if shutil.which("systemctl") is None:
+        return False
+    try:
+        result = subprocess.run(["systemctl", "--user", "status"], capture_output=True, text=True, timeout=5)
+        output = (result.stdout + result.stderr).lower()
+        if "not running" in output or "failed to connect" in output:
+            return False
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def service_content() -> str:
+    executable = Path.home() / ".local" / "bin" / "nekotunnel"
+    return f"""[Unit]
+Description=NekoTunnel background tunnel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={executable} tcp ${{BACKGROUND_PORT}} --foreground-service
+Restart=always
+RestartSec=5
+EnvironmentFile={CONFIG_PATH}
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def run_status() -> int:
+    config = load_config()
+    api_url = config.get("API_URL")
+    user_token = config.get("USER_TOKEN")
+    background_port = config.get("BACKGROUND_PORT")
+    frpc_path = APP_DIR / f"frpc-{FRPC_VERSION}" / "frpc"
+    state = load_state()
+    print(f"API URL: {api_url or 'not configured'}")
+    print(f"Token: {mask_token(user_token or '')}")
+    print(f"frpc v{FRPC_VERSION}: {'installed' if frpc_path.exists() else 'not installed'}")
+    print(f"Background port: {background_port or 'not configured'}")
+    if systemd_available():
+        result = subprocess.run(["systemctl", "--user", "is-active", "nekotunnel.service"], capture_output=True, text=True)
+        print(f"Background systemd: {result.stdout.strip() or 'inactive'}")
+    elif PID_PATH.exists():
+        pid = PID_PATH.read_text().strip()
+        running = pid.isdigit() and Path(f"/proc/{pid}").exists()
+        print(f"Background nohup: {'running' if running else 'stopped'}{f' (pid {pid})' if pid else ''}")
+    else:
+        print("Background nohup: not configured")
+    if state:
+        if "error" in state:
+            print(f"State: {state['error']}")
+        else:
+            print("Active session state:")
+            print(f"  session_id: {state.get('session_id', '-')}")
+            print(f"  local_port: {state.get('local_port', '-')}")
+            print(f"  remote: {state.get('server_addr', '-')}:{state.get('server_port', '-')}")
+            print(f"  started_at: {state.get('started_at', '-')}")
+    else:
+        print("Active session state: none")
+    return 0
+
+
+def run_tcp_once(args: list[str]) -> int:
+    try:
+        local_port, user_token, api_url = resolve_credentials(args)
+    except (RuntimeError, ValueError) as exc:
+        print(exc)
+        return 2
+
+    try:
+        frpc_path = ensure_frpc(api_url)
+    except Exception as exc:
+        print(f"Could not prepare frpc v{FRPC_VERSION}: {exc}")
+        return 1
+
+    status, data, body = post_json(
+        api_url,
+        "/api/connect",
+        {"token": user_token, "local_port": local_port, "client_info": f"nekotunnel/{FRPC_VERSION}"},
+    )
+    if not data:
+        print(f"Connect failed with HTTP {status}: {body}")
+        return 1
+    if not data.get("ok"):
+        print(json.dumps(data, indent=2))
+        return 1
+
+    session_id = data["session_id"]
+    config_path = APP_DIR / f"frpc-{session_id}.toml"
+    write_frpc_config(config_path, data, local_port)
+    save_state(
+        {
+            "session_id": session_id,
+            "slot_id": data.get("slot_id"),
+            "local_port": local_port,
+            "server_addr": data["server_addr"],
+            "server_port": data["server_port"],
+            "remote_port": data["remote_port"],
+            "proxy_name": data["proxy_name"],
+            "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+    )
+
+    print(f"Connected session: {session_id}", flush=True)
+    print(command_for_port(local_port, data["server_addr"], data["server_port"]), flush=True)
+    print("Press Ctrl+C to disconnect.", flush=True)
+
+    stop_event = threading.Event()
+    heartbeat = threading.Thread(
+        target=heartbeat_loop,
+        args=(api_url, user_token, session_id, int(data.get("heartbeat_interval", 15)), stop_event),
+        daemon=True,
+    )
+    heartbeat.start()
+
+    process = subprocess.Popen([str(frpc_path), "-c", str(config_path)])
+
+    def stop(_signum=None, _frame=None):
+        global SERVICE_STOPPING
+        if "--foreground-service" in args:
+            SERVICE_STOPPING = True
+        stop_event.set()
+        if process.poll() is None:
+            process.terminate()
+
+    signal.signal(signal.SIGINT, stop)
+    signal.signal(signal.SIGTERM, stop)
+
+    try:
+        while process.poll() is None and not stop_event.is_set():
+            time.sleep(0.5)
+    finally:
+        stop()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        disconnect(api_url, user_token, session_id)
+        clear_state()
+        if config_path.exists():
+            config_path.unlink()
+
+    return process.returncode or 0
+
+
+def run_tcp(args: list[str]) -> int:
+    if "--foreground-service" not in args:
+        return run_tcp_once(args)
+
+    stop_requested = False
+
+    def request_stop(_signum=None, _frame=None):
+        nonlocal stop_requested
+        stop_requested = True
+        raise StopRequested()
+
+    signal.signal(signal.SIGINT, request_stop)
+    signal.signal(signal.SIGTERM, request_stop)
+    while not stop_requested:
+        try:
+            code = run_tcp_once(args)
+            if stop_requested or SERVICE_STOPPING:
+                return code
+            print(f"Tunnel exited with code {code}. Reconnecting in 5 seconds...", flush=True)
+            time.sleep(5)
+        except StopRequested:
+            return 0
+        except Exception as exc:
+            if stop_requested:
+                return 0
+            print(f"Tunnel failed: {exc}. Reconnecting in 5 seconds...", flush=True)
+            time.sleep(5)
+    return 0
+
+
+def run_start(args: list[str]) -> int:
+    if len(args) != 2 or args[0] != "tcp":
+        return usage()
+    try:
+        local_port = parse_port(args[1])
+    except ValueError as exc:
+        print(exc)
+        return 2
+    save_background_port(local_port)
+    if systemd_available():
+        SERVICE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SERVICE_PATH.write_text(service_content())
+        subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
+        result = subprocess.run(["systemctl", "--user", "enable", "--now", "nekotunnel.service"], check=False)
+        if result.returncode != 0:
+            print("Could not start systemd user service.")
+            return result.returncode
+        print("NekoTunnel background service started.")
+        print("Use: nekotunnel status")
+        print("Use: nekotunnel logs")
+        if shutil.which("loginctl"):
+            print(f"To keep running after logout, run: loginctl enable-linger {os.environ.get('USER', '$USER')}")
+        return 0
+
+    executable = Path.home() / ".local" / "bin" / "nekotunnel"
+    log_file = open(LOG_PATH, "ab")
+    process = subprocess.Popen(
+        [str(executable), "tcp", str(local_port), "--foreground-service"],
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    PID_PATH.write_text(str(process.pid))
+    print(f"NekoTunnel background process started with PID {process.pid}.")
+    print("Use: nekotunnel status")
+    print("Use: nekotunnel logs")
+    return 0
+
+
+def stop_nohup() -> bool:
+    if not PID_PATH.exists():
+        return False
+    pid_text = PID_PATH.read_text().strip()
+    if pid_text.isdigit():
+        try:
+            os.kill(int(pid_text), signal.SIGTERM)
+            for _ in range(20):
+                if not Path(f"/proc/{pid_text}").exists():
+                    break
+                time.sleep(0.25)
+            if Path(f"/proc/{pid_text}").exists():
+                os.kill(int(pid_text), signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    PID_PATH.unlink(missing_ok=True)
+    return True
+
+
+def run_stop() -> int:
+    stopped = False
+    if systemd_available():
+        result = subprocess.run(["systemctl", "--user", "stop", "nekotunnel.service"], check=False)
+        stopped = result.returncode == 0
+    if stop_nohup():
+        stopped = True
+    disconnect_saved_state()
+    if stopped:
+        print("NekoTunnel background service stopped.")
+    else:
+        print("NekoTunnel background service was not running.")
+    return 0
+
+
+def run_restart() -> int:
+    config = load_config()
+    port = config.get("BACKGROUND_PORT")
+    if not port:
+        print("No saved background port. Use: nekotunnel start tcp <port>")
+        return 2
+    run_stop()
+    return run_start(["tcp", port])
+
+
+def run_logs() -> int:
+    if systemd_available() and SERVICE_PATH.exists():
+        return subprocess.call(["journalctl", "--user", "-u", "nekotunnel.service", "-f"])
+    LOG_PATH.touch(exist_ok=True)
+    return subprocess.call(["tail", "-f", str(LOG_PATH)])
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    if not args:
+        return usage()
+
+    command = args[0]
+    if command in {"token", "login"}:
+        parsed = parse_login(args[1:])
+        if not parsed:
+            return usage()
+        api_url, token = parsed
+        save_config(api_url, token)
+        print(f"Saved NekoTunnel config for {api_url} with token {mask_token(token)}")
+        return 0
+    if command == "tcp":
+        return run_tcp(args[1:])
+    if command == "start":
+        return run_start(args[1:])
+    if command == "stop":
+        if len(args) != 1:
+            return usage()
+        return run_stop()
+    if command == "restart":
+        if len(args) != 1:
+            return usage()
+        return run_restart()
+    if command == "status":
+        if len(args) != 1:
+            return usage()
+        return run_status()
+    if command == "logs":
+        if len(args) != 1:
+            return usage()
+        return run_logs()
+    if command == "logout":
+        if len(args) != 1:
+            return usage()
+        clear_config()
+        print("Removed NekoTunnel config.")
+        return 0
+    return usage()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+PY

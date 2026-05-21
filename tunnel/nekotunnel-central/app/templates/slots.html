@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Slots</h1>
+  <p class="muted">Service-level tunnel slots. Create Railway projects and services on the Projects page; enable TCP Proxy manually in Railway, then refresh TCP here.</p>
+</section>
+<div class="panel">
+  <div class="actions">
+    {% for status in ["all", "free", "busy", "deployed", "tcp_pending", "failed"] %}
+      <a class="button-link {% if selected_status == status %}active{% endif %}" href="/slots?status={{ status }}{% if selected_project_id %}&project_id={{ selected_project_id }}{% endif %}">{{ status|replace('_', ' ')|title }}</a>
+    {% endfor %}
+  </div>
+  <form method="get" action="/slots" class="inline-form">
+    <input type="hidden" name="status" value="{{ selected_status }}">
+    <label>Project
+      <select name="project_id">
+        <option value="">All projects</option>
+        {% for project in projects %}
+          <option value="{{ project.id }}" {% if selected_project_id == project.id %}selected{% endif %}>{{ project.project_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Filter</button>
+  </form>
+</div>
+<div class="panel">
+  <h2>Slot Table</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Project</th><th>Service</th><th>Account</th><th>TCP</th><th>Status</th><th>Current Session</th><th>Current User</th><th>Deploy Status</th><th>TCP Status</th><th>Error</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+      {% for slot in slots %}
+        <tr>
+          <td>{{ slot.project_name }}</td>
+          <td>{{ slot.service_name }}</td>
+          <td>{{ account_label(accounts, slot.account_id) }}</td>
+          <td><code>{{ slot.tcp_address or '-' }}</code></td>
+          <td><span class="badge status-{{ slot.status }}">{{ slot.status }}</span></td>
+          <td>{% if slot.current_session_id %}<code>{{ slot.current_session_id }}</code>{% else %}-{% endif %}</td>
+          <td>{{ slot.current_user_name or '-' }}</td>
+          <td>{{ slot.deploy_status or '-' }}</td>
+          <td>{{ slot.tcp_status or '-' }}</td>
+          <td>
+            {% if slot.status in ['deployed', 'tcp_pending'] %}
+              <p class="muted small">Manual step required: enable TCP Proxy in Railway for this service with internal port 8080, then click Refresh TCP.</p>
+            {% endif %}
+            {{ slot.error or '-' }}
+          </td>
+          <td class="actions">
+            {% if slot.status in ['deployed', 'tcp_pending'] %}
+              <form method="post" action="/slots/{{ slot.id }}/refresh-tcp"><button type="submit">Refresh TCP</button></form>
+            {% endif %}
+            {% if slot.id in redeployable_slot_ids %}
+              <form method="post" action="/slots/{{ slot.id }}/redeploy"><button type="submit">Redeploy Service</button><div class="muted small">Applies latest server template/supervisor fix.</div></form>
+            {% endif %}
+            {% if slot.status == 'busy' %}
+              <form method="post" action="/slots/{{ slot.id }}/force-release"><button type="submit">Force Release</button></form>
+            {% else %}
+              <form method="post" action="/slots/{{ slot.id }}/force-free"><button type="submit">Force Free</button></form>
+            {% endif %}
+            <form method="post" action="/slots/{{ slot.id }}/mark-offline"><button type="submit">Mark Offline</button></form>
+            <form method="post" action="/slots/{{ slot.id }}/delete"><button class="danger" type="submit">Delete Slot</button></form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="11" class="empty">No slots yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

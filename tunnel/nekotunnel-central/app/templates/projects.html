@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Projects</h1>
+  <p class="muted">Create Railway projects, then deploy one or more Railway services under each project. TCP Proxy remains a manual Railway dashboard step.</p>
+</section>
+<div class="panel">
+  <h2>Create Railway Project</h2>
+  <form method="post" action="/projects" class="stack">
+    <label>Railway Account
+      <select name="account_id" required {% if not accounts %}disabled{% endif %}>
+        {% for account in accounts %}<option value="{{ account.id }}">{{ account.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Project Name<input name="project_name" required placeholder="neko-multi-service-test-001"></label>
+    <label>Optional Workspace Override<input name="workspace" placeholder="Workspace name or ID"></label>
+    <button class="primary" type="submit" {% if not accounts %}disabled{% endif %}>Create Project</button>
+    {% if not accounts %}<p class="muted small">Add a Railway account first.</p>{% endif %}
+  </form>
+</div>
+<div class="panel">
+  <h2>Railway Projects</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Project name</th><th>Account</th><th>Project ID</th><th>Environment ID</th><th>Status</th><th>Error</th><th>Service count</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+      {% for project in projects %}
+        <tr>
+          <td>{{ project.project_name }}</td>
+          <td>{{ account_label(accounts, project.account_id) }}</td>
+          <td><code>{{ project.project_id or '-' }}</code></td>
+          <td><code>{{ project.environment_id or '-' }}</code></td>
+          <td><span class="badge status-{{ project.status }}">{{ project.status }}</span></td>
+          <td>{{ project.error or '-' }}</td>
+          <td>{{ service_counts.get(project.id, 0) }}</td>
+          <td class="actions">
+            <form method="post" action="/projects/{{ project.id }}/services" class="inline-form">
+              <input name="service_name" value="{{ next_service_names.get(project.id, 'final-1') }}" required>
+              <button type="submit">Create Service</button>
+            </form>
+            <form method="post" action="/projects/{{ project.id }}/refresh"><button type="submit">Refresh status</button></form>
+            <form method="post" action="/projects/{{ project.id }}/delete"><button class="danger" type="submit">Delete local record</button></form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="empty">No Railway projects yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

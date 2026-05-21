@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login · NekoTunnel Central</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <div class="logo-mark">NT</div>
+    <h1>NekoTunnel Central</h1>
+    <p class="muted">Admin token login</p>
+    {% for flash in flashes %}
+      <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+    {% endfor %}
+    <form method="post" action="/login" class="stack">
+      <label for="admin_token">Admin Token</label>
+      <input id="admin_token" name="admin_token" type="password" placeholder="Enter ADMIN_TOKEN" required autofocus>
+      <button class="primary" type="submit">Login</button>
+    </form>
+  </main>
+</body>
+</html>

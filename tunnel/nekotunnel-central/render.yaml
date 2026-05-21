@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: nekotunnel-central
+    env: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: NekoTunnel Central
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: APP_SECRET
+        generateValue: true
+      - key: SESSION_TTL_SECONDS
+        value: "90"
+      - key: CLEANUP_INTERVAL_SECONDS
+        value: "30"
+      - key: DATABASE_URL
+        sync: false

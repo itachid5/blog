@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Railway Accounts</h1>
+  <p class="muted">Store Railway API keys for local Railway CLI tests. Tokens are never shown in full after saving.</p>
+</section>
+<div class="panel">
+  <h2>Add Railway API Token</h2>
+  <form method="post" action="/railway-accounts" class="grid-form">
+    <label>Label<input name="label" required placeholder="Main workspace"></label>
+    <label>Railway API Token<input name="railway_token" required type="password" placeholder="ntk_..."></label>
+    <label>Optional Workspace Override<input name="workspace" placeholder="Workspace name or ID"></label>
+    <button class="primary" type="submit">Add account</button>
+  </form>
+</div>
+<div class="panel">
+  <h2>Accounts</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Label</th><th>Workspace</th><th>Token</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for account in accounts %}
+        <tr>
+          <td>{{ account.id }}</td>
+          <td>{{ account.label }}</td>
+          <td>{{ account.workspace }}</td>
+          <td><code>{{ account.token_prefix }}</code></td>
+          <td><span class="badge">{{ account.status }}</span></td>
+          <td class="actions">
+            <form method="post" action="/railway-accounts/{{ account.id }}/check"><button type="submit">Test this API key</button></form>
+            <form method="post" action="/railway-accounts/{{ account.id }}/disable"><button type="submit">Disable</button></form>
+            <form method="post" action="/railway-accounts/{{ account.id }}/delete"><button class="danger" type="submit">Delete</button></form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty">No Railway accounts yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
