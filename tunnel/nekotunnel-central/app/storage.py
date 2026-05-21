@@ -680,8 +680,9 @@ class SQLiteStore:
             current = conn.execute("SELECT * FROM railway_cli_logins WHERE id = ?", (login_id,)).fetchone()
             if not current:
                 return False
+            completed_at_sql = "completed_at = CURRENT_TIMESTAMP" if completed else "completed_at = completed_at"
             cursor = conn.execute(
-                """
+                f"""
                 UPDATE railway_cli_logins
                 SET status = ?,
                     login_url = ?,
@@ -689,7 +690,7 @@ class SQLiteStore:
                     stdout = ?,
                     stderr = ?,
                     error = ?,
-                    completed_at = CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE completed_at END
+                    {completed_at_sql}
                 WHERE id = ?
                 """,
                 (
@@ -699,7 +700,6 @@ class SQLiteStore:
                     stdout if stdout is not None else current["stdout"],
                     stderr if stderr is not None else current["stderr"],
                     (error[:500] if error is not None else current["error"]),
-                    1 if completed else 0,
                     login_id,
                 ),
             )
