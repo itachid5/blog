@@ -52,8 +52,8 @@
                 {% if attempt.login_url %}<div><a href="{{ attempt.login_url }}" target="_blank" rel="noreferrer">Open login URL</a></div><div><code>{{ attempt.login_url }}</code></div>{% endif %}
                 {% if attempt.pairing_code %}<div>Code: <code>{{ attempt.pairing_code }}</code></div>{% endif %}
                 {% if attempt.error %}<div class="muted">{{ attempt.error }}</div>{% endif %}
-                {% if attempt.stdout and not attempt.login_url %}<pre>{{ attempt.stdout[-1000:] }}</pre>{% endif %}
-                {% if attempt.stderr and not attempt.error %}<pre>{{ attempt.stderr[-1000:] }}</pre>{% endif %}
+                {% if attempt.stdout %}<pre>{{ attempt.stdout[-1000:] }}</pre>{% endif %}
+                {% if attempt.stderr %}<pre>{{ attempt.stderr[-1000:] }}</pre>{% endif %}
               {% else %}
                 <span class="muted">No login attempt yet.</span>
               {% endif %}
@@ -64,6 +64,7 @@
           <td class="actions">
             {% if account.auth_type == 'cli_session' %}
               <form method="post" action="/railway-accounts/{{ account.id }}/browserless-login/start"><button type="submit">Start Browserless Login</button></form>
+              <form method="get" action="/railway-accounts"><button type="submit">Refresh login status</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/check-cli-session"><button type="submit">Check CLI Login</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/logout-cli-session"><button type="submit">Logout CLI Session</button></form>
             {% else %}

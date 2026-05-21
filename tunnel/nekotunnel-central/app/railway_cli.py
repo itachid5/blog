@@ -1,9 +1,13 @@
+import errno
 import json
 import logging
 import os
+import pty
 import re
+import select
 import shlex
 import shutil
+import signal
 import subprocess
 import threading
 import time
@@ -84,11 +88,18 @@ def railway_cli_diagnostics() -> RailwayCliDiagnostics:
         except OSError as exc:
             version = str(exc)
     env_token = os.getenv("RAILWAY_API_TOKEN", "").strip()
-    home_dir = Path(settings.railway_home_dir)
+    configured_home = Path(settings.railway_home_dir)
+    try:
+        configured_home.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    home_dir = Path(_effective_railway_home_dir())
     home_exists = home_dir.exists()
     home_writable = home_exists and os.access(home_dir, os.W_OK)
     warning = ""
-    if not home_exists or not home_writable or (settings.render and str(home_dir) != "/var/data/railway"):
+    if str(home_dir) == "/tmp/railway":
+        warning = "Login will be lost after restart."
+    elif not home_exists or not home_writable or (settings.render and str(home_dir) != "/var/data/railway"):
         warning = "CLI login session may be lost after Render restart/redeploy unless a persistent disk is mounted at /var/data."
     return RailwayCliDiagnostics(
         detected_path=detected_path,
@@ -129,12 +140,27 @@ def _account_token(auth) -> str:
     return getattr(auth, "token_encrypted_or_masked", "") or ""
 
 
+def _effective_railway_home_dir() -> str:
+    configured_home = Path(settings.railway_home_dir)
+    try:
+        configured_home.mkdir(parents=True, exist_ok=True)
+        if os.access(configured_home, os.W_OK):
+            return str(configured_home)
+    except OSError:
+        pass
+    fallback_home = Path("/tmp/railway")
+    fallback_home.mkdir(parents=True, exist_ok=True)
+    return str(fallback_home)
+
+
 def _railway_env(auth) -> dict[str, str]:
     env = os.environ.copy()
     env.pop("RAILWAY_TOKEN", None)
     if _account_auth_type(auth) == "cli_session":
         env.pop("RAILWAY_API_TOKEN", None)
-        env["HOME"] = settings.railway_home_dir
+        env.pop("CI", None)
+        env["HOME"] = _effective_railway_home_dir()
+        env["TERM"] = "xterm"
     else:
         env["RAILWAY_API_TOKEN"] = _account_token(auth)
     return env
@@ -142,7 +168,7 @@ def _railway_env(auth) -> dict[str, str]:
 
 def _auth_mode_label(auth) -> str:
     if _account_auth_type(auth) == "cli_session":
-        return f"CLI session HOME={settings.railway_home_dir}, Railway token env unset"
+        return f"CLI session HOME={_effective_railway_home_dir()}, Railway token env unset"
     return "RAILWAY_API_TOKEN env, RAILWAY_TOKEN unset"
 
 
@@ -166,7 +192,7 @@ def railway_error_message(stdout: str, stderr: str, fallback: str) -> str:
 
 def command_for_log(cli_path: str, auth, args: list[str]) -> str:
     if _account_auth_type(auth) == "cli_session":
-        parts = ["HOME=" + settings.railway_home_dir, "env", "-u", "RAILWAY_TOKEN", "-u", "RAILWAY_API_TOKEN", cli_path, *args]
+        parts = ["HOME=" + _effective_railway_home_dir(), "env", "-u", "RAILWAY_TOKEN", "-u", "RAILWAY_API_TOKEN", cli_path, *args]
     else:
         token = _account_token(auth)
         parts = ["env", "-u", "RAILWAY_TOKEN", f"RAILWAY_API_TOKEN={mask_token(token)}", cli_path, *args]
@@ -210,7 +236,7 @@ def run_railway_command(auth, args: list[str], workdir: Path | None = None, time
         return RailwayCommandResult("failed", logged_command, "", "", MISSING_CLI_ERROR, 0, workdir, "railway_cli_missing")
 
     if _account_auth_type(auth) == "cli_session":
-        Path(settings.railway_home_dir).mkdir(parents=True, exist_ok=True)
+        Path(_effective_railway_home_dir()).mkdir(parents=True, exist_ok=True)
     env = _railway_env(auth)
 
     started = time.monotonic()
@@ -297,83 +323,113 @@ def _parse_browserless_output(stdout: str, stderr: str) -> tuple[str | None, str
 
 def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]) -> RailwayCommandResult:
     cli_path = detect_railway_cli()
-    logged_command = command_for_log(cli_path, type("CliSessionAuth", (), {"auth_type": "cli_session"})(), ["login", "--browserless"])
+    cli_auth = type("CliSessionAuth", (), {"auth_type": "cli_session"})()
+    logged_command = command_for_log(cli_path, cli_auth, ["login", "--browserless"])
     if not _is_executable(cli_path):
         update_attempt(attempt_id, status="failed", stderr=MISSING_CLI_ERROR, error=MISSING_CLI_ERROR, completed=True)
         return RailwayCommandResult("failed", logged_command, "", MISSING_CLI_ERROR, MISSING_CLI_ERROR, 0, None, "railway_cli_missing")
 
-    Path(settings.railway_home_dir).mkdir(parents=True, exist_ok=True)
-    env = _railway_env(type("CliSessionAuth", (), {"auth_type": "cli_session"})())
+    Path(_effective_railway_home_dir()).mkdir(parents=True, exist_ok=True)
+    env = _railway_env(cli_auth)
     started = time.monotonic()
     try:
+        master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(
             [cli_path, "login", "--browserless"],
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            preexec_fn=os.setsid,
+            close_fds=True,
         )
+        os.close(slave_fd)
     except OSError as exc:
         error = str(exc)
         update_attempt(attempt_id, status="failed", stderr=error, error=error, completed=True)
         return RailwayCommandResult("failed", logged_command, "", error, error, 0, None, "railway_cli_failed")
 
-    stdout_lines: list[str] = []
-    stderr_lines: list[str] = []
+    output_parts: list[str] = []
     output_lock = threading.Lock()
 
-    def persist(status: str = "running", error: str | None = None, completed: bool = False) -> None:
+    def persist(status: str = "waiting", error: str | None = None, completed: bool = False) -> None:
         with output_lock:
-            stdout = "".join(stdout_lines)
-            stderr = "".join(stderr_lines)
-        login_url, pairing_code = _parse_browserless_output(stdout, stderr)
+            output = "".join(output_parts)
+        login_url, pairing_code = _parse_browserless_output(output, "")
         update_attempt(
             attempt_id,
             status=status,
             login_url=login_url,
             pairing_code=pairing_code,
-            stdout=stdout[-8000:],
-            stderr=stderr[-8000:],
+            stdout=output[-8000:],
+            stderr="",
             error=error,
             completed=completed,
         )
 
-    def read_stream(stream, lines: list[str]) -> None:
-        if stream is None:
+    def terminate_process_group() -> None:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
             return
-        for line in stream:
-            with output_lock:
-                lines.append(line)
-            persist()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+    def read_pty_until_exit() -> None:
+        while True:
+            readable, _, _ = select.select([master_fd], [], [], 0.5)
+            if master_fd in readable:
+                try:
+                    chunk = os.read(master_fd, 4096)
+                except OSError as exc:
+                    if exc.errno == errno.EIO:
+                        break
+                    raise
+                if not chunk:
+                    break
+                text = chunk.decode("utf-8", errors="replace")
+                with output_lock:
+                    output_parts.append(text)
+                persist(status="waiting")
+            if process.poll() is not None:
+                readable, _, _ = select.select([master_fd], [], [], 0)
+                if master_fd not in readable:
+                    break
 
     def supervise() -> None:
-        persist()
-        threads = [
-            threading.Thread(target=read_stream, args=(process.stdout, stdout_lines), daemon=True),
-            threading.Thread(target=read_stream, args=(process.stderr, stderr_lines), daemon=True),
-        ]
-        for thread in threads:
-            thread.start()
+        persist(status="started")
         try:
-            return_code = process.wait(timeout=600)
-            for thread in threads:
-                thread.join(timeout=1)
+            reader = threading.Thread(target=read_pty_until_exit, daemon=True)
+            reader.start()
+            try:
+                return_code = process.wait(timeout=600)
+            except subprocess.TimeoutExpired:
+                terminate_process_group()
+                reader.join(timeout=1)
+                persist(status="timeout", error="Railway browserless login timed out after 10 minutes.", completed=True)
+                return
+            reader.join(timeout=1)
             if return_code == 0:
                 persist(status="completed", completed=True)
             else:
                 with output_lock:
-                    fallback = "".join(stderr_lines) or "".join(stdout_lines) or f"railway exited with {return_code}"
-                persist(status="failed", error=fallback[:500], completed=True)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            for thread in threads:
-                thread.join(timeout=1)
-            persist(status="failed", error="Railway browserless login timed out after 10 minutes.", completed=True)
+                    output = "".join(output_parts)
+                fallback = output or f"railway exited with {return_code}"
+                persist(status="failed", error=fallback[-500:], completed=True)
+        finally:
+            try:
+                os.close(master_fd)
+            except OSError:
+                pass
 
     threading.Thread(target=supervise, daemon=True).start()
     duration_ms = int((time.monotonic() - started) * 1000)
-    update_attempt(attempt_id, status="running")
+    update_attempt(attempt_id, status="started")
     return RailwayCommandResult("success", logged_command, "", "", "", duration_ms)
 
 
