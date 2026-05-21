@@ -13,11 +13,15 @@
     <button class="primary" type="submit">Add account</button>
   </form>
 </div>
+<div class="panel settings-grid">
+  <div><span>Railway CLI installed</span><strong>{{ 'yes' if railway_cli.path_exists else 'no' }}</strong></div>
+  <div><span>Railway CLI version</span><strong>{{ railway_cli.version }}</strong></div>
+</div>
 <div class="panel">
   <h2>Accounts</h2>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>ID</th><th>Label</th><th>Workspace</th><th>Token</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>ID</th><th>Label</th><th>Workspace</th><th>Token</th><th>API accepted</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>
       {% for account in accounts %}
         <tr>
@@ -25,15 +29,16 @@
           <td>{{ account.label }}</td>
           <td>{{ account.workspace }}</td>
           <td><code>{{ account.token_prefix }}</code></td>
+          <td>{{ 'yes' if account.status == 'valid' else 'no' }}</td>
           <td><span class="badge">{{ account.status }}</span></td>
           <td class="actions">
-            <form method="post" action="/railway-accounts/{{ account.id }}/check"><button type="submit">Test this token</button></form>
+            <form method="post" action="/railway-accounts/{{ account.id }}/check"><button type="submit">Test token again</button></form>
             <form method="post" action="/railway-accounts/{{ account.id }}/disable"><button type="submit">Disable</button></form>
             <form method="post" action="/railway-accounts/{{ account.id }}/delete"><button class="danger" type="submit">Delete</button></form>
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="6" class="empty">No Railway accounts yet.</td></tr>
+        <tr><td colspan="7" class="empty">No Railway accounts yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>

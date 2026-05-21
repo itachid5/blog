@@ -112,7 +112,11 @@ def dashboard(request: Request):
 
 @app.get("/railway-accounts")
 def railway_accounts(request: Request):
-    return render(request, "railway_accounts.html", {"accounts": store.railway_accounts})
+    return render(
+        request,
+        "railway_accounts.html",
+        {"accounts": store.railway_accounts, "railway_cli": railway_cli_diagnostics()},
+    )
 
 
 @app.post("/railway-accounts")
@@ -155,6 +159,11 @@ def check_railway_account(request: Request, account_id: int):
         return RedirectResponse("/railway-accounts", status_code=303)
 
     result = test_api_key(token)
+    store.update_railway_account_status(
+        account.id,
+        "valid" if result.status == "success" else result.error_code or "failed",
+        result.error,
+    )
     store.add_provision_log(
         account.id,
         "railway_api_key_test",

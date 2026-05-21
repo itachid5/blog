@@ -531,6 +531,19 @@ class SQLiteStore:
             row = conn.execute("SELECT * FROM railway_accounts WHERE id = ?", (account_id,)).fetchone()
         return RailwayAccount(**dict(row)) if row else None
 
+    def update_railway_account_status(self, account_id: int, status: str, error: str = "") -> bool:
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE railway_accounts
+                SET status = ?, error = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (status, error[:500], account_id),
+            )
+            conn.commit()
+        return cursor.rowcount > 0
+
     def disable_account(self, account_id: int) -> bool:
         account = self.get_account(account_id)
         if not account:

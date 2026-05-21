@@ -5,6 +5,8 @@ import shlex
 import shutil
 import subprocess
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,7 +15,8 @@ from .storage import mask_token
 
 
 MISSING_CLI_ERROR = "Railway CLI is not installed. Install with: bash <(curl -fsSL railway.com/install.sh) -y"
-RAILWAY_TOKEN_REJECTED_ERROR = "Railway rejected this token. Copy the full token using Railway's copy button and add it again. Make sure this is an Account Token from Railway Account → Tokens."
+RAILWAY_TOKEN_REJECTED_ERROR = "Railway rejected this token. Copy the full token using Railway's copy button and add it again."
+RAILWAY_GRAPHQL_URL = "https://backboard.railway.com/graphql/v2"
 
 
 @dataclass
@@ -37,6 +40,7 @@ class RailwayCommandResult:
     error: str
     duration_ms: int
     workdir: Path | None = None
+    error_code: str = ""
 
 
 def _is_executable(path: str) -> bool:
@@ -95,9 +99,20 @@ def mask_sensitive(text: str, token: str) -> str:
     return text.replace(token, mask_token(token))
 
 
-def railway_error_message(stdout: str, stderr: str, fallback: str) -> str:
+def classify_railway_error(stdout: str, stderr: str, fallback: str) -> str:
     combined = f"{stdout}\n{stderr}\n{fallback}".lower()
-    if "unauthorized" in combined:
+    if "unauthorized" in combined or "invalid token" in combined or "forbidden" in combined:
+        return "token_rejected"
+    if "unexpected argument" in combined or "unknown command" in combined or "usage:" in combined:
+        return "invalid_cli_command"
+    if "workspace" in combined and ("not found" in combined or "could not find" in combined):
+        return "workspace_not_found"
+    return "railway_cli_failed"
+
+
+def railway_error_message(stdout: str, stderr: str, fallback: str) -> str:
+    error_code = classify_railway_error(stdout, stderr, fallback)
+    if error_code == "token_rejected":
         return RAILWAY_TOKEN_REJECTED_ERROR
     return fallback
 
@@ -111,7 +126,7 @@ def run_railway_command(token: str, args: list[str], workdir: Path | None = None
     cli_path = detect_railway_cli()
     logged_command = command_for_log(cli_path, token, args)
     if not _is_executable(cli_path):
-        return RailwayCommandResult("failed", logged_command, "", "", MISSING_CLI_ERROR, 0, workdir)
+        return RailwayCommandResult("failed", logged_command, "", "", MISSING_CLI_ERROR, 0, workdir, "railway_cli_missing")
 
     env = os.environ.copy()
     env.pop("RAILWAY_TOKEN", None)
@@ -132,23 +147,51 @@ def run_railway_command(token: str, args: list[str], workdir: Path | None = None
         stdout = mask_sensitive(result.stdout, token)
         stderr = mask_sensitive(result.stderr, token)
         status = "success" if result.returncode == 0 else "failed"
-        error = "" if status == "success" else railway_error_message(stdout, stderr, stderr or stdout or f"railway exited with {result.returncode}")
-        return RailwayCommandResult(status, logged_command, stdout, stderr, error, duration_ms, workdir)
+        fallback = stderr or stdout or f"railway exited with {result.returncode}"
+        error_code = "" if status == "success" else classify_railway_error(stdout, stderr, fallback)
+        error = "" if status == "success" else railway_error_message(stdout, stderr, fallback)
+        return RailwayCommandResult(status, logged_command, stdout, stderr, error, duration_ms, workdir, error_code)
     except subprocess.TimeoutExpired as exc:
         duration_ms = int((time.monotonic() - started) * 1000)
         stdout = mask_sensitive(exc.stdout or "", token)
         stderr = mask_sensitive(exc.stderr or "", token)
-        return RailwayCommandResult("failed", logged_command, stdout, stderr, f"Railway command timed out after {timeout} seconds.", duration_ms, workdir)
+        return RailwayCommandResult("failed", logged_command, stdout, stderr, f"Railway command timed out after {timeout} seconds.", duration_ms, workdir, "railway_cli_failed")
     except OSError as exc:
         duration_ms = int((time.monotonic() - started) * 1000)
-        return RailwayCommandResult("failed", logged_command, "", "", mask_sensitive(str(exc), token), duration_ms, workdir)
+        return RailwayCommandResult("failed", logged_command, "", "", mask_sensitive(str(exc), token), duration_ms, workdir, "railway_cli_failed")
 
 
 def test_api_key(token: str) -> RailwayCommandResult:
-    result = run_railway_command(token, ["whoami"], timeout=30)
-    if result.status == "success":
-        return result
-    return run_railway_command(token, ["projects", "--json"], timeout=30)
+    command = f"POST {RAILWAY_GRAPHQL_URL} Authorization=Bearer {mask_token(token)}"
+    started = time.monotonic()
+    body = json.dumps({"query": "query { me { id name email } }"}).encode("utf-8")
+    request = urllib.request.Request(
+        RAILWAY_GRAPHQL_URL,
+        data=body,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8") or "{}")
+        duration_ms = int((time.monotonic() - started) * 1000)
+        me = payload.get("data", {}).get("me") if isinstance(payload, dict) else None
+        if isinstance(me, dict) and me.get("id"):
+            name = me.get("name") or me.get("email") or me.get("id")
+            return RailwayCommandResult("success", command, f"Railway API accepted token for {name}", "", "", duration_ms)
+        error_text = json.dumps(payload.get("errors", payload)) if isinstance(payload, dict) else "Railway API token validation failed."
+        error_code = "token_rejected" if "unauthorized" in error_text.lower() else "railway_cli_failed"
+        error = RAILWAY_TOKEN_REJECTED_ERROR if error_code == "token_rejected" else error_text
+        return RailwayCommandResult("failed", command, "", error_text, error, duration_ms, None, error_code)
+    except urllib.error.HTTPError as exc:
+        duration_ms = int((time.monotonic() - started) * 1000)
+        detail = exc.read().decode("utf-8", errors="replace")
+        error_code = "token_rejected" if exc.code in {401, 403} or "unauthorized" in detail.lower() else "railway_cli_failed"
+        error = RAILWAY_TOKEN_REJECTED_ERROR if error_code == "token_rejected" else detail or f"Railway API returned HTTP {exc.code}."
+        return RailwayCommandResult("failed", command, "", detail, error, duration_ms, None, error_code)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        duration_ms = int((time.monotonic() - started) * 1000)
+        return RailwayCommandResult("failed", command, "", "", str(exc), duration_ms, None, "railway_cli_failed")
 
 
 def create_project(project_name: str, token: str, workspace: str | None) -> RailwayCommandResult:
@@ -160,7 +203,9 @@ def create_project(project_name: str, token: str, workspace: str | None) -> Rail
     args = ["init", "--name", project_name]
     if workspace:
         args.extend(["--workspace", workspace])
-    args.append("--json")
+    result = run_railway_command(token, [*args, "--json"], workdir=workdir, timeout=90)
+    if result.status == "success":
+        return result
     return run_railway_command(token, args, workdir=workdir, timeout=90)
 
 
