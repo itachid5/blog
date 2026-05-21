@@ -49,11 +49,24 @@
             {% if account.auth_type == 'cli_session' %}
               {% if attempt %}
                 <div><span class="badge">{{ attempt.status }}</span></div>
-                {% if attempt.login_url %}<div><a href="{{ attempt.login_url }}" target="_blank" rel="noreferrer">Open login URL</a></div><div><code>{{ attempt.login_url }}</code></div>{% endif %}
-                {% if attempt.pairing_code %}<div>Code: <code>{{ attempt.pairing_code }}</code></div>{% endif %}
+                {% if attempt.login_url %}
+                  <div class="panel">
+                    <div><strong>Railway Login URL:</strong></div>
+                    <div><a href="{{ attempt.login_url }}" target="_blank" rel="noreferrer">Open login URL</a></div>
+                    <div><code>{{ attempt.login_url }}</code></div>
+                    <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.login_url }}')">Copy URL</button>
+                    {% if attempt.pairing_code %}
+                      <div><strong>Device Code:</strong></div>
+                      <div><code>{{ attempt.pairing_code }}</code></div>
+                      <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.pairing_code }}')">Copy Code</button>
+                    {% else %}
+                      <div class="alert alert-warning">Login URL found, but device code was not parsed yet. Wait a few seconds and refresh status.</div>
+                    {% endif %}
+                  </div>
+                {% endif %}
                 {% if attempt.error %}<div class="muted">{{ attempt.error }}</div>{% endif %}
-                {% if attempt.stdout %}<pre>{{ attempt.stdout[-1000:] }}</pre>{% endif %}
-                {% if attempt.stderr %}<pre>{{ attempt.stderr[-1000:] }}</pre>{% endif %}
+                {% if attempt.stdout %}<div class="muted">Debug output</div><pre>{{ attempt.stdout[-1000:] }}</pre>{% endif %}
+                {% if attempt.stderr %}<div class="muted">Debug error output</div><pre>{{ attempt.stderr[-1000:] }}</pre>{% endif %}
               {% else %}
                 <span class="muted">No login attempt yet.</span>
               {% endif %}
@@ -64,7 +77,7 @@
           <td class="actions">
             {% if account.auth_type == 'cli_session' %}
               <form method="post" action="/railway-accounts/{{ account.id }}/browserless-login/start"><button type="submit">Start Browserless Login</button></form>
-              <form method="get" action="/railway-accounts"><button type="submit">Refresh login status</button></form>
+              <form method="get" action="/railway-accounts"><button type="submit">Refresh Status</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/check-cli-session"><button type="submit">Check CLI Login</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/logout-cli-session"><button type="submit">Logout CLI Session</button></form>
             {% else %}

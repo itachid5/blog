@@ -302,23 +302,21 @@ def run_railway_command(auth, args: list[str], workdir: Path | None = None, time
         return RailwayCommandResult("failed", logged_command, "", "", error, duration_ms, workdir, "railway_cli_failed")
 
 
+ANSI_ESCAPE_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+DEVICE_CODE_RE = re.compile(r"\b[A-Z0-9]{4}-[A-Z0-9]{4}\b")
+
+
+def strip_ansi(text: str) -> str:
+    return ANSI_ESCAPE_RE.sub("", text)
+
+
 def _parse_browserless_output(stdout: str, stderr: str) -> tuple[str | None, str | None]:
-    combined = f"{stdout}\n{stderr}"
-    url_match = re.search(r"https?://\S+", combined)
-    login_url = url_match.group(0).rstrip(".,)") if url_match else None
-    code = None
-    code_patterns = (
-        r"(?:code|pairing code)[:\s]+([A-Z0-9-]{4,})",
-        r"enter\s+([A-Z0-9-]{4,})",
-    )
-    for pattern in code_patterns:
-        match = re.search(pattern, combined, re.IGNORECASE)
-        if match:
-            candidate = match.group(1).strip().strip(".")
-            if not candidate.lower().startswith("http"):
-                code = candidate
-                break
-    return login_url, code
+    combined = strip_ansi(f"{stdout}\n{stderr}")
+    railway_url_match = re.search(r"https://railway\.com/\S+", combined)
+    url_match = railway_url_match or re.search(r"https?://\S+", combined)
+    login_url = url_match.group(0).rstrip(".,);]") if url_match else None
+    code_match = DEVICE_CODE_RE.search(combined.upper())
+    return login_url, code_match.group(0) if code_match else None
 
 
 def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]) -> RailwayCommandResult:
@@ -354,7 +352,7 @@ def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]
 
     def persist(status: str = "waiting", error: str | None = None, completed: bool = False) -> None:
         with output_lock:
-            output = "".join(output_parts)
+            output = strip_ansi("".join(output_parts))
         login_url, pairing_code = _parse_browserless_output(output, "")
         update_attempt(
             attempt_id,
@@ -392,7 +390,7 @@ def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]
                     raise
                 if not chunk:
                     break
-                text = chunk.decode("utf-8", errors="replace")
+                text = strip_ansi(chunk.decode("utf-8", errors="replace"))
                 with output_lock:
                     output_parts.append(text)
                 persist(status="waiting")
@@ -418,7 +416,7 @@ def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]
                 persist(status="completed", completed=True)
             else:
                 with output_lock:
-                    output = "".join(output_parts)
+                    output = strip_ansi("".join(output_parts))
                 fallback = output or f"railway exited with {return_code}"
                 persist(status="failed", error=fallback[-500:], completed=True)
         finally:
