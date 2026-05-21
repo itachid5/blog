@@ -18,6 +18,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .auth import is_logged_in, login_admin, logout_admin, require_admin
 from .config import settings
 from .railway_cli import (
+    check_cli_session,
     create_project,
     create_service,
     create_test_project,
@@ -25,6 +26,7 @@ from .railway_cli import (
     deployment_id_from_output,
     link_project,
     live_token_test,
+    logout_cli_session,
     railway_cli_diagnostics,
     railway_environment_config,
     railway_environment_edit_service_config,
@@ -33,6 +35,7 @@ from .railway_cli import (
     railway_status,
     refresh_tcp_proxy,
     safe_project_name,
+    start_browserless_login,
     test_api_key,
 )
 from .storage import account_label, mask_token, store
@@ -114,10 +117,15 @@ def dashboard(request: Request):
 
 @app.get("/railway-accounts")
 def railway_accounts(request: Request):
+    accounts = store.railway_accounts
     return render(
         request,
         "railway_accounts.html",
-        {"accounts": store.railway_accounts, "railway_cli": railway_cli_diagnostics()},
+        {
+            "accounts": accounts,
+            "railway_cli": railway_cli_diagnostics(),
+            "cli_login_attempts": {account.id: store.latest_cli_login_attempt(account.id) for account in accounts},
+        },
     )
 
 
@@ -125,18 +133,27 @@ def railway_accounts(request: Request):
 def add_railway_account(
     request: Request,
     label: Annotated[str, Form()],
-    railway_token: Annotated[str, Form()],
+    railway_token: Annotated[str, Form()] = "",
     workspace: Annotated[str, Form()] = "",
+    auth_type: Annotated[str, Form()] = "token",
 ):
     auth_redirect = require_admin(request)
     if auth_redirect:
         return auth_redirect
+    normalized_auth_type = auth_type if auth_type in {"token", "cli_session"} else "token"
+    clean_label = label.strip()
     token = railway_token.strip()
-    if not token:
-        flash(request, "danger", "Railway Account Token is required.")
+    if not clean_label:
+        flash(request, "danger", "Railway account label is required.")
         return RedirectResponse("/railway-accounts", status_code=303)
-    store.add_railway_account(label.strip(), token, workspace.strip() or None)
-    flash(request, "success", "Railway account added. Token is saved for Railway CLI actions and displayed only masked.")
+    if normalized_auth_type == "token" and not token:
+        flash(request, "danger", "Railway Account Token is required for token accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    store.add_railway_account(clean_label, token, workspace.strip() or None, normalized_auth_type)
+    if normalized_auth_type == "cli_session":
+        flash(request, "success", "CLI session account added. Start Browserless Login to authenticate Railway CLI.")
+    else:
+        flash(request, "success", "Railway account added. Token is saved for Railway CLI actions and displayed only masked.")
     return RedirectResponse("/railway-accounts", status_code=303)
 
 
@@ -152,6 +169,9 @@ def check_railway_account(request: Request, account_id: int):
         return RedirectResponse("/railway-accounts", status_code=303)
     if account.status == "disabled":
         flash(request, "danger", "Railway account is disabled.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type == "cli_session":
+        flash(request, "warning", "Diagnostic whoami is only available for token accounts. Use Check CLI Login for CLI-session accounts.")
         return RedirectResponse("/railway-accounts", status_code=303)
     token = account.token_encrypted_or_masked
     if not token or "..." in token:
@@ -196,6 +216,9 @@ def live_railway_token_test(request: Request, account_id: int):
         return RedirectResponse("/railway-accounts", status_code=303)
     if account.status == "disabled":
         flash(request, "danger", "Railway account is disabled.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type == "cli_session":
+        flash(request, "warning", "Live token test is only available for token accounts. Use Check CLI Login for CLI-session accounts.")
         return RedirectResponse("/railway-accounts", status_code=303)
     token = account.token_encrypted_or_masked
     if not token or "..." in token:
@@ -254,6 +277,9 @@ def create_railway_test_project(request: Request, account_id: int):
     if account.status == "disabled":
         flash(request, "danger", "Railway account is disabled.")
         return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type == "cli_session":
+        flash(request, "warning", "Create test project from the Railway Accounts page is only available for token accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
     token = account.token_encrypted_or_masked
     if not token or "..." in token:
         error = "Saved Railway token is masked and cannot be used for live project creation. Re-add the account token and try again."
@@ -276,6 +302,96 @@ def create_railway_test_project(request: Request, account_id: int):
         account.label,
     )
     flash(request, "success" if result.status == "success" else "danger", f"Create test project: {result.status}. Token {mask_token(token)}.")
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/browserless-login/start")
+def start_railway_browserless_login(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Browserless login is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.status == "disabled":
+        flash(request, "danger", "Railway account is disabled.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    attempt = store.create_cli_login_attempt(account.id)
+    result = start_browserless_login(attempt.id, store.update_cli_login_attempt)
+    if result.status == "success":
+        flash(request, "success", "Browserless login started. Copy the URL/code below and complete login in your browser.")
+    else:
+        flash(request, "danger", result.error or "Browserless login failed to start.")
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.get("/railway-accounts/{account_id}/browserless-login/status")
+def railway_browserless_login_status(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account or account.auth_type != "cli_session":
+        raise HTTPException(status_code=404, detail="CLI-session account not found")
+    attempt = store.latest_cli_login_attempt(account.id)
+    if not attempt:
+        return JSONResponse({"status": "missing"})
+    return JSONResponse({
+        "id": attempt.id,
+        "status": attempt.status,
+        "login_url": attempt.login_url,
+        "pairing_code": attempt.pairing_code,
+        "stdout": attempt.stdout[-4000:],
+        "stderr": attempt.stderr[-4000:],
+        "error": attempt.error,
+        "started_at": attempt.started_at,
+        "completed_at": attempt.completed_at,
+    })
+
+
+@app.post("/railway-accounts/{account_id}/check-cli-session")
+def check_railway_cli_session(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Check CLI Login is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    result = check_cli_session()
+    store.update_railway_account_status(account.id, "active" if result.status == "success" else "failed", "" if result.status == "success" else result.error)
+    store.add_provision_log(account.id, "check_cli_session", account.label, result.status, result.command, result.stdout, result.stderr, result.error, result.duration_ms, None, account.label)
+    flash(request, "success" if result.status == "success" else "danger", "Railway CLI session is active." if result.status == "success" else result.error)
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/logout-cli-session")
+def logout_railway_cli_session(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Logout CLI Session is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    result = logout_cli_session()
+    status = "unchecked" if result.status == "success" else account.status
+    store.update_railway_account_status(account.id, status, "" if result.status == "success" else result.error)
+    store.add_provision_log(account.id, "logout_cli_session", account.label, result.status, result.command, result.stdout, result.stderr, result.error, result.duration_ms, None, account.label)
+    if result.status == "success":
+        flash(request, "success", "Railway CLI session logged out.")
+    else:
+        flash(request, "warning", result.error or "Railway CLI logout failed; the session may already be logged out.")
     return RedirectResponse("/railway-accounts", status_code=303)
 
 

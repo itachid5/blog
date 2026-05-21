@@ -19,6 +19,7 @@ class Settings:
     tunnel_cleanup_interval_seconds: int = int(os.getenv("TUNNEL_CLEANUP_INTERVAL_SECONDS", "30"))
     database_url: str | None = os.getenv("DATABASE_URL")
     railway_cli_path: str | None = os.getenv("RAILWAY_CLI_PATH")
+    railway_home_dir: str = os.getenv("RAILWAY_HOME_DIR", "/var/data/railway")
     render: bool = bool(os.getenv("RENDER"))
 
 

@@ -5,11 +5,13 @@ import re
 import shlex
 import shutil
 import subprocess
+import threading
 import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from .config import settings
 from .storage import mask_token
@@ -31,6 +33,10 @@ class RailwayCliDiagnostics:
     env_token_present: bool
     env_token_masked: str
     account_token_source: str
+    railway_home_dir: str
+    railway_home_exists: bool
+    railway_home_writable: bool
+    persistent_disk_warning: str
 
 
 @dataclass
@@ -78,6 +84,12 @@ def railway_cli_diagnostics() -> RailwayCliDiagnostics:
         except OSError as exc:
             version = str(exc)
     env_token = os.getenv("RAILWAY_API_TOKEN", "").strip()
+    home_dir = Path(settings.railway_home_dir)
+    home_exists = home_dir.exists()
+    home_writable = home_exists and os.access(home_dir, os.W_OK)
+    warning = ""
+    if not home_exists or not home_writable or (settings.render and str(home_dir) != "/var/data/railway"):
+        warning = "CLI login session may be lost after Render restart/redeploy unless a persistent disk is mounted at /var/data."
     return RailwayCliDiagnostics(
         detected_path=detected_path,
         version=version,
@@ -87,6 +99,10 @@ def railway_cli_diagnostics() -> RailwayCliDiagnostics:
         env_token_present=bool(env_token),
         env_token_masked=mask_token(env_token) if env_token else "",
         account_token_source="database",
+        railway_home_dir=str(home_dir),
+        railway_home_exists=home_exists,
+        railway_home_writable=home_writable,
+        persistent_disk_warning=warning,
     )
 
 
@@ -98,7 +114,36 @@ def safe_project_name(project_name: str) -> str:
 def mask_sensitive(text: str, token: str) -> str:
     if not text:
         return ""
+    if not token:
+        return text
     return text.replace(token, mask_token(token))
+
+
+def _account_auth_type(auth) -> str:
+    return getattr(auth, "auth_type", "token") or "token"
+
+
+def _account_token(auth) -> str:
+    if isinstance(auth, str):
+        return auth
+    return getattr(auth, "token_encrypted_or_masked", "") or ""
+
+
+def _railway_env(auth) -> dict[str, str]:
+    env = os.environ.copy()
+    env.pop("RAILWAY_TOKEN", None)
+    if _account_auth_type(auth) == "cli_session":
+        env.pop("RAILWAY_API_TOKEN", None)
+        env["HOME"] = settings.railway_home_dir
+    else:
+        env["RAILWAY_API_TOKEN"] = _account_token(auth)
+    return env
+
+
+def _auth_mode_label(auth) -> str:
+    if _account_auth_type(auth) == "cli_session":
+        return f"CLI session HOME={settings.railway_home_dir}, Railway token env unset"
+    return "RAILWAY_API_TOKEN env, RAILWAY_TOKEN unset"
 
 
 def classify_railway_error(stdout: str, stderr: str, fallback: str) -> str:
@@ -119,24 +164,30 @@ def railway_error_message(stdout: str, stderr: str, fallback: str) -> str:
     return fallback
 
 
-def command_for_log(cli_path: str, token: str, args: list[str]) -> str:
-    parts = ["env", "-u", "RAILWAY_TOKEN", f"RAILWAY_API_TOKEN={mask_token(token)}", cli_path, *args]
+def command_for_log(cli_path: str, auth, args: list[str]) -> str:
+    if _account_auth_type(auth) == "cli_session":
+        parts = ["HOME=" + settings.railway_home_dir, "env", "-u", "RAILWAY_TOKEN", "-u", "RAILWAY_API_TOKEN", cli_path, *args]
+    else:
+        token = _account_token(auth)
+        parts = ["env", "-u", "RAILWAY_TOKEN", f"RAILWAY_API_TOKEN={mask_token(token)}", cli_path, *args]
     return " ".join(shlex.quote(part) for part in parts)
 
 
-def _railway_debug_context(token: str, command: str, workdir: Path | None) -> dict[str, str]:
+def _railway_debug_context(auth, command: str, workdir: Path | None) -> dict[str, str]:
+    token = _account_token(auth)
     return {
         "workdir": str(workdir or Path.cwd()),
-        "auth_mode": "RAILWAY_API_TOKEN env, RAILWAY_TOKEN unset",
-        "masked_token": mask_token(token),
+        "auth_mode": _auth_mode_label(auth),
+        "masked_token": mask_token(token) if token else "",
         "command": command,
     }
 
 
-def run_railway_command(token: str, args: list[str], workdir: Path | None = None, timeout: int = 90) -> RailwayCommandResult:
+def run_railway_command(auth, args: list[str], workdir: Path | None = None, timeout: int = 90) -> RailwayCommandResult:
     cli_path = detect_railway_cli()
-    logged_command = command_for_log(cli_path, token, args)
-    debug_context = _railway_debug_context(token, logged_command, workdir)
+    token = _account_token(auth)
+    logged_command = command_for_log(cli_path, auth, args)
+    debug_context = _railway_debug_context(auth, logged_command, workdir)
     logger.info(
         "railway command start workdir=%s auth_mode=%s token=%s command=%s",
         debug_context["workdir"],
@@ -158,9 +209,9 @@ def run_railway_command(token: str, args: list[str], workdir: Path | None = None
         )
         return RailwayCommandResult("failed", logged_command, "", "", MISSING_CLI_ERROR, 0, workdir, "railway_cli_missing")
 
-    env = os.environ.copy()
-    env.pop("RAILWAY_TOKEN", None)
-    env["RAILWAY_API_TOKEN"] = token
+    if _account_auth_type(auth) == "cli_session":
+        Path(settings.railway_home_dir).mkdir(parents=True, exist_ok=True)
+    env = _railway_env(auth)
 
     started = time.monotonic()
     try:
@@ -224,6 +275,128 @@ def run_railway_command(token: str, args: list[str], workdir: Path | None = None
         )
         return RailwayCommandResult("failed", logged_command, "", "", error, duration_ms, workdir, "railway_cli_failed")
 
+
+def _parse_browserless_output(stdout: str, stderr: str) -> tuple[str | None, str | None]:
+    combined = f"{stdout}\n{stderr}"
+    url_match = re.search(r"https?://\S+", combined)
+    login_url = url_match.group(0).rstrip(".,)") if url_match else None
+    code = None
+    code_patterns = (
+        r"(?:code|pairing code)[:\s]+([A-Z0-9-]{4,})",
+        r"enter\s+([A-Z0-9-]{4,})",
+    )
+    for pattern in code_patterns:
+        match = re.search(pattern, combined, re.IGNORECASE)
+        if match:
+            candidate = match.group(1).strip().strip(".")
+            if not candidate.lower().startswith("http"):
+                code = candidate
+                break
+    return login_url, code
+
+
+def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]) -> RailwayCommandResult:
+    cli_path = detect_railway_cli()
+    logged_command = command_for_log(cli_path, type("CliSessionAuth", (), {"auth_type": "cli_session"})(), ["login", "--browserless"])
+    if not _is_executable(cli_path):
+        update_attempt(attempt_id, status="failed", stderr=MISSING_CLI_ERROR, error=MISSING_CLI_ERROR, completed=True)
+        return RailwayCommandResult("failed", logged_command, "", MISSING_CLI_ERROR, MISSING_CLI_ERROR, 0, None, "railway_cli_missing")
+
+    Path(settings.railway_home_dir).mkdir(parents=True, exist_ok=True)
+    env = _railway_env(type("CliSessionAuth", (), {"auth_type": "cli_session"})())
+    started = time.monotonic()
+    try:
+        process = subprocess.Popen(
+            [cli_path, "login", "--browserless"],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+    except OSError as exc:
+        error = str(exc)
+        update_attempt(attempt_id, status="failed", stderr=error, error=error, completed=True)
+        return RailwayCommandResult("failed", logged_command, "", error, error, 0, None, "railway_cli_failed")
+
+    stdout_lines: list[str] = []
+    stderr_lines: list[str] = []
+    output_lock = threading.Lock()
+
+    def persist(status: str = "running", error: str | None = None, completed: bool = False) -> None:
+        with output_lock:
+            stdout = "".join(stdout_lines)
+            stderr = "".join(stderr_lines)
+        login_url, pairing_code = _parse_browserless_output(stdout, stderr)
+        update_attempt(
+            attempt_id,
+            status=status,
+            login_url=login_url,
+            pairing_code=pairing_code,
+            stdout=stdout[-8000:],
+            stderr=stderr[-8000:],
+            error=error,
+            completed=completed,
+        )
+
+    def read_stream(stream, lines: list[str]) -> None:
+        if stream is None:
+            return
+        for line in stream:
+            with output_lock:
+                lines.append(line)
+            persist()
+
+    def supervise() -> None:
+        persist()
+        threads = [
+            threading.Thread(target=read_stream, args=(process.stdout, stdout_lines), daemon=True),
+            threading.Thread(target=read_stream, args=(process.stderr, stderr_lines), daemon=True),
+        ]
+        for thread in threads:
+            thread.start()
+        try:
+            return_code = process.wait(timeout=600)
+            for thread in threads:
+                thread.join(timeout=1)
+            if return_code == 0:
+                persist(status="completed", completed=True)
+            else:
+                with output_lock:
+                    fallback = "".join(stderr_lines) or "".join(stdout_lines) or f"railway exited with {return_code}"
+                persist(status="failed", error=fallback[:500], completed=True)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            for thread in threads:
+                thread.join(timeout=1)
+            persist(status="failed", error="Railway browserless login timed out after 10 minutes.", completed=True)
+
+    threading.Thread(target=supervise, daemon=True).start()
+    duration_ms = int((time.monotonic() - started) * 1000)
+    update_attempt(attempt_id, status="running")
+    return RailwayCommandResult("success", logged_command, "", "", "", duration_ms)
+
+
+def check_cli_session() -> RailwayCommandResult:
+    auth = type("CliSessionAuth", (), {"auth_type": "cli_session"})()
+    result = run_railway_command(auth, ["whoami"], timeout=30)
+    if result.status == "success":
+        return result
+    return RailwayCommandResult(
+        "failed",
+        result.command,
+        result.stdout,
+        result.stderr,
+        "Start Browserless Login first.",
+        result.duration_ms,
+        result.workdir,
+        result.error_code or "cli_session_missing",
+    )
+
+
+def logout_cli_session() -> RailwayCommandResult:
+    auth = type("CliSessionAuth", (), {"auth_type": "cli_session"})()
+    return run_railway_command(auth, ["logout"], timeout=30)
 
 def test_api_key(token: str) -> RailwayCommandResult:
     result = run_railway_command(token, ["whoami"], timeout=30)

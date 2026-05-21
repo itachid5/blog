@@ -150,12 +150,13 @@ class SQLiteStore:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     label TEXT NOT NULL,
                     workspace_override TEXT,
-                    token_encrypted_or_masked TEXT NOT NULL,
-                    token_prefix TEXT NOT NULL,
+                    token_encrypted_or_masked TEXT NOT NULL DEFAULT '',
+                    token_prefix TEXT NOT NULL DEFAULT '',
                     status TEXT NOT NULL DEFAULT 'unchecked',
                     error TEXT NOT NULL DEFAULT '',
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    auth_type TEXT NOT NULL DEFAULT 'token'
                 );
 
                 CREATE TABLE IF NOT EXISTS railway_projects (
@@ -243,6 +244,20 @@ class SQLiteStore:
                     FOREIGN KEY (railway_account_id) REFERENCES railway_accounts(id) ON DELETE SET NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS railway_cli_logins (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    login_url TEXT,
+                    pairing_code TEXT,
+                    stdout TEXT NOT NULL DEFAULT '',
+                    stderr TEXT NOT NULL DEFAULT '',
+                    error TEXT NOT NULL DEFAULT '',
+                    started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TEXT,
+                    FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS app_settings (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL DEFAULT '',
@@ -250,6 +265,8 @@ class SQLiteStore:
                 );
                 """
             )
+            self.ensure_railway_account_columns(conn)
+            self.ensure_railway_cli_login_columns(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
             self.ensure_session_columns(conn)
@@ -293,6 +310,69 @@ class SQLiteStore:
             "masked_database_url": self.masked_database_url,
             "sqlite_path": str(self.db_path),
         }
+
+    def ensure_railway_account_columns(self, conn: sqlite3.Connection) -> None:
+        columns = self.table_columns(conn, "railway_accounts")
+        definitions = {
+            "token_encrypted_or_masked": "TEXT NOT NULL DEFAULT ''",
+            "token_prefix": "TEXT NOT NULL DEFAULT ''",
+            "auth_type": "TEXT NOT NULL DEFAULT 'token'",
+        }
+        for name, definition in definitions.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE railway_accounts ADD COLUMN {name} {definition}")
+
+    def ensure_railway_cli_login_columns(self, conn: sqlite3.Connection) -> None:
+        if self.database_type == "postgres":
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS railway_cli_logins (
+                    id SERIAL PRIMARY KEY,
+                    account_id INTEGER NOT NULL REFERENCES railway_accounts(id) ON DELETE CASCADE,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    login_url TEXT,
+                    pairing_code TEXT,
+                    stdout TEXT NOT NULL DEFAULT '',
+                    stderr TEXT NOT NULL DEFAULT '',
+                    error TEXT NOT NULL DEFAULT '',
+                    started_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                    completed_at TEXT
+                )
+                """
+            )
+        else:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS railway_cli_logins (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    login_url TEXT,
+                    pairing_code TEXT,
+                    stdout TEXT NOT NULL DEFAULT '',
+                    stderr TEXT NOT NULL DEFAULT '',
+                    error TEXT NOT NULL DEFAULT '',
+                    started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TEXT,
+                    FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
+                )
+                """
+            )
+        columns = self.table_columns(conn, "railway_cli_logins")
+        definitions = {
+            "account_id": "INTEGER NOT NULL DEFAULT 0",
+            "status": "TEXT NOT NULL DEFAULT 'pending'",
+            "login_url": "TEXT",
+            "pairing_code": "TEXT",
+            "stdout": "TEXT NOT NULL DEFAULT ''",
+            "stderr": "TEXT NOT NULL DEFAULT ''",
+            "error": "TEXT NOT NULL DEFAULT ''",
+            "started_at": "TEXT NOT NULL DEFAULT ''",
+            "completed_at": "TEXT",
+        }
+        for name, definition in definitions.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE railway_cli_logins ADD COLUMN {name} {definition}")
 
     def ensure_railway_project_columns(self, conn: sqlite3.Connection) -> None:
         columns = self.table_columns(conn, "railway_projects")
@@ -507,19 +587,22 @@ class SQLiteStore:
         self.add_log("admin", "provision_log.delete", f"Deleted provision log {log_id}")
         return True
 
-    def add_railway_account(self, label: str, token: str, workspace: str | None) -> RailwayAccount:
-        masked = mask_token(token)
+    def add_railway_account(self, label: str, token: str = "", workspace: str | None = None, auth_type: str = "token") -> RailwayAccount:
+        normalized_auth_type = auth_type if auth_type in {"token", "cli_session"} else "token"
+        token_value = token if normalized_auth_type == "token" else ""
         with self.connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO railway_accounts (label, workspace_override, token_encrypted_or_masked, token_prefix, status, error)
-                VALUES (?, ?, ?, ?, 'unchecked', '')
+                INSERT INTO railway_accounts (
+                    label, workspace_override, token_encrypted_or_masked, token_prefix, status, error, auth_type
+                )
+                VALUES (?, ?, ?, ?, 'unchecked', '', ?)
                 """,
-                (label, workspace or None, token, token_prefix(token)),
+                (label, workspace or None, token_value, token_prefix(token_value) if token_value else "", normalized_auth_type),
             )
             conn.commit()
             account_id = cursor.lastrowid
-        self.add_log("admin", "railway_account.add", f"Added account {label}")
+        self.add_log("admin", "railway_account.add", f"Added {normalized_auth_type} account {label}")
         return self.get_account(account_id)
 
     def list_railway_accounts(self) -> list[RailwayAccount]:
@@ -541,6 +624,79 @@ class SQLiteStore:
                 WHERE id = ?
                 """,
                 (status, error[:500], account_id),
+            )
+            conn.commit()
+        return cursor.rowcount > 0
+
+    def create_cli_login_attempt(self, account_id: int) -> RailwayCliLogin:
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO railway_cli_logins (account_id, status, stdout, stderr, error)
+                VALUES (?, 'pending', '', '', '')
+                """,
+                (account_id,),
+            )
+            conn.commit()
+            login_id = cursor.lastrowid
+        self.add_log("admin", "railway_cli_login.start", f"Started CLI login attempt {login_id} for account {account_id}")
+        return self.get_cli_login_attempt(login_id)
+
+    def get_cli_login_attempt(self, login_id: int) -> RailwayCliLogin | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM railway_cli_logins WHERE id = ?", (login_id,)).fetchone()
+        return RailwayCliLogin(**dict(row)) if row else None
+
+    def latest_cli_login_attempt(self, account_id: int) -> RailwayCliLogin | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM railway_cli_logins
+                WHERE account_id = ?
+                ORDER BY datetime(started_at) DESC, id DESC
+                LIMIT 1
+                """,
+                (account_id,),
+            ).fetchone()
+        return RailwayCliLogin(**dict(row)) if row else None
+
+    def update_cli_login_attempt(
+        self,
+        login_id: int,
+        status: str | None = None,
+        login_url: str | None = None,
+        pairing_code: str | None = None,
+        stdout: str | None = None,
+        stderr: str | None = None,
+        error: str | None = None,
+        completed: bool = False,
+    ) -> bool:
+        with self.connect() as conn:
+            current = conn.execute("SELECT * FROM railway_cli_logins WHERE id = ?", (login_id,)).fetchone()
+            if not current:
+                return False
+            cursor = conn.execute(
+                """
+                UPDATE railway_cli_logins
+                SET status = ?,
+                    login_url = ?,
+                    pairing_code = ?,
+                    stdout = ?,
+                    stderr = ?,
+                    error = ?,
+                    completed_at = CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE completed_at END
+                WHERE id = ?
+                """,
+                (
+                    status if status is not None else current["status"],
+                    login_url if login_url is not None else current["login_url"],
+                    pairing_code if pairing_code is not None else current["pairing_code"],
+                    stdout if stdout is not None else current["stdout"],
+                    stderr if stderr is not None else current["stderr"],
+                    (error[:500] if error is not None else current["error"]),
+                    1 if completed else 0,
+                    login_id,
+                ),
             )
             conn.commit()
         return cursor.rowcount > 0
@@ -1217,6 +1373,8 @@ class PostgresStore(SQLiteStore):
         with self.connect() as conn:
             for statement in self.schema_statements():
                 conn.execute(statement)
+            self.ensure_railway_account_columns(conn)
+            self.ensure_railway_cli_login_columns(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
             self.ensure_session_columns(conn)
@@ -1235,12 +1393,13 @@ class PostgresStore(SQLiteStore):
                 id SERIAL PRIMARY KEY,
                 label TEXT NOT NULL,
                 workspace_override TEXT,
-                token_encrypted_or_masked TEXT NOT NULL,
-                token_prefix TEXT NOT NULL,
+                token_encrypted_or_masked TEXT NOT NULL DEFAULT '',
+                token_prefix TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'unchecked',
                 error TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
-                updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text)
+                updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                auth_type TEXT NOT NULL DEFAULT 'token'
             )
             """,
             """
@@ -1337,6 +1496,20 @@ class PostgresStore(SQLiteStore):
                 error TEXT NOT NULL DEFAULT '',
                 duration_ms INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS railway_cli_logins (
+                id SERIAL PRIMARY KEY,
+                account_id INTEGER NOT NULL REFERENCES railway_accounts(id) ON DELETE CASCADE,
+                status TEXT NOT NULL DEFAULT 'pending',
+                login_url TEXT,
+                pairing_code TEXT,
+                stdout TEXT NOT NULL DEFAULT '',
+                stderr TEXT NOT NULL DEFAULT '',
+                error TEXT NOT NULL DEFAULT '',
+                started_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                completed_at TEXT
             )
             """,
             """
