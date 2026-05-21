@@ -14,6 +14,7 @@
   </form>
 </div>
 <div class="panel settings-grid">
+  <div><span>Railway CLI path</span><strong>{{ railway_cli.detected_path }}</strong></div>
   <div><span>Railway CLI installed</span><strong>{{ 'yes' if railway_cli.path_exists else 'no' }}</strong></div>
   <div><span>Railway CLI version</span><strong>{{ railway_cli.version }}</strong></div>
 </div>
@@ -32,7 +33,9 @@
           <td>{{ 'yes' if account.status == 'valid' else 'no' }}</td>
           <td><span class="badge">{{ account.status }}</span></td>
           <td class="actions">
-            <form method="post" action="/railway-accounts/{{ account.id }}/check"><button type="submit">Test token again</button></form>
+            <form method="post" action="/railway-accounts/{{ account.id }}/live-token-test"><button type="submit">Run live token test</button></form>
+            <form method="post" action="/railway-accounts/{{ account.id }}/create-test-project"><button type="submit">Create test project</button></form>
+            <form method="post" action="/railway-accounts/{{ account.id }}/check"><button type="submit">Diagnostic whoami</button></form>
             <form method="post" action="/railway-accounts/{{ account.id }}/disable"><button type="submit">Disable</button></form>
             <form method="post" action="/railway-accounts/{{ account.id }}/delete"><button class="danger" type="submit">Delete</button></form>
           </td>

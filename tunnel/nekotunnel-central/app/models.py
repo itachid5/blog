@@ -6,12 +6,13 @@ class RailwayAccount:
     id: int
     label: str
     workspace_override: str | None
-    token_encrypted_or_masked: str
-    token_prefix: str
+    token_encrypted_or_masked: str | None
+    token_prefix: str | None
     status: str
     error: str
     created_at: str
     updated_at: str
+    auth_type: str = "token"
 
     @property
     def workspace(self) -> str:
@@ -135,6 +136,20 @@ class AuditLog:
 
 
 @dataclass
+class RailwayCliLogin:
+    id: int
+    account_id: int
+    status: str
+    login_url: str | None
+    pairing_code: str | None
+    stdout: str
+    stderr: str
+    error: str
+    started_at: str
+    completed_at: str | None
+
+
+@dataclass
 class ProvisionLog:
     id: int
     railway_account_id: int | None
@@ -150,6 +165,7 @@ class ProvisionLog:
     slot_id: int | None = None
     account_label: str = ""
     service_name: str = ""
+    auth_type: str = "token"
 
     @property
     def account_id(self) -> int | None:

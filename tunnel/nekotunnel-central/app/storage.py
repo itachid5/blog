@@ -14,7 +14,7 @@ except ImportError:
     psycopg2 = None
     DictCursor = None
 
-from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayProject, Slot, TunnelSession, UserToken
+from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayCliLogin, RailwayProject, Slot, TunnelSession, UserToken
 
 
 DB_PATH = Path("data/nekotunnel.db")
@@ -26,9 +26,10 @@ EXPECTED_TABLES = (
     "sessions",
     "audit_logs",
     "provision_logs",
+    "railway_cli_logins",
     "app_settings",
 )
-SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs"}
+SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs", "railway_cli_logins"}
 INDEX_STATEMENTS = (
     "CREATE INDEX IF NOT EXISTS idx_users_token_hash ON users(token_hash)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_user_status ON sessions(user_id, status)",

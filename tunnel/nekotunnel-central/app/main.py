@@ -20,9 +20,11 @@ from .config import settings
 from .railway_cli import (
     create_project,
     create_service,
+    create_test_project,
     deploy_service,
     deployment_id_from_output,
     link_project,
+    live_token_test,
     railway_cli_diagnostics,
     railway_environment_config,
     railway_environment_edit_service_config,
@@ -179,6 +181,101 @@ def check_railway_account(request: Request, account_id: int):
         flash(request, "success", f"Railway token test succeeded for {account.label}.")
     else:
         flash(request, "danger", result.error or "Railway token test failed.")
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/live-token-test")
+def live_railway_token_test(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.status == "disabled":
+        flash(request, "danger", "Railway account is disabled.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    token = account.token_encrypted_or_masked
+    if not token or "..." in token:
+        error = "Saved Railway token is masked and cannot be used for live token testing. Re-add the account token and try again."
+        store.add_provision_log(account.id, "live_cli_whoami", account.label, "failed", "railway whoami", "", "", error, 0, None, account.label)
+        flash(request, "danger", error)
+        return RedirectResponse("/railway-accounts", status_code=303)
+
+    cli_result, graphql_result = live_token_test(token)
+    store.add_provision_log(
+        account.id,
+        "live_cli_whoami",
+        account.label,
+        cli_result.status,
+        cli_result.command,
+        cli_result.stdout,
+        cli_result.stderr,
+        cli_result.error,
+        cli_result.duration_ms,
+        None,
+        account.label,
+    )
+    graphql_status = "not_run"
+    if graphql_result:
+        graphql_status = graphql_result.status
+        store.add_provision_log(
+            account.id,
+            "live_graphql_me",
+            account.label,
+            graphql_result.status,
+            graphql_result.command,
+            graphql_result.stdout,
+            graphql_result.stderr,
+            graphql_result.error,
+            graphql_result.duration_ms,
+            None,
+            account.label,
+        )
+    account_status = "valid" if cli_result.status == "success" or (graphql_result and graphql_result.status == "success") else cli_result.error_code or "failed"
+    account_error = "" if account_status == "valid" else cli_result.error or (graphql_result.error if graphql_result else "")
+    store.update_railway_account_status(account.id, account_status, account_error)
+    flash(request, "success" if account_status == "valid" else "danger", f"Live token test: cli_whoami={cli_result.status}, graphql_me={graphql_status}. Token {mask_token(token)}.")
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/create-test-project")
+def create_railway_test_project(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.status == "disabled":
+        flash(request, "danger", "Railway account is disabled.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    token = account.token_encrypted_or_masked
+    if not token or "..." in token:
+        error = "Saved Railway token is masked and cannot be used for live project creation. Re-add the account token and try again."
+        store.add_provision_log(account.id, "create_test_project", account.label, "failed", "railway init", "", "", error, 0, None, account.label)
+        flash(request, "danger", error)
+        return RedirectResponse("/railway-accounts", status_code=303)
+
+    result = create_test_project(token)
+    store.add_provision_log(
+        account.id,
+        "create_test_project",
+        account.label,
+        result.status,
+        result.command,
+        result.stdout,
+        result.stderr,
+        result.error,
+        result.duration_ms,
+        None,
+        account.label,
+    )
+    flash(request, "success" if result.status == "success" else "danger", f"Create test project: {result.status}. Token {mask_token(token)}.")
     return RedirectResponse("/railway-accounts", status_code=303)
 
 
@@ -596,7 +693,7 @@ def create_railway_project(
         flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
 
-    workspace_override = workspace.strip() or account.workspace_override or None
+    workspace_override = workspace.strip() or (account.workspace_override or "").strip() or None
     result = create_project(clean_project_name, token, workspace_override)
     ids = parse_project_create_ids(result.stdout) if result.status == "success" else {}
     project = store.add_railway_project(
