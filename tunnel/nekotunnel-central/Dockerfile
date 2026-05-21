@@ -3,6 +3,17 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash curl ca-certificates git openssh-client tar gzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://railway.com/install.sh | bash -s -- -y \
+    && ln -sf /root/.railway/bin/railway /usr/local/bin/railway \
+    && railway --version
+
+ENV RAILWAY_CLI_PATH=/usr/local/bin/railway
+ENV PATH="/usr/local/bin:/root/.railway/bin:${PATH}"
+
 WORKDIR /app
 
 COPY requirements.txt .
