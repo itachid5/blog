@@ -13,6 +13,7 @@ from .storage import mask_token
 
 
 MISSING_CLI_ERROR = "Railway CLI is not installed. Install with: bash <(curl -fsSL railway.com/install.sh) -y"
+RAILWAY_TOKEN_REJECTED_ERROR = "Railway rejected this token. Copy the full token using Railway's copy button and add it again. Make sure this is an Account Token from Railway Account → Tokens."
 
 
 @dataclass
@@ -22,6 +23,9 @@ class RailwayCliDiagnostics:
     env_path: str
     cwd: str
     path_exists: bool
+    env_token_present: bool
+    env_token_masked: str
+    account_token_source: str
 
 
 @dataclass
@@ -67,12 +71,16 @@ def railway_cli_diagnostics() -> RailwayCliDiagnostics:
             version = "version check timed out"
         except OSError as exc:
             version = str(exc)
+    env_token = os.getenv("RAILWAY_API_TOKEN", "").strip()
     return RailwayCliDiagnostics(
         detected_path=detected_path,
         version=version,
         env_path=settings.railway_cli_path or "",
         cwd=str(Path.cwd()),
         path_exists=path_exists,
+        env_token_present=bool(env_token),
+        env_token_masked=mask_token(env_token) if env_token else "",
+        account_token_source="database",
     )
 
 
@@ -85,6 +93,13 @@ def mask_sensitive(text: str, token: str) -> str:
     if not text:
         return ""
     return text.replace(token, mask_token(token))
+
+
+def railway_error_message(stdout: str, stderr: str, fallback: str) -> str:
+    combined = f"{stdout}\n{stderr}\n{fallback}".lower()
+    if "unauthorized" in combined:
+        return RAILWAY_TOKEN_REJECTED_ERROR
+    return fallback
 
 
 def command_for_log(cli_path: str, token: str, args: list[str]) -> str:
@@ -117,7 +132,7 @@ def run_railway_command(token: str, args: list[str], workdir: Path | None = None
         stdout = mask_sensitive(result.stdout, token)
         stderr = mask_sensitive(result.stderr, token)
         status = "success" if result.returncode == 0 else "failed"
-        error = "" if status == "success" else (stderr or stdout or f"railway exited with {result.returncode}")
+        error = "" if status == "success" else railway_error_message(stdout, stderr, stderr or stdout or f"railway exited with {result.returncode}")
         return RailwayCommandResult(status, logged_command, stdout, stderr, error, duration_ms, workdir)
     except subprocess.TimeoutExpired as exc:
         duration_ms = int((time.monotonic() - started) * 1000)
@@ -130,7 +145,10 @@ def run_railway_command(token: str, args: list[str], workdir: Path | None = None
 
 
 def test_api_key(token: str) -> RailwayCommandResult:
-    return run_railway_command(token, ["whoami"], timeout=30)
+    result = run_railway_command(token, ["whoami"], timeout=30)
+    if result.status == "success":
+        return result
+    return run_railway_command(token, ["projects", "--json"], timeout=30)
 
 
 def create_project(project_name: str, token: str, workspace: str | None) -> RailwayCommandResult:

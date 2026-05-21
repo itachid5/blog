@@ -125,8 +125,12 @@ def add_railway_account(
     auth_redirect = require_admin(request)
     if auth_redirect:
         return auth_redirect
-    store.add_railway_account(label.strip(), railway_token.strip(), workspace.strip() or None)
-    flash(request, "success", "Railway account added. Token is saved for local Railway CLI tests and displayed only masked.")
+    token = railway_token.strip()
+    if not token:
+        flash(request, "danger", "Railway Account Token is required.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    store.add_railway_account(label.strip(), token, workspace.strip() or None)
+    flash(request, "success", "Railway account added. Token is saved for Railway CLI actions and displayed only masked.")
     return RedirectResponse("/railway-accounts", status_code=303)
 
 
@@ -145,7 +149,7 @@ def check_railway_account(request: Request, account_id: int):
         return RedirectResponse("/railway-accounts", status_code=303)
     token = account.token_encrypted_or_masked
     if not token or "..." in token:
-        error = "Saved Railway token is masked and cannot be used for API key testing. Re-add the account token and try again."
+        error = "Saved Railway token is masked and cannot be used for token testing. Re-add the account token and try again."
         store.add_provision_log(account.id, "railway_api_key_test", account.label, "failed", "railway whoami", "", "", error, 0)
         flash(request, "danger", error)
         return RedirectResponse("/railway-accounts", status_code=303)
@@ -163,9 +167,9 @@ def check_railway_account(request: Request, account_id: int):
         result.duration_ms,
     )
     if result.status == "success":
-        flash(request, "success", f"Railway API key test succeeded for {account.label}.")
+        flash(request, "success", f"Railway token test succeeded for {account.label}.")
     else:
-        flash(request, "danger", result.error or "Railway API key test failed.")
+        flash(request, "danger", result.error or "Railway token test failed.")
     return RedirectResponse("/railway-accounts", status_code=303)
 
 

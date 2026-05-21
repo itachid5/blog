@@ -1426,9 +1426,9 @@ def create_store():
 
 
 def mask_token(token: str) -> str:
-    if len(token) <= 12:
+    if len(token) <= 10:
         return f"{token[:4]}..."
-    return f"{token[:7]}...{token[-4:]}"
+    return f"{token[:6]}...{token[-4:]}"
 
 
 def token_prefix(token: str) -> str:

@@ -28,6 +28,9 @@
   <div><span>Railway CLI version</span><strong>{{ railway_cli.version }}</strong></div>
   <div><span>Railway CLI path exists</span><strong>{{ 'yes' if railway_cli.path_exists else 'no' }}</strong></div>
   <div><span>RAILWAY_CLI_PATH env value</span><strong>{{ railway_cli.env_path or '-' }}</strong></div>
+  <div><span>RAILWAY_API_TOKEN env present</span><strong>{{ 'yes' if railway_cli.env_token_present else 'no' }}</strong></div>
+  <div><span>RAILWAY_API_TOKEN env masked</span><strong>{{ railway_cli.env_token_masked or '-' }}</strong></div>
+  <div><span>Selected account token source</span><strong>{{ railway_cli.account_token_source }}</strong></div>
   <div><span>Current working dir</span><strong>{{ railway_cli.cwd }}</strong></div>
   <div><span>Provision work dir</span><strong>{{ provision_work_dir }}</strong></div>
   <div><span>Provision work dir exists</span><strong>{{ 'yes' if provision_work_dir_exists else 'no' }}</strong></div>
