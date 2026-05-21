@@ -12,7 +12,10 @@ RUN curl -fsSL https://railway.com/install.sh | bash -s -- -y \
     && railway --version
 
 ENV RAILWAY_CLI_PATH=/usr/local/bin/railway
+ENV RAILWAY_HOME_DIR=/var/data/railway
 ENV PATH="/usr/local/bin:/root/.railway/bin:${PATH}"
+
+RUN mkdir -p /var/data/railway
 
 WORKDIR /app
 

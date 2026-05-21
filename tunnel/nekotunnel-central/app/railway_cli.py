@@ -471,7 +471,7 @@ def create_test_project(token: str) -> RailwayCommandResult:
     return run_railway_command(token, args, workdir=workdir, timeout=90)
 
 
-def create_project(project_name: str, token: str, workspace: str | None) -> RailwayCommandResult:
+def create_project(project_name: str, auth, workspace: str | None) -> RailwayCommandResult:
     timestamp = time.strftime("%Y%m%d%H%M%S")
     workdir = Path("data") / "provision-work" / "projects" / f"{safe_project_name(project_name)}-{timestamp}"
     workdir.mkdir(parents=True, exist_ok=True)
@@ -480,59 +480,59 @@ def create_project(project_name: str, token: str, workspace: str | None) -> Rail
     args = ["init", "--name", project_name]
     if workspace:
         args.extend(["--workspace", workspace])
-    result = run_railway_command(token, [*args, "--json"], workdir=workdir, timeout=90)
+    result = run_railway_command(auth, [*args, "--json"], workdir=workdir, timeout=90)
     if result.status == "success":
         return result
-    return run_railway_command(token, args, workdir=workdir, timeout=90)
+    return run_railway_command(auth, args, workdir=workdir, timeout=90)
 
 
-def link_project(project_name: str, token: str, workdir: Path, workspace: str | None = None) -> RailwayCommandResult:
+def link_project(project_name: str, auth, workdir: Path, workspace: str | None = None) -> RailwayCommandResult:
     args = ["link", "--project", project_name]
     if workspace:
         args.extend(["--workspace", workspace])
     args.append("--json")
-    return run_railway_command(token, args, workdir=workdir, timeout=90)
+    return run_railway_command(auth, args, workdir=workdir, timeout=90)
 
 
-def create_service(service_name: str, token: str, workdir: Path) -> RailwayCommandResult:
-    return run_railway_command(token, ["add", "-s", service_name, "--json"], workdir=workdir, timeout=90)
+def create_service(service_name: str, auth, workdir: Path) -> RailwayCommandResult:
+    return run_railway_command(auth, ["add", "-s", service_name, "--json"], workdir=workdir, timeout=90)
 
 
-def deploy_service(service_name: str, token: str, workdir: Path) -> RailwayCommandResult:
-    result = run_railway_command(token, ["up", "-s", service_name, "--detach", "--json"], workdir=workdir, timeout=300)
+def deploy_service(service_name: str, auth, workdir: Path) -> RailwayCommandResult:
+    result = run_railway_command(auth, ["up", "-s", service_name, "--detach", "--json"], workdir=workdir, timeout=300)
     if result.status == "failed" and "json" in (result.stderr + result.stdout + result.error).lower():
-        return run_railway_command(token, ["up", "-s", service_name, "--detach"], workdir=workdir, timeout=300)
+        return run_railway_command(auth, ["up", "-s", service_name, "--detach"], workdir=workdir, timeout=300)
     return result
 
 
-def refresh_tcp_proxy(service_name: str, token: str, workdir: Path) -> RailwayCommandResult:
+def refresh_tcp_proxy(service_name: str, auth, workdir: Path) -> RailwayCommandResult:
     return run_railway_command(
-        token,
+        auth,
         ["run", "-s", service_name, "sh", "-c", 'printf "%s:%s" "$RAILWAY_TCP_PROXY_DOMAIN" "$RAILWAY_TCP_PROXY_PORT"'],
         workdir=workdir,
         timeout=90,
     )
 
 
-def railway_status(token: str, workdir: Path) -> RailwayCommandResult:
-    return run_railway_command(token, ["status", "--json"], workdir=workdir, timeout=90)
+def railway_status(auth, workdir: Path) -> RailwayCommandResult:
+    return run_railway_command(auth, ["status", "--json"], workdir=workdir, timeout=90)
 
 
-def railway_environment_config(token: str, workdir: Path) -> RailwayCommandResult:
-    return run_railway_command(token, ["environment", "config", "--json"], workdir=workdir, timeout=90)
+def railway_environment_config(auth, workdir: Path) -> RailwayCommandResult:
+    return run_railway_command(auth, ["environment", "config", "--json"], workdir=workdir, timeout=90)
 
 
-def railway_environment_show(token: str, workdir: Path) -> RailwayCommandResult:
-    return run_railway_command(token, ["environment", "show", "--json"], workdir=workdir, timeout=90)
+def railway_environment_show(auth, workdir: Path) -> RailwayCommandResult:
+    return run_railway_command(auth, ["environment", "show", "--json"], workdir=workdir, timeout=90)
 
 
-def railway_help(token: str, args: list[str], workdir: Path) -> RailwayCommandResult:
-    return run_railway_command(token, [*args, "--help"], workdir=workdir, timeout=90)
+def railway_help(auth, args: list[str], workdir: Path) -> RailwayCommandResult:
+    return run_railway_command(auth, [*args, "--help"], workdir=workdir, timeout=90)
 
 
-def railway_environment_edit_service_config(token: str, service_name: str, path: str, value: str, workdir: Path) -> RailwayCommandResult:
+def railway_environment_edit_service_config(auth, service_name: str, path: str, value: str, workdir: Path) -> RailwayCommandResult:
     return run_railway_command(
-        token,
+        auth,
         ["environment", "edit", "--service-config", service_name, path, value],
         workdir=workdir,
         timeout=90,

@@ -86,6 +86,15 @@ def render(request: Request, template: str, context: dict | None = None):
     )
 
 
+def railway_auth_for_command(account, operation: str):
+    if account.auth_type == "cli_session":
+        return account, "", ""
+    token = account.token_encrypted_or_masked
+    if not token or "..." in token:
+        return None, "", f"Saved Railway token is masked and cannot be used for {operation}. Re-add the account token and try again."
+    return token, token, ""
+
+
 @app.get("/login")
 def login_page(request: Request):
     if is_logged_in(request):
@@ -653,9 +662,9 @@ def discover_graphql_tcp_mutations(token: str) -> tuple[str, str, str]:
     return ("found" if names else "success"), output, ""
 
 
-def run_tcp_refresh(slot, account, token: str, action: str, pending_message: str = TCP_PROXY_PENDING_MESSAGE) -> tuple[str, str]:
+def run_tcp_refresh(slot, account, auth, action: str, pending_message: str = TCP_PROXY_PENDING_MESSAGE) -> tuple[str, str]:
     service_name = (slot.service_name or "final").strip() or "final"
-    result = refresh_tcp_proxy(service_name, token, slot_workdir(slot))
+    result = refresh_tcp_proxy(service_name, auth, slot_workdir(slot))
     if result.status == "success":
         parsed = parse_tcp_proxy(result.stdout)
         if parsed:
@@ -802,15 +811,14 @@ def create_railway_project(
     if account.status == "disabled":
         flash(request, "danger", "Railway account is disabled.")
         return RedirectResponse("/projects", status_code=303)
-    token = account.token_encrypted_or_masked
-    if not token or "..." in token:
-        error = "Saved Railway token is masked and cannot be used for project creation. Re-add the account token and try again."
+    auth, token, error = railway_auth_for_command(account, "project creation")
+    if error:
         store.add_provision_log(account.id, "create_project", clean_project_name, "failed", "railway init", "", "", error, 0, None, account.label)
         flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
 
     workspace_override = workspace.strip() or (account.workspace_override or "").strip() or None
-    result = create_project(clean_project_name, token, workspace_override)
+    result = create_project(clean_project_name, auth, workspace_override)
     ids = parse_project_create_ids(result.stdout) if result.status == "success" else {}
     project = store.add_railway_project(
         account.id,
@@ -854,13 +862,12 @@ def refresh_project_status(request: Request, project_id: int):
     if not account or account.status == "disabled":
         flash(request, "danger", "Linked Railway account is missing or disabled.")
         return RedirectResponse("/projects", status_code=303)
-    token = account.token_encrypted_or_masked
-    if not token or "..." in token:
-        error = "Saved Railway token is masked and cannot be used for project status refresh. Re-add the account token and try again."
+    auth, token, error = railway_auth_for_command(account, "project status refresh")
+    if error:
         store.add_provision_log(account.id, "create_project", project.project_name, "failed", "railway status --json", "", "", error, 0, None, account.label)
         flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
-    result = railway_status(token, Path(project.workdir))
+    result = railway_status(auth, Path(project.workdir))
     store.add_provision_log(account.id, "create_project", project.project_name, result.status, result.command, result.stdout, result.stderr, result.error, result.duration_ms, None, account.label)
     if result.status == "success":
         ids = parse_railway_status_ids(result.stdout)
@@ -896,9 +903,9 @@ def create_project_service(request: Request, project_id: int, service_name: Anno
     if not account or account.status == "disabled":
         flash(request, "danger", "Linked Railway account is missing or disabled.")
         return RedirectResponse("/projects", status_code=303)
-    token = account.token_encrypted_or_masked
-    if not token or "..." in token:
-        flash(request, "danger", "Saved Railway token is masked and cannot be used for service deployment. Re-add the account token and try again.")
+    auth, token, error = railway_auth_for_command(account, "service deployment")
+    if error:
+        flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
 
     clean_service_name = service_name.strip() or store.next_service_name(project.id)
@@ -915,7 +922,7 @@ def create_project_service(request: Request, project_id: int, service_name: Anno
         flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
 
-    create_result = create_service(clean_service_name, token, workdir)
+    create_result = create_service(clean_service_name, auth, workdir)
     store.add_provision_log(account.id, "create_service", project.project_name, create_result.status, create_result.command, create_result.stdout, create_result.stderr, create_result.error, create_result.duration_ms, slot.id, account.label, clean_service_name)
     if create_result.status == "failed":
         error = short_error(create_result.error or create_result.stderr or create_result.stdout)
@@ -923,7 +930,7 @@ def create_project_service(request: Request, project_id: int, service_name: Anno
         flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
 
-    deploy_result = deploy_service(clean_service_name, token, workdir)
+    deploy_result = deploy_service(clean_service_name, auth, workdir)
     store.add_provision_log(account.id, "deploy_service", project.project_name, deploy_result.status, deploy_result.command, deploy_result.stdout, deploy_result.stderr, deploy_result.error, deploy_result.duration_ms, slot.id, account.label, clean_service_name)
     if deploy_result.status == "success":
         store.mark_slot_deployed(slot.id, clean_service_name, deployment_id_from_output(deploy_result.stdout))
@@ -996,9 +1003,8 @@ def create_service_and_deploy(request: Request, slot_id: int):
     if not account or account.status == "disabled":
         flash(request, "danger", "Linked Railway account is missing or disabled.")
         return RedirectResponse("/slots", status_code=303)
-    token = account.token_encrypted_or_masked
-    if not token or "..." in token:
-        error = "Saved Railway token is masked and cannot be used for deployment. Re-add the account token and try again."
+    auth, token, error = railway_auth_for_command(account, "deployment")
+    if error:
         store.mark_slot_deploy_failed(slot.id, error)
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
@@ -1010,7 +1016,7 @@ def create_service_and_deploy(request: Request, slot_id: int):
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
 
-    create_result = create_service(service_name, token, workdir)
+    create_result = create_service(service_name, auth, workdir)
     create_status = create_result.status
     create_error = create_result.error
     if create_result.status == "failed" and "already" in (create_result.stdout + create_result.stderr + create_result.error).lower():
@@ -1036,7 +1042,7 @@ def create_service_and_deploy(request: Request, slot_id: int):
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
 
-    deploy_result = deploy_service(service_name, token, workdir)
+    deploy_result = deploy_service(service_name, auth, workdir)
     store.add_provision_log(
         account.id,
         "deploy_service",
@@ -1093,9 +1099,8 @@ def redeploy_service(request: Request, slot_id: int):
         store.add_provision_log(account.id, "redeploy_service", slot.project_name, "failed", "railway up", "", "", error, 0, slot.id, account.label, service_name)
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
-    token = account.token_encrypted_or_masked
-    if not token or "..." in token:
-        error = "Saved Railway token is masked and cannot be used for redeployment. Re-add the account token and try again."
+    auth, token, error = railway_auth_for_command(account, "redeployment")
+    if error:
         store.mark_slot_deploy_failed(slot.id, error)
         store.add_provision_log(account.id, "redeploy_service", slot.project_name, "failed", "railway up", "", "", error, 0, slot.id, account.label, service_name)
         flash(request, "danger", error)
@@ -1107,7 +1112,7 @@ def redeploy_service(request: Request, slot_id: int):
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
 
-    deploy_result = deploy_service(service_name, token, workdir)
+    deploy_result = deploy_service(service_name, auth, workdir)
     store.add_provision_log(
         account.id,
         "redeploy_service",
@@ -1170,9 +1175,8 @@ def refresh_tcp(request: Request, slot_id: int):
         store.add_provision_log(slot.railway_account_id, "refresh_tcp", slot.project_name, "failed", "railway run", "", "", error, 0, slot.id, "", slot.service_name)
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
-    token = account.token_encrypted_or_masked
-    if not token or "..." in token:
-        error = "Saved Railway token is masked and cannot be used for TCP refresh. Re-add the account token and try again."
+    auth, token, error = railway_auth_for_command(account, "TCP refresh")
+    if error:
         store.mark_slot_tcp_failed(slot.id, error)
         store.add_provision_log(account.id, "refresh_tcp", slot.project_name, "failed", "railway run", "", "", error, 0, slot.id, account.label, slot.service_name)
         flash(request, "danger", error)
@@ -1185,7 +1189,7 @@ def refresh_tcp(request: Request, slot_id: int):
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
 
-    category, message = run_tcp_refresh(slot, account, token, "refresh_tcp")
+    category, message = run_tcp_refresh(slot, account, auth, "refresh_tcp")
     flash(request, category, message)
     return RedirectResponse("/slots", status_code=303)
 
