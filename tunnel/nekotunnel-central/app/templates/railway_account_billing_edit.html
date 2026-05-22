@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Edit Manual Billing</h1>
+  <p class="muted">Manual billing tracker is display-only for {{ account.label }}.</p>
+</section>
+<div class="panel">
+  <form method="post" action="/railway-accounts/{{ account.id }}/billing/edit" class="grid-form">
+    <label>
+      <input type="checkbox" name="manual_billing_enabled" value="1" {% if account.manual_billing_enabled %}checked{% endif %}>
+      Enable manual billing tracker
+    </label>
+    <label>Plan name<input name="manual_plan_name" value="{{ account.manual_plan_name or '' }}" placeholder="Hobby, Pro, Trial, Custom"></label>
+    <label>Subscription status
+      <select name="manual_subscription_status">
+        {% for status in statuses %}
+          <option value="{{ status }}" {% if (account.manual_subscription_status or 'unknown') == status %}selected{% endif %}>{{ status }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Credits total<input name="manual_credits_total" value="{{ account.manual_credits_total or '' }}" placeholder="$5"></label>
+    <label>Credits remaining<input name="manual_credits_remaining" value="{{ account.manual_credits_remaining or '' }}" placeholder="$3.42"></label>
+    <label>Billing started at date<input type="date" name="manual_billing_started_at" value="{{ (account.manual_billing_started_at or '')[:10] }}"></label>
+    <label>Renewal/expiry date<input type="date" name="manual_billing_renews_at" value="{{ (account.manual_billing_renews_at or '')[:10] }}"></label>
+    <label>Billing cycle days<input type="number" min="1" name="manual_billing_days" value="{{ account.manual_billing_days or 30 }}"></label>
+    <label>Note<textarea name="manual_billing_note" rows="4">{{ account.manual_billing_note or '' }}</textarea></label>
+    <div class="settings-grid">
+      <div><span>Account added at</span><strong>{{ summary.account_added }}</strong></div>
+      <div><span>Age</span><strong>{{ summary.account_age }}</strong></div>
+      <div><span>Countdown</span><strong>{{ summary.countdown }}</strong></div>
+      <div><span>Last updated</span><strong>{{ summary.last_updated }}</strong></div>
+    </div>
+    <button class="primary" type="submit">Save Manual Billing</button>
+    <a class="button-link" href="/railway-accounts">Cancel</a>
+  </form>
+</div>
+{% endblock %}

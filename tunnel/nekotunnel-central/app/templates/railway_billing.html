@@ -13,6 +13,36 @@
   </div>
 </div>
 <div class="panel">
+  <h2>Manual Billing Overview</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Account</th><th>Plan</th><th>Status</th><th>Credits</th><th>Account Added</th><th>Cycle Start</th><th>Renewal/Expiry</th><th>Countdown</th><th>Note</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+      {% for account in manual_billing_enabled_accounts %}
+        {% set manual_billing = manual_billing_summaries.get(account.id, {}) %}
+        <tr>
+          <td>{{ account.label }}</td>
+          <td>{{ account.manual_plan_name or '-' }}</td>
+          <td>{{ account.manual_subscription_status or '-' }}</td>
+          <td>{{ account.manual_credits_remaining or '-' }}{% if account.manual_credits_total %} / {{ account.manual_credits_total }}{% endif %}</td>
+          <td>{{ manual_billing.account_added or '-' }}<br><span class="muted">{{ manual_billing.account_age or '-' }}</span></td>
+          <td>{{ manual_billing.cycle_start or '-' }}</td>
+          <td>{{ manual_billing.renewal or '-' }}{% if manual_billing.renewal_is_derived %}<br><span class="muted">derived from cycle days</span>{% endif %}</td>
+          <td>{{ manual_billing.countdown or '-' }}</td>
+          <td>{{ account.manual_billing_note or '-' }}</td>
+          <td><a class="button-link" href="/railway-accounts/{{ account.id }}/billing/edit">Edit</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="10" class="empty">No manual billing trackers enabled yet. Add manual billing from Railway Accounts.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="panel">
+  <h2>Billing Discovery Snapshots</h2>
   <div class="table-wrap">
     <table>
       <thead>

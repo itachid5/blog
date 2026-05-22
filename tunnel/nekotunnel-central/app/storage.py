@@ -159,7 +159,17 @@ class SQLiteStore:
                     auth_type TEXT NOT NULL DEFAULT 'token',
                     cli_backup_present INTEGER NOT NULL DEFAULT 0,
                     cli_backup_updated_at TEXT,
-                    cli_backup_size_bytes INTEGER
+                    cli_backup_size_bytes INTEGER,
+                    manual_plan_name TEXT,
+                    manual_subscription_status TEXT,
+                    manual_credits_total TEXT,
+                    manual_credits_remaining TEXT,
+                    manual_billing_started_at TEXT,
+                    manual_billing_renews_at TEXT,
+                    manual_billing_days INTEGER,
+                    manual_billing_note TEXT,
+                    manual_billing_enabled INTEGER NOT NULL DEFAULT 0,
+                    manual_billing_updated_at TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS railway_projects (
@@ -365,6 +375,16 @@ class SQLiteStore:
             "cli_backup_present": "INTEGER NOT NULL DEFAULT 0",
             "cli_backup_updated_at": "TEXT",
             "cli_backup_size_bytes": "INTEGER",
+            "manual_plan_name": "TEXT",
+            "manual_subscription_status": "TEXT",
+            "manual_credits_total": "TEXT",
+            "manual_credits_remaining": "TEXT",
+            "manual_billing_started_at": "TEXT",
+            "manual_billing_renews_at": "TEXT",
+            "manual_billing_days": "INTEGER",
+            "manual_billing_note": "TEXT",
+            "manual_billing_enabled": "INTEGER NOT NULL DEFAULT 0",
+            "manual_billing_updated_at": "TEXT",
         }
         for name, definition in definitions.items():
             if name not in columns:
@@ -778,6 +798,53 @@ class SQLiteStore:
         with self.connect() as conn:
             row = conn.execute("SELECT * FROM railway_accounts WHERE id = ?", (account_id,)).fetchone()
         return RailwayAccount(**dict(row)) if row else None
+
+    def update_manual_billing(
+        self,
+        account_id: int,
+        manual_billing_enabled: int,
+        manual_plan_name: str | None,
+        manual_subscription_status: str | None,
+        manual_credits_total: str | None,
+        manual_credits_remaining: str | None,
+        manual_billing_started_at: str | None,
+        manual_billing_renews_at: str | None,
+        manual_billing_days: int | None,
+        manual_billing_note: str | None,
+    ) -> bool:
+        # Manual billing tracker is display-only.
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE railway_accounts
+                SET manual_billing_enabled = ?,
+                    manual_plan_name = ?,
+                    manual_subscription_status = ?,
+                    manual_credits_total = ?,
+                    manual_credits_remaining = ?,
+                    manual_billing_started_at = ?,
+                    manual_billing_renews_at = ?,
+                    manual_billing_days = ?,
+                    manual_billing_note = ?,
+                    manual_billing_updated_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    manual_billing_enabled,
+                    manual_plan_name,
+                    manual_subscription_status,
+                    manual_credits_total,
+                    manual_credits_remaining,
+                    manual_billing_started_at,
+                    manual_billing_renews_at,
+                    manual_billing_days,
+                    manual_billing_note,
+                    account_id,
+                ),
+            )
+            conn.commit()
+        return cursor.rowcount > 0
 
     def update_railway_account_status(self, account_id: int, status: str, error: str = "") -> bool:
         with self.connect() as conn:
@@ -1763,7 +1830,17 @@ class PostgresStore(SQLiteStore):
                 auth_type TEXT NOT NULL DEFAULT 'token',
                 cli_backup_present INTEGER NOT NULL DEFAULT 0,
                 cli_backup_updated_at TEXT,
-                cli_backup_size_bytes INTEGER
+                cli_backup_size_bytes INTEGER,
+                manual_plan_name TEXT,
+                manual_subscription_status TEXT,
+                manual_credits_total TEXT,
+                manual_credits_remaining TEXT,
+                manual_billing_started_at TEXT,
+                manual_billing_renews_at TEXT,
+                manual_billing_days INTEGER,
+                manual_billing_note TEXT,
+                manual_billing_enabled INTEGER NOT NULL DEFAULT 0,
+                manual_billing_updated_at TEXT
             )
             """,
             """

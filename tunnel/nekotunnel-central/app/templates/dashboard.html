@@ -11,5 +11,8 @@
   <article class="card"><span>Busy Slots</span><strong>{{ stats.busy_slots }}</strong></article>
   <article class="card"><span>Active Sessions</span><strong>{{ stats.active_sessions }}</strong></article>
   <article class="card danger-card"><span>Failed Slots</span><strong>{{ stats.failed_slots }}</strong></article>
+  <article class="card"><span>Manual Billing Enabled</span><strong>{{ manual_billing_stats.enabled }}</strong></article>
+  <article class="card"><span>Billing Expiring ≤3 Days</span><strong>{{ manual_billing_stats.expiring_within_3_days }}</strong></article>
+  <article class="card danger-card"><span>Billing Expired</span><strong>{{ manual_billing_stats.expired }}</strong></article>
 </section>
 {% endblock %}

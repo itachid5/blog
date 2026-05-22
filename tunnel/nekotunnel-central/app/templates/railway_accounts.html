@@ -38,6 +38,7 @@
       {% for account in accounts %}
         {% set attempt = cli_login_attempts.get(account.id) %}
         {% set billing = billing_snapshots.get(account.id) %}
+        {% set manual_billing = manual_billing_summaries.get(account.id, {}) %}
         <tr>
           <td>{{ account.id }}</td>
           <td>{{ account.label }}</td>
@@ -57,7 +58,18 @@
             {% endif %}
           </td>
           <td>
+            <div class="panel">
+              <div><span>Manual tracker:</span> <strong>{{ 'enabled' if account.manual_billing_enabled else 'disabled' }}</strong></div>
+              <div><span>Plan:</span> <strong>{{ account.manual_plan_name or '-' }}</strong></div>
+              <div><span>Status:</span> <strong>{{ account.manual_subscription_status or '-' }}</strong></div>
+              <div><span>Credits remaining:</span> <strong>{{ account.manual_credits_remaining or '-' }}</strong></div>
+              <div><span>Billing countdown:</span> <strong>{{ manual_billing.countdown or '-' }}</strong></div>
+              <div><span>Account added:</span> <strong>{{ manual_billing.account_added or '-' }}</strong></div>
+              <div><span>Age:</span> <strong>{{ manual_billing.account_age or '-' }}</strong></div>
+              <div><span>Last updated:</span> <strong>{{ manual_billing.last_updated or '-' }}</strong></div>
+            </div>
             {% if account.auth_type == 'cli_session' %}
+              <div class="muted">Discovery snapshot</div>
               {% if billing %}
                 <div><span>Plan:</span> <strong>{{ billing.plan_name or '-' }}</strong></div>
                 <div><span>Subscription:</span> <strong>{{ billing.subscription_status or '-' }}</strong></div>
@@ -71,8 +83,6 @@
               {% else %}
                 <span class="muted">No billing discovery snapshot yet.</span>
               {% endif %}
-            {% else %}
-              -
             {% endif %}
           </td>
           <td>
@@ -105,6 +115,7 @@
             {% endif %}
           </td>
           <td class="actions">
+            <form method="get" action="/railway-accounts/{{ account.id }}/billing/edit"><button type="submit">Edit Manual Billing</button></form>
             {% if account.auth_type == 'cli_session' %}
               <form method="post" action="/railway-accounts/{{ account.id }}/backup-cli-session"><button type="submit">Backup CLI Session</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/restore-cli-session"><button type="submit">Restore CLI Session</button></form>

@@ -16,6 +16,16 @@ class RailwayAccount:
     cli_backup_present: int = 0
     cli_backup_updated_at: str | None = None
     cli_backup_size_bytes: int | None = None
+    manual_plan_name: str | None = None
+    manual_subscription_status: str | None = None
+    manual_credits_total: str | None = None
+    manual_credits_remaining: str | None = None
+    manual_billing_started_at: str | None = None
+    manual_billing_renews_at: str | None = None
+    manual_billing_days: int | None = None
+    manual_billing_note: str | None = None
+    manual_billing_enabled: int = 0
+    manual_billing_updated_at: str | None = None
 
     @property
     def workspace(self) -> str:

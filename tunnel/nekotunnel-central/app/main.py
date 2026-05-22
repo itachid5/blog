@@ -6,6 +6,7 @@ import secrets
 import time
 import urllib.error
 import urllib.request
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -112,6 +113,100 @@ def billing_summary(raw_summary: str | None) -> dict:
     return parsed if isinstance(parsed, dict) else {"raw_summary": parsed}
 
 
+MANUAL_BILLING_STATUSES = {"active", "trial", "expired", "unknown", "custom"}
+
+
+def parse_manual_billing_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    clean_value = value.strip()
+    if not clean_value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(clean_value.replace("Z", "+00:00"))
+    except ValueError:
+        parsed_date = date.fromisoformat(clean_value)
+        parsed = datetime.combine(parsed_date, datetime.min.time())
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    return parsed
+
+
+def normalize_manual_billing_date(value: str | None) -> str | None:
+    if not value or not value.strip():
+        return None
+    return parse_manual_billing_datetime(value).isoformat(timespec="minutes")
+
+
+def compact_date(value: str | None) -> str:
+    parsed = parse_manual_billing_datetime(value)
+    return parsed.date().isoformat() if parsed else "-"
+
+
+def age_label(value: str | None) -> str:
+    parsed = parse_manual_billing_datetime(value)
+    if not parsed:
+        return "-"
+    days = (datetime.utcnow().date() - parsed.date()).days
+    if days <= 0:
+        return "today"
+    if days == 1:
+        return "1 day ago"
+    return f"{days} days ago"
+
+
+def countdown_label(renews_at: datetime | None) -> str:
+    if not renews_at:
+        return "-"
+    today = datetime.utcnow().date()
+    renew_date = renews_at.date()
+    day_delta = (renew_date - today).days
+    if day_delta > 0:
+        if day_delta == 1:
+            return "1 day left"
+        return f"{day_delta} days left"
+    if day_delta == 0:
+        return "Renews today"
+    expired_days = abs(day_delta)
+    if expired_days == 1:
+        return "Expired 1 day ago"
+    return f"Expired {expired_days} days ago"
+
+
+def manual_billing_summary(account) -> dict[str, object]:
+    # Manual billing tracker is display-only.
+    renews_at = parse_manual_billing_datetime(account.manual_billing_renews_at)
+    derived_renews_at = False
+    if not renews_at and account.manual_billing_started_at and account.manual_billing_days:
+        renews_at = parse_manual_billing_datetime(account.manual_billing_started_at) + timedelta(days=account.manual_billing_days)
+        derived_renews_at = True
+    return {
+        "enabled": bool(account.manual_billing_enabled),
+        "account_added": compact_date(account.created_at),
+        "account_age": age_label(account.created_at),
+        "cycle_start": compact_date(account.manual_billing_started_at),
+        "renewal": renews_at.date().isoformat() if renews_at else "-",
+        "renewal_is_derived": derived_renews_at,
+        "countdown": countdown_label(renews_at),
+        "is_expired": bool(renews_at and renews_at.date() < datetime.utcnow().date()),
+        "expires_within_3_days": bool(renews_at and 0 <= (renews_at.date() - datetime.utcnow().date()).days <= 3),
+        "last_updated": account.manual_billing_updated_at or "-",
+    }
+
+
+def manual_billing_summaries(accounts) -> dict[int, dict[str, object]]:
+    return {account.id: manual_billing_summary(account) for account in accounts}
+
+
+def manual_billing_dashboard_stats(accounts) -> dict[str, int]:
+    summaries = [manual_billing_summary(account) for account in accounts if account.manual_billing_enabled]
+    return {
+        "enabled": len(summaries),
+        "expiring_within_3_days": sum(1 for summary in summaries if summary["expires_within_3_days"]),
+        "expired": sum(1 for summary in summaries if summary["is_expired"]),
+    }
+
+
 def railway_auth_for_command(account, operation: str):
     if account.auth_type == "cli_session":
         restore_result = restore_cli_session(account.id)
@@ -185,7 +280,8 @@ def logout(request: Request):
 
 @app.get("/")
 def dashboard(request: Request):
-    return render(request, "dashboard.html", {"stats": store.stats()})
+    accounts = store.railway_accounts
+    return render(request, "dashboard.html", {"stats": store.stats(), "manual_billing_stats": manual_billing_dashboard_stats(accounts)})
 
 
 @app.get("/railway-accounts")
@@ -201,6 +297,7 @@ def railway_accounts(request: Request):
             "cli_login_attempts": {account.id: store.latest_cli_login_attempt(account.id) for account in accounts},
             "local_session_states": {account.id: cli_local_session_state(account, railway_cli) for account in accounts},
             "billing_snapshots": store.latest_billing_snapshots_by_account(),
+            "manual_billing_summaries": manual_billing_summaries(accounts),
             "billing_unavailable_error": BILLING_UNAVAILABLE_ERROR,
         },
     )
@@ -279,9 +376,93 @@ def railway_billing(request: Request, account_id: Annotated[int | None, Query()]
             "snapshots": snapshots,
             "selected_account_id": account_id,
             "summaries": {snapshot.id: billing_summary(snapshot.raw_summary) for snapshot in snapshots},
+            "manual_billing_summaries": manual_billing_summaries(accounts),
+            "manual_billing_enabled_accounts": [account for account in accounts if account.manual_billing_enabled],
             "billing_unavailable_error": BILLING_UNAVAILABLE_ERROR,
         },
     )
+
+
+@app.get("/railway-accounts/{account_id}/billing/edit")
+def edit_manual_billing(request: Request, account_id: int):
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    return render(
+        request,
+        "railway_account_billing_edit.html",
+        {
+            "account": account,
+            "statuses": ["active", "trial", "expired", "unknown", "custom"],
+            "summary": manual_billing_summary(account),
+        },
+    )
+
+
+@app.post("/railway-accounts/{account_id}/billing/edit")
+def update_manual_billing(
+    request: Request,
+    account_id: int,
+    manual_plan_name: Annotated[str, Form()] = "",
+    manual_subscription_status: Annotated[str, Form()] = "unknown",
+    manual_credits_total: Annotated[str, Form()] = "",
+    manual_credits_remaining: Annotated[str, Form()] = "",
+    manual_billing_started_at: Annotated[str, Form()] = "",
+    manual_billing_renews_at: Annotated[str, Form()] = "",
+    manual_billing_days: Annotated[str, Form()] = "",
+    manual_billing_note: Annotated[str, Form()] = "",
+    manual_billing_enabled: Annotated[str | None, Form()] = None,
+):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+
+    status = manual_subscription_status.strip() or "unknown"
+    if status not in MANUAL_BILLING_STATUSES:
+        flash(request, "danger", "Invalid manual subscription status.")
+        return RedirectResponse(f"/railway-accounts/{account_id}/billing/edit", status_code=303)
+
+    try:
+        started_at = normalize_manual_billing_date(manual_billing_started_at)
+        renews_at = normalize_manual_billing_date(manual_billing_renews_at)
+    except ValueError:
+        flash(request, "danger", "Invalid billing date.")
+        return RedirectResponse(f"/railway-accounts/{account_id}/billing/edit", status_code=303)
+
+    days = None
+    if manual_billing_days.strip():
+        try:
+            days = int(manual_billing_days.strip())
+        except ValueError:
+            flash(request, "danger", "Billing cycle days must be a number.")
+            return RedirectResponse(f"/railway-accounts/{account_id}/billing/edit", status_code=303)
+        if days <= 0:
+            flash(request, "danger", "Billing cycle days must be greater than zero.")
+            return RedirectResponse(f"/railway-accounts/{account_id}/billing/edit", status_code=303)
+
+    def clean(value: str) -> str | None:
+        stripped = value.strip()
+        return stripped or None
+
+    store.update_manual_billing(
+        account_id,
+        1 if manual_billing_enabled else 0,
+        clean(manual_plan_name),
+        status,
+        clean(manual_credits_total),
+        clean(manual_credits_remaining),
+        started_at,
+        renews_at,
+        days,
+        clean(manual_billing_note),
+    )
+    flash(request, "success", "Manual billing tracker updated.")
+    return RedirectResponse("/railway-accounts", status_code=303)
 
 
 @app.post("/railway-accounts")
