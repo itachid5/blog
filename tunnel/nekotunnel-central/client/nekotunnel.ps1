@@ -315,19 +315,17 @@ function Write-FrpcConfig($Allocation, [int]$LocalPort) {
 serverAddr = "$($Allocation.server_addr)"
 serverPort = $($Allocation.server_port)
 
-auth.method = "token"
-auth.token = "$($Allocation.frp_token)"
-
-loginFailExit = false
+[auth]
+method = "token"
+token = "$($Allocation.frp_token)"
 
 [transport]
 protocol = "tcp"
 heartbeatInterval = 20
 heartbeatTimeout = 120
 tcpMux = $TcpMuxValue
-tcpMuxKeepaliveInterval = 30
 tls.enable = true
-tls.serverName = "nekotunnel-control"
+tls.disableCustomTLSFirstByte = true
 
 [[proxies]]
 name = "$($Allocation.proxy_name)"
@@ -338,6 +336,27 @@ remotePort = $($Allocation.remote_port)
 "@
     Set-Content -Path $ConfigPath -Value $ConfigText -Encoding ASCII
     return $ConfigPath
+}
+
+function Test-FrpcConfig([string]$FrpcPath, [string]$ConfigPath) {
+    try {
+        $Output = & $FrpcPath verify -c $ConfigPath 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0) { return [pscustomobject]@{ ok = $true; message = $Output.Trim() } }
+        if ($Output.ToLowerInvariant().Contains("unknown command") -and $Output.ToLowerInvariant().Contains("verify")) {
+            return [pscustomobject]@{ ok = $true; message = "frpc config validation skipped: verify command is not supported" }
+        }
+        if ([string]::IsNullOrWhiteSpace($Output)) { $Output = "frpc verify exited with code $LASTEXITCODE" }
+        return [pscustomobject]@{ ok = $false; message = $Output.Trim() }
+    } catch {
+        return [pscustomobject]@{ ok = $true; message = "frpc config validation skipped: $($_.Exception.Message)" }
+    }
+}
+
+function Write-FrpcValidationError([string]$Protocol, [int]$Port, [string]$Message) {
+    try {
+        if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
+        Add-Content -Path (Frpc-Log-Path $Protocol $Port "err") -Value "frpc config validation failed: $Message"
+    } catch {}
 }
 
 function Connection-Command([int]$LocalPort, [string]$ServerAddr, $ServerPort) {
@@ -431,6 +450,15 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
     }
 
     $FrpcConfig = Write-FrpcConfig $Allocation $Creds.local_port
+    $Verify = Test-FrpcConfig $FrpcPath $FrpcConfig
+    if (-not $Verify.ok) {
+        Write-Host "frpc config validation failed: $($Verify.message)"
+        Write-FrpcValidationError $Protocol $Creds.local_port $Verify.message
+        try { Invoke-NekoPost $Creds.api_url "/api/disconnect" @{ token = $Creds.token; session_id = $Allocation.session_id; release = $true } | Out-Null } catch { Write-Host "Disconnect failed: $($_.Exception.Message)" }
+        Remove-Item -Path $FrpcConfig -Force -ErrorAction SilentlyContinue
+        return 1
+    }
+
     $PreviousState = Load-State $StateFile
     $PreviousPublic = $null
     if ($null -ne $PreviousState -and $PreviousState.server_addr -and $PreviousState.server_port) { $PreviousPublic = "$($PreviousState.server_addr):$($PreviousState.server_port)" }

@@ -1,5 +1,9 @@
+import shutil
+import subprocess
 import threading
 from pathlib import Path
+
+import pytest
 
 from app.storage import SQLiteStore
 
@@ -54,22 +58,58 @@ def test_frpc_config_uses_verified_v057_transport_keys(tmp_path):
     client["write_frpc_config"](config_path, allocation, 3389)
 
     config = config_path.read_text()
-    assert "loginFailExit = false" in config
+    assert "loginFailExit" not in config
+    assert "tcpMuxKeepaliveInterval" not in config
+    assert "dialServerKeepalive" not in config
+    assert "tls.serverName" not in config
+    assert 'serverAddr = "example.com"' in config
+    assert "serverPort = 7000" in config
+    assert "[auth]" in config
+    assert 'method = "token"' in config
+    assert 'token = "secret"' in config
     assert "[transport]" in config
     assert 'protocol = "tcp"' in config
-    assert "tls.enable = true" in config
-    assert 'tls.serverName = "nekotunnel-control"' in config
-    assert "tcpMux = false" in config
-    assert "tcpMuxKeepaliveInterval = 30" in config
     assert "heartbeatInterval = 20" in config
     assert "heartbeatTimeout = 120" in config
-    assert "dialServerKeepalive = 30" in config
+    assert "tcpMux = false" in config
+    assert "tls.enable = true" in config
+    assert "tls.disableCustomTLSFirstByte = true" in config
+    assert "[[proxies]]" in config
+    assert 'name = "proxy-1"' in config
+    assert 'type = "tcp"' in config
+    assert 'localIP = "127.0.0.1"' in config
+    assert "localPort = 3389" in config
+    assert "remotePort = 6000" in config
 
     client["write_frpc_config"](config_path, allocation, 22)
     assert "tcpMux = true" in config_path.read_text()
 
     client["write_frpc_config"](config_path, {**allocation, "tcp_mux": True}, 3389)
     assert "tcpMux = true" in config_path.read_text()
+
+
+def test_frpc_verify_passes_when_binary_is_available(tmp_path):
+    frpc = shutil.which("frpc")
+    if frpc is None:
+        pytest.skip("frpc binary is not installed")
+
+    client = load_linux_client_namespace()
+    config_path = tmp_path / "frpc.toml"
+    client["write_frpc_config"](
+        config_path,
+        {
+            "server_addr": "example.com",
+            "server_port": 7000,
+            "frp_token": "secret",
+            "proxy_name": "proxy-1",
+            "remote_port": 6000,
+            "tcp_mux": True,
+        },
+        22,
+    )
+
+    result = subprocess.run([frpc, "verify", "-c", str(config_path)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_heartbeat_failures_do_not_stop_service_loop(monkeypatch, capsys):
@@ -131,8 +171,12 @@ def test_clients_have_detached_service_entrypoints():
     assert "run-service" in windows
     assert 'New-ScheduledTaskAction -Execute "powershell.exe"' in windows
     assert "-WindowStyle Hidden" in windows
-    assert 'nekotunnel-control' in linux
-    assert 'tls.serverName = "nekotunnel-control"' in windows
+    assert 'loginFailExit' not in linux
+    assert 'loginFailExit' not in windows
+    assert 'tls.disableCustomTLSFirstByte = true' in linux
+    assert 'tls.disableCustomTLSFirstByte = true' in windows
+    assert 'tls.serverName' not in linux
+    assert 'tls.serverName' not in windows
     assert "-RedirectStandardOutput $FrpcOut -RedirectStandardError $FrpcErr" in windows
     assert "frpc_exit_at=" in windows
     assert "last_100_frpc_out" in windows

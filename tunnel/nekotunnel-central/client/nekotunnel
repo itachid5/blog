@@ -401,17 +401,13 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
                 'method = "token"',
                 f'token = "{allocation["frp_token"]}"',
                 "",
-                "loginFailExit = false",
-                "",
                 "[transport]",
                 "protocol = \"tcp\"",
-                "tls.enable = true",
-                "tls.serverName = \"nekotunnel-control\"",
-                f"tcpMux = {str(tcp_mux).lower()}",
-                "tcpMuxKeepaliveInterval = 30",
                 "heartbeatInterval = 20",
                 "heartbeatTimeout = 120",
-                "dialServerKeepalive = 30",
+                f"tcpMux = {str(tcp_mux).lower()}",
+                "tls.enable = true",
+                "tls.disableCustomTLSFirstByte = true",
                 "",
                 "[[proxies]]",
                 f'name = "{allocation["proxy_name"]}"',
@@ -424,6 +420,41 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
         )
     )
     config_path.chmod(0o600)
+
+
+def verify_frpc_config(frpc_path: Path, config_path: Path) -> tuple[bool, str]:
+    try:
+        result = subprocess.run(
+            [str(frpc_path), "verify", "-c", str(config_path)],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False, "frpc config validation timed out"
+    except OSError as exc:
+        return True, f"frpc config validation skipped: {exc}"
+
+    output = "\n".join(part.strip() for part in [result.stdout, result.stderr] if part.strip())
+    if result.returncode == 0:
+        return True, output
+
+    lower_output = output.lower()
+    if "unknown command" in lower_output and "verify" in lower_output:
+        return True, "frpc config validation skipped: verify command is not supported"
+
+    message = output or f"frpc verify exited with code {result.returncode}"
+    return False, message
+
+
+def log_frpc_validation_error(protocol: str, local_port: int, message: str) -> None:
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(frpc_log_path_for(protocol, local_port, "err"), "a", encoding="utf-8") as handle:
+            handle.write(f"frpc config validation failed: {message}\n")
+    except OSError:
+        pass
 
 
 def heartbeat_loop(
@@ -733,6 +764,17 @@ def run_tcp_once(args: list[str]) -> int:
     session_id = data["session_id"]
     config_path = APP_DIR / f"frpc-{session_id}.toml"
     write_frpc_config(config_path, data, local_port)
+    verify_ok, verify_message = verify_frpc_config(frpc_path, config_path)
+    if not verify_ok:
+        print(f"frpc config validation failed: {verify_message}", flush=True)
+        log_frpc_validation_error(protocol, local_port, verify_message)
+        disconnect(api_url, user_token, session_id, release=True)
+        try:
+            config_path.unlink()
+        except OSError:
+            pass
+        return 1
+
     previous_state = load_state(state_path) or {}
     public_address = f"{data['server_addr']}:{data['server_port']}"
     previous_public_address = None
