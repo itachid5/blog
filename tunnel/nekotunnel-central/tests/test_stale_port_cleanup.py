@@ -113,10 +113,13 @@ def test_different_active_endpoint_still_returns_port_already_active(tmp_path):
     assert duplicate.status_code == 409
     assert body["error"] == "port_already_active"
     assert body["local_port"] == 22
+    assert body["blocker_type"] == "endpoint"
+    assert body["blocker_id"]
     assert body["status"] == "active"
     assert body["endpoint_id_short"] == "endpoint-act"
     assert body["same_endpoint"] is False
-    assert body["suggested_command"] == "nekotunnel cleanup tcp 22"
+    assert body["reason"] == "active_endpoint_same_port"
+    assert body["suggested_command"] == "nekotunnel cleanup tcp 22 --force"
 
 
 def test_api_disconnect_port_closes_same_endpoint_active_session(tmp_path, monkeypatch):
@@ -193,3 +196,125 @@ def test_self_test_releases_allocated_session_on_verify_failure(tmp_path, monkey
 
     assert client["run_self_test"](["tcp", "22"]) == 1
     assert disconnected == [("session-123456", True)]
+
+
+
+def test_stale_endpoint_reservation_cleanup_releases_slot(tmp_path):
+    store = make_store(tmp_path)
+    user, _token = store.create_user_token("alice", 3)
+    make_ready_slot(store, "slot-1", 7001)
+    allocation, error = store.allocate_session(
+        user, 22, protocol="tcp", client_id="client-a", endpoint_id="endpoint-stale"
+    )
+    assert error == ""
+    with store.connect() as conn:
+        conn.execute("DELETE FROM sessions WHERE id = ?", (allocation["session_id"],))
+        conn.execute(
+            """
+            UPDATE tunnel_endpoints
+            SET status = 'active'
+            WHERE endpoint_id = ?
+            """,
+            ("endpoint-stale",),
+        )
+        conn.commit()
+
+    details = store.port_conflict_details(user.id, "tcp", 22, "endpoint-other")
+    result = store.disconnect_port(user.id, "tcp", 22)
+
+    assert details["reason"] == "stale_invalid_endpoint_reservation"
+    assert result["closed"] == 0
+    assert result["released_slots"] == [allocation["slot_id"]]
+    assert slot_row(store, allocation["slot_id"])["status"] == "free"
+
+
+def test_slot_current_session_id_missing_cleanup_releases_slot(tmp_path):
+    store = make_store(tmp_path)
+    user, _token = store.create_user_token("alice", 3)
+    make_ready_slot(store, "slot-1", 7001)
+    allocation, error = store.allocate_session(
+        user, 22, protocol="tcp", client_id="client-a", endpoint_id="endpoint-slot"
+    )
+    assert error == ""
+    with store.connect() as conn:
+        conn.execute("DELETE FROM sessions WHERE id = ?", (allocation["session_id"],))
+        conn.execute(
+            """
+            UPDATE tunnel_endpoints
+            SET status = 'stale'
+            WHERE endpoint_id = ?
+            """,
+            ("endpoint-slot",),
+        )
+        conn.commit()
+
+    result = store.disconnect_port(user.id, "tcp", 22)
+
+    assert result["released_slots"] == [allocation["slot_id"]]
+    slot = slot_row(store, allocation["slot_id"])
+    assert slot["status"] == "free"
+    assert slot["current_session_id"] is None
+
+
+def test_force_cleanup_closes_same_user_same_port_only(tmp_path):
+    store = make_store(tmp_path)
+    alice, _alice_token = store.create_user_token("alice", 3)
+    bob, _bob_token = store.create_user_token("bob", 3)
+    make_ready_slot(store, "slot-1", 7001)
+    make_ready_slot(store, "slot-2", 7002)
+    alice_allocation, alice_error = store.allocate_session(
+        alice, 22, protocol="tcp", client_id="client-a", endpoint_id="endpoint-alice"
+    )
+    bob_allocation, bob_error = store.allocate_session(
+        bob, 22, protocol="tcp", client_id="client-b", endpoint_id="endpoint-bob"
+    )
+    assert alice_error == ""
+    assert bob_error == ""
+
+    result = store.disconnect_port(alice.id, "tcp", 22, force=True)
+
+    assert result["closed"] == 1
+    assert result["released_slots"] == [alice_allocation["slot_id"]]
+    assert slot_row(store, alice_allocation["slot_id"])["status"] == "free"
+    assert slot_row(store, bob_allocation["slot_id"])["status"] == "busy"
+    with store.connect() as conn:
+        bob_session = conn.execute("SELECT status FROM sessions WHERE id = ?", (bob_allocation["session_id"],)).fetchone()
+    assert bob_session["status"] == "active"
+
+
+def test_cross_user_endpoint_id_collision_is_scoped_not_blocked(tmp_path):
+    store = make_store(tmp_path)
+    alice, _alice_token = store.create_user_token("alice", 3)
+    bob, _bob_token = store.create_user_token("bob", 3)
+    make_ready_slot(store, "slot-1", 7001)
+    make_ready_slot(store, "slot-2", 7002)
+    first, first_error = store.allocate_session(
+        alice, 22, protocol="tcp", client_id="same-machine", endpoint_id="same-endpoint"
+    )
+    second, second_error = store.allocate_session(
+        bob, 22, protocol="tcp", client_id="same-machine", endpoint_id="same-endpoint"
+    )
+
+    assert first_error == ""
+    assert second_error == ""
+    assert first["endpoint_id"] == "same-endpoint"
+    assert second["endpoint_id"] != "same-endpoint"
+
+
+def test_cleanup_force_works_from_linux_client(monkeypatch):
+    client = load_linux_client_namespace()
+    calls = []
+    monkeypatch.setitem(client, "systemd_available", lambda: False)
+    monkeypatch.setitem(client, "stop_nohup", lambda protocol, port: False)
+    monkeypatch.setitem(client, "kill_frpc_for_endpoint", lambda protocol, port: 0)
+    monkeypatch.setitem(client, "disconnect_saved_state", lambda path=client["STATE_PATH"]: True)
+    monkeypatch.setitem(client, "remove_background_endpoint", lambda protocol, port: None)
+
+    def cleanup(protocol, port, endpoint_id="", client_id="", force=False):
+        calls.append((protocol, port, force))
+        return True, {"ok": True, "closed": 2, "released_slots": [7]}, ""
+
+    monkeypatch.setitem(client, "cleanup_server_port", cleanup)
+
+    assert client["run_cleanup"](["tcp", "22", "--force"]) == 0
+    assert calls == [("tcp", 22, True)]

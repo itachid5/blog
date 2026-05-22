@@ -2181,11 +2181,16 @@ async def api_connect(request: Request):
                     "ok": False,
                     "error": error,
                     "local_port": local_port,
-                    "status": details.get("status"),
+                    "blocker_type": details.get("blocker_type", "unknown"),
+                    "blocker_id": details.get("blocker_id", "unknown"),
+                    "session_id_short": details.get("session_id_short"),
+                    "slot_id": details.get("slot_id"),
+                    "status": details.get("status", "unknown"),
                     "last_seen_at": details.get("last_seen_at"),
-                    "endpoint_id_short": details.get("endpoint_id_short"),
+                    "endpoint_id_short": details.get("endpoint_id_short", "-"),
                     "same_endpoint": details.get("same_endpoint", False),
-                    "suggested_command": f"nekotunnel cleanup {protocol} {local_port}",
+                    "reason": details.get("reason", "port_already_active"),
+                    "suggested_command": f"nekotunnel cleanup {protocol} {local_port} --force",
                 },
                 status_code=409,
             )
@@ -2279,5 +2284,6 @@ async def api_disconnect_port(request: Request):
         local_port,
         endpoint_id=str(payload.get("endpoint_id") or "").strip(),
         client_id=str(payload.get("client_id") or "").strip(),
+        force=bool(payload.get("force")),
     )
     return result

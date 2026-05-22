@@ -33,15 +33,17 @@ def make_ready_slot(store: SQLiteStore, service_name: str, port: int = 7000) -> 
         conn.commit()
 
 
-def test_endpoint_id_does_not_include_token():
+def test_endpoint_id_is_token_scoped_without_exposing_token():
     client = load_linux_client_namespace()
 
     first = client["stable_endpoint_id"]("https://api.example", "token-one", "machine-1", "tcp", 3389)
     second = client["stable_endpoint_id"]("https://api.example", "token-two", "machine-1", "tcp", 3389)
     different_port = client["stable_endpoint_id"]("https://api.example", "token-one", "machine-1", "tcp", 22)
 
-    assert first == second
+    assert first != second
     assert first != different_port
+    assert "token-one" not in first
+    assert "token-two" not in second
 
 
 def test_frpc_config_uses_verified_v057_transport_keys(tmp_path):

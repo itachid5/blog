@@ -1791,8 +1791,11 @@ class SQLiteStore:
             if sticky:
                 endpoint = conn.execute("SELECT * FROM tunnel_endpoints WHERE endpoint_id = ?", (endpoint_id,)).fetchone()
                 if endpoint and endpoint["user_id"] != user.id:
-                    conn.rollback()
-                    return None, "port_already_active"
+                    endpoint_id = hashlib.sha256(f"{endpoint_id}|{user.id}".encode("utf-8")).hexdigest()
+                    endpoint = conn.execute("SELECT * FROM tunnel_endpoints WHERE endpoint_id = ?", (endpoint_id,)).fetchone()
+                    if endpoint and endpoint["user_id"] != user.id:
+                        conn.rollback()
+                        return None, "port_already_active"
                 if endpoint is None:
                     conn.execute(
                         """
@@ -2108,43 +2111,158 @@ class SQLiteStore:
 
     def port_conflict_details(self, user_id: int, protocol: str, local_port: int, endpoint_id: str = "") -> dict:
         now_text = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        active_statuses = self.active_status_placeholders()
         with self.connect() as conn:
+            if endpoint_id:
+                row = conn.execute(
+                    """
+                    SELECT id, endpoint_id, status, last_seen_at, preferred_slot_id, last_session_id, user_id
+                    FROM tunnel_endpoints
+                    WHERE endpoint_id = ? AND user_id != ?
+                    LIMIT 1
+                    """,
+                    (endpoint_id, user_id),
+                ).fetchone()
+                if row:
+                    conflict_endpoint = row["endpoint_id"] or ""
+                    return {
+                        "blocker_type": "endpoint",
+                        "blocker_id": str(row["id"]),
+                        "session_id_short": (row["last_session_id"] or "")[:12] or None,
+                        "slot_id": row["preferred_slot_id"],
+                        "status": row["status"] or "stale_invalid",
+                        "last_seen_at": row["last_seen_at"],
+                        "endpoint_id_short": conflict_endpoint[:12] if conflict_endpoint else "-",
+                        "same_endpoint": False,
+                        "reason": "endpoint_id_owned_by_other_user",
+                    }
             row = conn.execute(
                 """
-                SELECT endpoint_id, status, last_seen_at, grace_until
-                FROM tunnel_endpoints
+                SELECT e.id, e.endpoint_id, e.status, e.last_seen_at, e.preferred_slot_id, e.last_session_id,
+                       s.id AS session_id, s.status AS session_status, s.last_heartbeat_at
+                FROM tunnel_endpoints e
+                LEFT JOIN sessions s ON s.id = e.last_session_id
+                WHERE e.user_id = ?
+                  AND e.protocol = ?
+                  AND e.local_port = ?
+                  AND e.endpoint_id != ?
+                  AND e.status = 'active'
+                  AND s.id IS NOT NULL
+                  AND s.status IN ('active', 'starting', 'connected')
+                  AND (e.grace_until IS NULL OR e.grace_until >= ?)
+                ORDER BY e.last_seen_at DESC
+                LIMIT 1
+                """,
+                (user_id, protocol, local_port, endpoint_id, now_text),
+            ).fetchone()
+            if row:
+                conflict_endpoint = row["endpoint_id"] or ""
+                return {
+                    "blocker_type": "endpoint",
+                    "blocker_id": str(row["id"]),
+                    "session_id_short": (row["session_id"] or row["last_session_id"] or "")[:12] or None,
+                    "slot_id": row["preferred_slot_id"],
+                    "status": row["status"] or "stale_invalid",
+                    "last_seen_at": row["last_seen_at"] or row["last_heartbeat_at"],
+                    "endpoint_id_short": conflict_endpoint[:12] if conflict_endpoint else "-",
+                    "same_endpoint": bool(endpoint_id and conflict_endpoint == endpoint_id),
+                    "reason": "active_endpoint_same_port",
+                }
+            row = conn.execute(
+                f"""
+                SELECT id, endpoint_id, status, last_heartbeat_at AS last_seen_at, slot_id
+                FROM sessions
                 WHERE user_id = ?
                   AND protocol = ?
                   AND local_port = ?
-                  AND status IN ('active', 'reconnecting')
-                  AND (grace_until IS NULL OR grace_until >= ?)
-                ORDER BY CASE WHEN endpoint_id = ? THEN 0 ELSE 1 END, last_seen_at DESC
+                  AND status IN ({active_statuses})
+                ORDER BY last_heartbeat_at DESC
                 LIMIT 1
                 """,
-                (user_id, protocol, local_port, now_text, endpoint_id),
+                (user_id, protocol, local_port, *ACTIVE_SESSION_STATUSES),
             ).fetchone()
-            if not row:
-                row = conn.execute(
-                    """
-                    SELECT endpoint_id, status, last_heartbeat_at AS last_seen_at, grace_until
-                    FROM sessions
-                    WHERE user_id = ?
-                      AND protocol = ?
-                      AND local_port = ?
-                      AND status IN ('active', 'starting', 'connected', 'reconnecting', 'stale')
-                    ORDER BY last_heartbeat_at DESC
-                    LIMIT 1
-                    """,
-                    (user_id, protocol, local_port),
-                ).fetchone()
-        if not row:
-            return {}
-        conflict_endpoint = row["endpoint_id"] or ""
+            if row:
+                conflict_endpoint = row["endpoint_id"] or ""
+                return {
+                    "blocker_type": "session",
+                    "blocker_id": row["id"],
+                    "session_id_short": row["id"][:12],
+                    "slot_id": row["slot_id"],
+                    "status": row["status"] or "stale_invalid",
+                    "last_seen_at": row["last_seen_at"],
+                    "endpoint_id_short": conflict_endpoint[:12] if conflict_endpoint else "-",
+                    "same_endpoint": bool(endpoint_id and conflict_endpoint == endpoint_id),
+                    "reason": "active_session_same_port",
+                }
+            row = conn.execute(
+                """
+                SELECT e.id, e.endpoint_id, e.status, e.last_seen_at, e.preferred_slot_id, e.last_session_id
+                FROM tunnel_endpoints e
+                LEFT JOIN sessions s ON s.id = e.last_session_id
+                WHERE e.user_id = ?
+                  AND e.protocol = ?
+                  AND e.local_port = ?
+                  AND (
+                    e.status IS NULL
+                    OR e.status IN ('reconnecting', 'stale')
+                    OR (e.status = 'active' AND (e.last_session_id IS NULL OR s.id IS NULL OR s.status NOT IN ('active', 'starting', 'connected')))
+                  )
+                ORDER BY e.last_seen_at DESC
+                LIMIT 1
+                """,
+                (user_id, protocol, local_port),
+            ).fetchone()
+            if row:
+                conflict_endpoint = row["endpoint_id"] or ""
+                return {
+                    "blocker_type": "endpoint",
+                    "blocker_id": str(row["id"]),
+                    "session_id_short": (row["last_session_id"] or "")[:12] or None,
+                    "slot_id": row["preferred_slot_id"],
+                    "status": row["status"] or "stale_invalid",
+                    "last_seen_at": row["last_seen_at"],
+                    "endpoint_id_short": conflict_endpoint[:12] if conflict_endpoint else "-",
+                    "same_endpoint": bool(endpoint_id and conflict_endpoint == endpoint_id),
+                    "reason": "stale_invalid_endpoint_reservation",
+                }
+            row = conn.execute(
+                """
+                SELECT slots.id, slots.current_session_id, slots.status, sessions.status AS session_status, sessions.last_heartbeat_at
+                FROM slots
+                LEFT JOIN sessions ON sessions.id = slots.current_session_id
+                LEFT JOIN tunnel_endpoints endpoints ON endpoints.preferred_slot_id = slots.id
+                WHERE endpoints.user_id = ?
+                  AND endpoints.protocol = ?
+                  AND endpoints.local_port = ?
+                  AND slots.current_session_id IS NOT NULL
+                  AND (sessions.id IS NULL OR sessions.status NOT IN ('active', 'starting', 'connected'))
+                ORDER BY slots.id ASC
+                LIMIT 1
+                """,
+                (user_id, protocol, local_port),
+            ).fetchone()
+        if row:
+            return {
+                "blocker_type": "slot",
+                "blocker_id": str(row["id"]),
+                "session_id_short": (row["current_session_id"] or "")[:12] or None,
+                "slot_id": row["id"],
+                "status": row["session_status"] or row["status"] or "stale_invalid",
+                "last_seen_at": row["last_heartbeat_at"],
+                "endpoint_id_short": "-",
+                "same_endpoint": False,
+                "reason": "slot_points_to_missing_or_closed_session",
+            }
         return {
-            "status": row["status"],
-            "last_seen_at": row["last_seen_at"],
-            "endpoint_id_short": conflict_endpoint[:12] if conflict_endpoint else "-",
-            "same_endpoint": bool(endpoint_id and conflict_endpoint == endpoint_id),
+            "blocker_type": "unknown",
+            "blocker_id": "unknown",
+            "session_id_short": None,
+            "slot_id": None,
+            "status": "unknown",
+            "last_seen_at": None,
+            "endpoint_id_short": "-",
+            "same_endpoint": False,
+            "reason": "port_already_active_source_not_found",
         }
 
     def disconnect_port(
@@ -2159,54 +2277,102 @@ class SQLiteStore:
     ) -> dict:
         params: list[object] = [user_id, protocol, local_port]
         filters = ["user_id = ?", "protocol = ?", "local_port = ?"]
-        if endpoint_id:
+        if endpoint_id and not force:
             filters.append("endpoint_id = ?")
             params.append(endpoint_id)
-            statuses = ('active', 'starting', 'connected', 'reconnecting', 'stale')
+            status_filter = "(status IS NULL OR status IN ('active', 'starting', 'connected', 'reconnecting', 'stale'))"
         elif force:
-            statuses = ('active', 'starting', 'connected', 'reconnecting', 'stale')
+            status_filter = "(status IS NULL OR status NOT IN ('closed', 'expired', 'replaced'))"
         else:
-            statuses = ('reconnecting', 'stale')
-        if client_id:
+            status_filter = "(status IS NULL OR status IN ('reconnecting', 'stale'))"
+        if client_id and not force:
             filters.append("client_id = ?")
             params.append(client_id[:200])
-        status_placeholders = ",".join("?" for _ in statuses)
-        params.extend(statuses)
         with self.connect() as conn:
             rows = conn.execute(
                 f"""
                 SELECT id, slot_id FROM sessions
                 WHERE {' AND '.join(filters)}
-                  AND status IN ({status_placeholders})
+                  AND {status_filter}
                 ORDER BY started_at DESC
                 """,
                 tuple(params),
             ).fetchall()
         released_slots: list[int] = []
+        closed = 0
         for row in rows:
             if self.close_session(row["id"], user_id, "closed", actor, release=True):
+                closed += 1
                 if row["slot_id"] is not None and row["slot_id"] not in released_slots:
                     released_slots.append(row["slot_id"])
-        if released_slots:
-            active_statuses = self.active_status_placeholders()
-            with self.connect() as conn:
-                for slot_id in released_slots:
-                    active = conn.execute(
-                        f"SELECT 1 FROM sessions WHERE slot_id = ? AND status IN ({active_statuses}) LIMIT 1",
-                        (slot_id, *ACTIVE_SESSION_STATUSES),
-                    ).fetchone()
-                    if not active:
-                        conn.execute(
-                            """
-                            UPDATE slots
-                            SET status = 'free', current_session_id = NULL, error = '', updated_at = CURRENT_TIMESTAMP
-                            WHERE id = ?
-                            """,
-                            (slot_id,),
-                        )
-                conn.commit()
-        self.add_log(actor, "disconnect.port", f"Closed {len(rows)} session(s) for {protocol}-{local_port}")
-        return {"ok": True, "closed": len(rows), "released_slots": released_slots}
+        with self.connect() as conn:
+            endpoint_rows = conn.execute(
+                """
+                SELECT e.id, e.endpoint_id, e.preferred_slot_id, e.last_session_id
+                FROM tunnel_endpoints e
+                LEFT JOIN sessions s ON s.id = e.last_session_id
+                WHERE e.user_id = ?
+                  AND e.protocol = ?
+                  AND e.local_port = ?
+                  AND (
+                    ?
+                    OR e.status IS NULL
+                    OR e.status IN ('reconnecting', 'stale')
+                    OR (e.status = 'active' AND (e.last_session_id IS NULL OR s.id IS NULL OR s.status NOT IN ('active', 'starting', 'connected')))
+                  )
+                """,
+                (user_id, protocol, local_port, 1 if force else 0),
+            ).fetchall()
+            endpoint_ids = [row["id"] for row in endpoint_rows]
+            for row in endpoint_rows:
+                if row["preferred_slot_id"] is not None and row["preferred_slot_id"] not in released_slots:
+                    released_slots.append(row["preferred_slot_id"])
+            if endpoint_ids:
+                placeholders = ",".join("?" for _ in endpoint_ids)
+                conn.execute(
+                    f"""
+                    UPDATE tunnel_endpoints
+                    SET status = 'inactive', grace_until = NULL, last_disconnect_reason = 'cleanup', last_seen_at = CURRENT_TIMESTAMP
+                    WHERE id IN ({placeholders})
+                    """,
+                    tuple(endpoint_ids),
+                )
+            slot_rows = conn.execute(
+                """
+                SELECT DISTINCT slots.id
+                FROM slots
+                LEFT JOIN sessions s ON s.id = slots.current_session_id
+                LEFT JOIN tunnel_endpoints e ON e.preferred_slot_id = slots.id
+                WHERE slots.current_session_id IS NOT NULL
+                  AND (
+                    slots.id IN ({slot_placeholders})
+                    OR (e.user_id = ? AND e.protocol = ? AND e.local_port = ?)
+                  )
+                  AND (s.id IS NULL OR s.status NOT IN ('active', 'starting', 'connected'))
+                """.format(slot_placeholders=",".join("?" for _ in released_slots) or "NULL"),
+                (*released_slots, user_id, protocol, local_port),
+            ).fetchall()
+            for row in slot_rows:
+                if row["id"] not in released_slots:
+                    released_slots.append(row["id"])
+            for slot_id in released_slots:
+                active = conn.execute(
+                    f"SELECT 1 FROM sessions WHERE slot_id = ? AND status IN ({self.active_status_placeholders()}) LIMIT 1",
+                    (slot_id, *ACTIVE_SESSION_STATUSES),
+                ).fetchone()
+                if not active:
+                    conn.execute(
+                        """
+                        UPDATE slots
+                        SET status = 'free', current_session_id = NULL, error = '', updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                        """,
+                        (slot_id,),
+                    )
+            conn.commit()
+        released_slots = sorted(released_slots)
+        self.add_log(actor, "disconnect.port", f"Closed {closed} session(s) for {protocol}-{local_port}")
+        return {"ok": True, "closed": closed, "released_slots": released_slots}
 
     def expire_stale_sessions(self, ttl_seconds: int, grace_seconds: int = 300) -> list[str]:
         cutoff = (datetime.utcnow() - timedelta(seconds=ttl_seconds)).strftime("%Y-%m-%d %H:%M:%S")
