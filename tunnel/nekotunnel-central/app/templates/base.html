@@ -26,10 +26,6 @@
           <small>Central</small>
         </span>
       </a>
-      <button class="theme-toggle" id="themeToggleBtn" type="button" onclick="toggleTheme()" aria-label="Toggle theme">
-        <i class="ph-light ph-moon" aria-hidden="true"></i>
-        <span class="theme-fallback">◐</span>
-      </button>
     </div>
 
     <nav class="nav-menu">
@@ -73,11 +69,17 @@
 
   <main class="main-content" id="mainContent">
     <header class="topbar">
-      <button class="menu-btn" type="button" onclick="toggleSidebar()" aria-label="Toggle sidebar">
-        <i class="ph-light ph-list" aria-hidden="true"></i>
-        <span class="menu-fallback">☰</span>
+      <div class="topbar-left">
+        <button class="menu-btn" type="button" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+          <i class="ph-light ph-list" aria-hidden="true"></i>
+          <span class="menu-fallback">☰</span>
+        </button>
+        <div class="dashboard-title">{{ settings.app_name }}</div>
+      </div>
+      <button class="theme-toggle" id="themeToggleBtn" type="button" onclick="toggleTheme()" aria-label="Toggle theme">
+        <i class="ph-light ph-moon" aria-hidden="true"></i>
+        <span class="theme-fallback">◐</span>
       </button>
-      <div class="dashboard-title">{{ settings.app_name }}</div>
     </header>
 
     <div class="content-body">

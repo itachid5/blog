@@ -21,24 +21,24 @@
 <div class="panel">
   <h2>Railway Projects</h2>
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table projects-table">
       <thead>
         <tr><th>Project name</th><th>Account</th><th>Project ID</th><th>Environment ID</th><th>Status</th><th>Error</th><th>Service count</th><th>Actions</th></tr>
       </thead>
       <tbody>
       {% for project in projects %}
         <tr>
-          <td>{{ project.project_name }}</td>
-          <td>{{ account_label(accounts, project.account_id) }}</td>
-          <td><code>{{ project.project_id or '-' }}</code></td>
-          <td><code>{{ project.environment_id or '-' }}</code></td>
-          <td><span class="badge status-{{ project.status }}">{{ project.status }}</span></td>
-          <td>
+          <td data-label="Project Name">{{ project.project_name }}</td>
+          <td data-label="Account">{{ account_label(accounts, project.account_id) }}</td>
+          <td data-label="Project ID"><code>{{ project.project_id or '-' }}</code></td>
+          <td data-label="Environment ID"><code>{{ project.environment_id or '-' }}</code></td>
+          <td data-label="Status"><span class="badge status-{{ project.status }}">{{ project.status }}</span></td>
+          <td data-label="Error">
             {{ project.error or '-' }}
             {% if project.id in project_link_restore_ids %}<div class="muted small">Project link will be restored automatically before the next action.</div>{% endif %}
           </td>
-          <td>{{ service_counts.get(project.id, 0) }}</td>
-          <td class="actions">
+          <td data-label="Service Count">{{ service_counts.get(project.id, 0) }}</td>
+          <td data-label="Actions" class="actions project-actions">
             <form method="post" action="/projects/{{ project.id }}/services" class="inline-form">
               <input name="service_name" value="{{ next_service_names.get(project.id, 'final-1') }}" required>
               <button type="submit">Create Service</button>

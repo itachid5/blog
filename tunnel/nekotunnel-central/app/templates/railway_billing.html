@@ -15,7 +15,7 @@
 <div class="panel">
   <h2>Manual Billing Overview</h2>
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table billing-table">
       <thead>
         <tr><th>Account</th><th>Plan</th><th>Status</th><th>Credits</th><th>Account Added</th><th>Cycle Start</th><th>Renewal/Expiry</th><th>Countdown</th><th>Note</th><th>Action</th></tr>
       </thead>
@@ -23,16 +23,16 @@
       {% for account in manual_billing_enabled_accounts %}
         {% set manual_billing = manual_billing_summaries.get(account.id, {}) %}
         <tr>
-          <td>{{ account.label }}</td>
-          <td>{{ account.manual_plan_name or '-' }}</td>
-          <td>{{ account.manual_subscription_status or '-' }}</td>
-          <td>{{ account.manual_credits_remaining or '-' }}{% if account.manual_credits_total %} / {{ account.manual_credits_total }}{% endif %}</td>
-          <td>{{ manual_billing.account_added or '-' }}<br><span class="muted">{{ manual_billing.account_age or '-' }}</span></td>
-          <td>{{ manual_billing.cycle_start or '-' }}</td>
-          <td>{{ manual_billing.renewal or '-' }}{% if manual_billing.renewal_is_derived %}<br><span class="muted">derived from cycle days</span>{% endif %}</td>
-          <td>{{ manual_billing.countdown or '-' }}</td>
-          <td>{{ account.manual_billing_note or '-' }}</td>
-          <td><a class="button-link" href="/railway-accounts/{{ account.id }}/billing/edit">Edit</a></td>
+          <td data-label="Account">{{ account.label }}</td>
+          <td data-label="Plan">{{ account.manual_plan_name or '-' }}</td>
+          <td data-label="Status">{{ account.manual_subscription_status or '-' }}</td>
+          <td data-label="Credits">{{ account.manual_credits_remaining or '-' }}{% if account.manual_credits_total %} / {{ account.manual_credits_total }}{% endif %}</td>
+          <td data-label="Account Added">{{ manual_billing.account_added or '-' }}<br><span class="muted">{{ manual_billing.account_age or '-' }}</span></td>
+          <td data-label="Cycle Start">{{ manual_billing.cycle_start or '-' }}</td>
+          <td data-label="Renewal/Expiry">{{ manual_billing.renewal or '-' }}{% if manual_billing.renewal_is_derived %}<br><span class="muted">derived from cycle days</span>{% endif %}</td>
+          <td data-label="Countdown">{{ manual_billing.countdown or '-' }}</td>
+          <td data-label="Note">{{ account.manual_billing_note or '-' }}</td>
+          <td data-label="Actions" class="billing-actions"><a class="button-link" href="/railway-accounts/{{ account.id }}/billing/edit">Edit</a></td>
         </tr>
       {% else %}
         <tr><td colspan="10" class="empty">No manual billing trackers enabled yet. Add manual billing from Railway Accounts.</td></tr>
@@ -44,7 +44,7 @@
 <div class="panel">
   <h2>Billing Discovery Snapshots</h2>
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table billing-table">
       <thead>
         <tr>
           <th>Time</th><th>Account</th><th>Status</th><th>Plan</th><th>Subscription</th><th>Credits</th><th>Usage</th><th>Billing period</th><th>Trial</th><th>Promo</th><th>Error</th><th>Discovery details</th>
@@ -54,18 +54,18 @@
       {% for snapshot in snapshots %}
         {% set summary = summaries.get(snapshot.id, {}) %}
         <tr>
-          <td>{{ snapshot.updated_at or snapshot.created_at }}</td>
-          <td>{{ account_label(accounts, snapshot.account_id) }}</td>
-          <td><span class="badge status-{{ snapshot.discovery_status }}">{{ snapshot.discovery_status }}</span></td>
-          <td>{{ snapshot.plan_name or '-' }}</td>
-          <td>{{ snapshot.subscription_status or '-' }}</td>
-          <td>{{ snapshot.credits_remaining or '-' }}</td>
-          <td>{{ snapshot.current_usage or '-' }}</td>
-          <td>{{ snapshot.billing_period_start or '-' }} → {{ snapshot.billing_period_end or '-' }}</td>
-          <td>{{ snapshot.trial_expires_at or '-' }}</td>
-          <td>{{ snapshot.promo_expires_at or '-' }}</td>
-          <td>{{ snapshot.error or '-' }}</td>
-          <td>
+          <td data-label="Time">{{ snapshot.updated_at or snapshot.created_at }}</td>
+          <td data-label="Account">{{ account_label(accounts, snapshot.account_id) }}</td>
+          <td data-label="Status"><span class="badge status-{{ snapshot.discovery_status }}">{{ snapshot.discovery_status }}</span></td>
+          <td data-label="Plan">{{ snapshot.plan_name or '-' }}</td>
+          <td data-label="Subscription">{{ snapshot.subscription_status or '-' }}</td>
+          <td data-label="Credits">{{ snapshot.credits_remaining or '-' }}</td>
+          <td data-label="Usage">{{ snapshot.current_usage or '-' }}</td>
+          <td data-label="Billing Period">{{ snapshot.billing_period_start or '-' }} → {{ snapshot.billing_period_end or '-' }}</td>
+          <td data-label="Trial">{{ snapshot.trial_expires_at or '-' }}</td>
+          <td data-label="Promo">{{ snapshot.promo_expires_at or '-' }}</td>
+          <td data-label="Error">{{ snapshot.error or '-' }}</td>
+          <td data-label="Discovery Details">
             <details>
               <summary>View safe summary</summary>
               {% if summary.days_remaining %}<div><strong>Days remaining:</strong> {{ summary.days_remaining }}</div>{% endif %}

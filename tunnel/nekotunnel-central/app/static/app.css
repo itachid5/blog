@@ -204,6 +204,7 @@ pre {
   height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
   padding: 0 20px;
   background: var(--header-bg);
@@ -211,7 +212,8 @@ pre {
   box-shadow: 0 8px 28px var(--shadow-color);
   backdrop-filter: blur(16px);
 }
-.dashboard-title { font-size: 15px; font-weight: 500; letter-spacing: .02em; }
+.topbar-left { min-width: 0; display: flex; align-items: center; gap: 14px; }
+.dashboard-title { min-width: 0; font-size: 15px; font-weight: 500; letter-spacing: .02em; overflow-wrap: anywhere; }
 .content-body {
   width: min(100%, 1440px);
   margin: 0 auto;
@@ -391,10 +393,10 @@ tr:last-child td { border-bottom: 0; }
   .actions form, .actions button, .actions .button-link { width: 100%; }
   input, select, textarea, button, .primary, .button-link { min-height: 44px; }
 
-  .accounts-table { min-width: 0; }
-  .accounts-table thead { display: none; }
-  .accounts-table, .accounts-table tbody, .accounts-table tr, .accounts-table td { display: block; width: 100%; }
-  .accounts-table tr {
+  .responsive-table { min-width: 0; }
+  .responsive-table thead { display: none; }
+  .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { display: block; width: 100%; }
+  .responsive-table tr {
     margin-bottom: 16px;
     padding: 14px;
     border: 1px solid var(--border-color);
@@ -402,14 +404,14 @@ tr:last-child td { border-bottom: 0; }
     background: var(--bg-color);
     box-shadow: 0 4px 12px var(--shadow-color);
   }
-  .accounts-table tr:last-child { margin-bottom: 0; }
-  .accounts-table td {
+  .responsive-table tr:last-child { margin-bottom: 0; }
+  .responsive-table td {
     border: 0;
     padding: 8px 0;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
-  .accounts-table td::before {
+  .responsive-table td::before {
     content: attr(data-label);
     display: block;
     margin-bottom: 4px;
@@ -419,20 +421,29 @@ tr:last-child td { border-bottom: 0; }
     letter-spacing: .08em;
     text-transform: uppercase;
   }
-  .accounts-table .empty::before { content: none; }
-  .accounts-table code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
-  .accounts-table .badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
-  .accounts-table .account-mini-panel { margin: .2rem 0 0; padding: .75rem; }
-  .accounts-table .mobile-only { display: block; }
+  .responsive-table .empty::before { content: none; }
+  .responsive-table code, .responsive-table pre { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; overflow-x: auto; }
+  .responsive-table .badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .responsive-table .account-mini-panel { margin: .2rem 0 0; padding: .75rem; }
+  .responsive-table .mobile-only { display: block; }
   .account-meta { margin-top: .45rem; color: var(--text-secondary); font-size: .78rem; }
-  .account-actions {
+  .account-actions, .project-actions, .slot-actions, .billing-actions, .row-actions {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
     min-width: 0;
   }
-  .account-actions form, .account-actions button, .account-actions a { width: 100%; }
-  .account-actions button, .account-actions a { min-height: 44px; }
+  .account-actions form, .account-actions button, .account-actions a,
+  .project-actions form, .project-actions button, .project-actions a,
+  .slot-actions form, .slot-actions button, .slot-actions a,
+  .billing-actions form, .billing-actions button, .billing-actions a,
+  .row-actions form, .row-actions button, .row-actions a { width: 100%; }
+  .account-actions button, .account-actions a,
+  .project-actions button, .project-actions a,
+  .slot-actions button, .slot-actions a,
+  .billing-actions button, .billing-actions a,
+  .row-actions button, .row-actions a { min-height: 44px; }
+  .responsive-table .inline-form { grid-template-columns: 1fr; width: 100%; }
   .browserless-box { margin: .45rem 0 0; padding: .75rem; overflow-x: auto; }
   .browserless-output {
     max-width: 100%;

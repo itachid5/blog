@@ -26,29 +26,31 @@
 <div class="panel">
   <h2>Slot Table</h2>
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table slots-table">
       <thead>
-        <tr><th>Project</th><th>Service</th><th>Account</th><th>TCP</th><th>Status</th><th>Current Session</th><th>Current User</th><th>Deploy Status</th><th>TCP Status</th><th>Error</th><th>Actions</th></tr>
+        <tr><th>ID</th><th>Account</th><th>Project</th><th>Service</th><th>Status</th><th>Deploy Status</th><th>TCP Status</th><th>TCP Host</th><th>TCP Port</th><th>User</th><th>Current Session</th><th>Error</th><th>Actions</th></tr>
       </thead>
       <tbody>
       {% for slot in slots %}
         <tr>
-          <td>{{ slot.project_name }}</td>
-          <td>{{ slot.service_name }}</td>
-          <td>{{ account_label(accounts, slot.account_id) }}</td>
-          <td><code>{{ slot.tcp_address or '-' }}</code></td>
-          <td><span class="badge status-{{ slot.status }}">{{ slot.status }}</span></td>
-          <td>{% if slot.current_session_id %}<code>{{ slot.current_session_id }}</code>{% else %}-{% endif %}</td>
-          <td>{{ slot.current_user_name or '-' }}</td>
-          <td>{{ slot.deploy_status or '-' }}</td>
-          <td>{{ slot.tcp_status or '-' }}</td>
-          <td>
+          <td data-label="ID">{{ slot.id }}</td>
+          <td data-label="Account">{{ account_label(accounts, slot.account_id) }}</td>
+          <td data-label="Project">{{ slot.project_name }}</td>
+          <td data-label="Service">{{ slot.service_name }}</td>
+          <td data-label="Status"><span class="badge status-{{ slot.status }}">{{ slot.status }}</span></td>
+          <td data-label="Deploy Status">{{ slot.deploy_status or '-' }}</td>
+          <td data-label="TCP Status">{{ slot.tcp_status or '-' }}</td>
+          <td data-label="TCP Host"><code>{{ slot.server_addr or '-' }}</code></td>
+          <td data-label="TCP Port"><code>{{ slot.server_port or '-' }}</code></td>
+          <td data-label="User">{{ slot.current_user_name or '-' }}</td>
+          <td data-label="Current Session">{% if slot.current_session_id %}<code>{{ slot.current_session_id }}</code>{% else %}-{% endif %}</td>
+          <td data-label="Error">
             {% if slot.status in ['deployed', 'tcp_pending'] %}
               <p class="muted small">Manual step required: enable TCP Proxy in Railway for this service with internal port 8080, then click Refresh TCP.</p>
             {% endif %}
             {{ slot.error or '-' }}
           </td>
-          <td class="actions">
+          <td data-label="Actions" class="actions slot-actions">
             {% if slot.status in ['deployed', 'tcp_pending'] %}
               <form method="post" action="/slots/{{ slot.id }}/refresh-tcp"><button type="submit">Refresh TCP</button></form>
             {% endif %}
@@ -65,7 +67,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="11" class="empty">No slots yet.</td></tr>
+        <tr><td colspan="13" class="empty">No slots yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>
