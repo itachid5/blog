@@ -12,6 +12,7 @@ for line in Path(".env").read_text().splitlines() if Path(".env").exists() else 
 class Settings:
     app_name: str = os.getenv("APP_NAME", "NekoTunnel Central")
     admin_token: str = os.getenv("ADMIN_TOKEN", "change-me")
+    app_secret: str = os.getenv("APP_SECRET", "")
     session_secret: str = os.getenv("APP_SECRET", os.getenv("SESSION_SECRET", "dev-session-secret-change-me"))
     session_ttl_seconds: int = int(os.getenv("SESSION_TTL_SECONDS", "3600"))
     cleanup_interval_seconds: int = int(os.getenv("CLEANUP_INTERVAL_SECONDS", "300"))
@@ -19,7 +20,7 @@ class Settings:
     tunnel_cleanup_interval_seconds: int = int(os.getenv("TUNNEL_CLEANUP_INTERVAL_SECONDS", "30"))
     database_url: str | None = os.getenv("DATABASE_URL")
     railway_cli_path: str | None = os.getenv("RAILWAY_CLI_PATH")
-    railway_home_dir: str = os.getenv("RAILWAY_HOME_DIR", "/var/data/railway")
+    railway_home_dir: str = os.getenv("RAILWAY_HOME_DIR", "/tmp/railway")
     render: bool = bool(os.getenv("RENDER"))
 
 

@@ -27,9 +27,10 @@ EXPECTED_TABLES = (
     "audit_logs",
     "provision_logs",
     "railway_cli_logins",
+    "railway_cli_session_backups",
     "app_settings",
 )
-SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs", "railway_cli_logins"}
+SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs", "railway_cli_logins", "railway_cli_session_backups"}
 INDEX_STATEMENTS = (
     "CREATE INDEX IF NOT EXISTS idx_users_token_hash ON users(token_hash)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_user_status ON sessions(user_id, status)",
@@ -153,7 +154,10 @@ class SQLiteStore:
                     error TEXT NOT NULL DEFAULT '',
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    auth_type TEXT NOT NULL DEFAULT 'token'
+                    auth_type TEXT NOT NULL DEFAULT 'token',
+                    cli_backup_present INTEGER NOT NULL DEFAULT 0,
+                    cli_backup_updated_at TEXT,
+                    cli_backup_size_bytes INTEGER
                 );
 
                 CREATE TABLE IF NOT EXISTS railway_projects (
@@ -255,6 +259,19 @@ class SQLiteStore:
                     FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS railway_cli_session_backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    encrypted_blob TEXT NOT NULL,
+                    sha256 TEXT,
+                    size_bytes INTEGER,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    restored_at TEXT,
+                    error TEXT,
+                    FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS app_settings (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL DEFAULT '',
@@ -264,6 +281,7 @@ class SQLiteStore:
             )
             self.ensure_railway_account_columns(conn)
             self.ensure_railway_cli_login_columns(conn)
+            self.ensure_cli_session_backup_schema(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
             self.ensure_session_columns(conn)
@@ -322,6 +340,9 @@ class SQLiteStore:
             "token_encrypted_or_masked": "TEXT NOT NULL DEFAULT ''",
             "token_prefix": "TEXT NOT NULL DEFAULT ''",
             "auth_type": "TEXT NOT NULL DEFAULT 'token'",
+            "cli_backup_present": "INTEGER NOT NULL DEFAULT 0",
+            "cli_backup_updated_at": "TEXT",
+            "cli_backup_size_bytes": "INTEGER",
         }
         for name, definition in definitions.items():
             if name not in columns:
@@ -378,6 +399,55 @@ class SQLiteStore:
         for name, definition in definitions.items():
             if name not in columns:
                 conn.execute(f"ALTER TABLE railway_cli_logins ADD COLUMN {name} {definition}")
+
+    def ensure_cli_session_backup_schema(self, conn: sqlite3.Connection) -> None:
+        if self.database_type == "postgres":
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS railway_cli_session_backups (
+                    id SERIAL PRIMARY KEY,
+                    account_id INTEGER NOT NULL REFERENCES railway_accounts(id) ON DELETE CASCADE,
+                    encrypted_blob TEXT NOT NULL,
+                    sha256 TEXT,
+                    size_bytes INTEGER,
+                    created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                    updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                    restored_at TEXT,
+                    error TEXT
+                )
+                """
+            )
+        else:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS railway_cli_session_backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    encrypted_blob TEXT NOT NULL,
+                    sha256 TEXT,
+                    size_bytes INTEGER,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    restored_at TEXT,
+                    error TEXT,
+                    FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
+                )
+                """
+            )
+        columns = self.table_columns(conn, "railway_cli_session_backups")
+        definitions = {
+            "account_id": "INTEGER NOT NULL DEFAULT 0",
+            "encrypted_blob": "TEXT NOT NULL DEFAULT ''",
+            "sha256": "TEXT",
+            "size_bytes": "INTEGER",
+            "created_at": "TEXT NOT NULL DEFAULT ''",
+            "updated_at": "TEXT NOT NULL DEFAULT ''",
+            "restored_at": "TEXT",
+            "error": "TEXT",
+        }
+        for name, definition in definitions.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE railway_cli_session_backups ADD COLUMN {name} {definition}")
 
     def ensure_railway_project_columns(self, conn: sqlite3.Connection) -> None:
         columns = self.table_columns(conn, "railway_projects")
@@ -632,6 +702,94 @@ class SQLiteStore:
             )
             conn.commit()
         return cursor.rowcount > 0
+
+    def save_cli_session_backup(self, account_id: int, encrypted_blob: str, sha256: str, size_bytes: int) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM railway_cli_session_backups WHERE account_id = ?", (account_id,))
+            conn.execute(
+                """
+                INSERT INTO railway_cli_session_backups (account_id, encrypted_blob, sha256, size_bytes, error)
+                VALUES (?, ?, ?, ?, '')
+                """,
+                (account_id, encrypted_blob, sha256, size_bytes),
+            )
+            conn.execute(
+                """
+                UPDATE railway_accounts
+                SET cli_backup_present = 1,
+                    cli_backup_updated_at = CURRENT_TIMESTAMP,
+                    cli_backup_size_bytes = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (size_bytes, account_id),
+            )
+            conn.commit()
+        self.add_log("admin", "railway_cli_session_backup.save", f"Saved encrypted CLI session backup for account {account_id} ({size_bytes} bytes)")
+
+    def latest_cli_session_backup(self, account_id: int):
+        with self.connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT * FROM railway_cli_session_backups
+                WHERE account_id = ?
+                ORDER BY {self.order_by_timestamp('updated_at')}, id DESC
+                LIMIT 1
+                """,
+                (account_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def mark_cli_session_backup_restored(self, account_id: int) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE railway_cli_session_backups
+                SET restored_at = CURRENT_TIMESTAMP, error = ''
+                WHERE id = (
+                    SELECT id FROM railway_cli_session_backups WHERE account_id = ? ORDER BY id DESC LIMIT 1
+                )
+                """,
+                (account_id,),
+            )
+            conn.commit()
+
+    def mark_cli_session_backup_error(self, account_id: int, error: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE railway_cli_session_backups
+                SET error = ?
+                WHERE id = (
+                    SELECT id FROM railway_cli_session_backups WHERE account_id = ? ORDER BY id DESC LIMIT 1
+                )
+                """,
+                (error[:500], account_id),
+            )
+            conn.commit()
+
+    def delete_cli_session_backup(self, account_id: int) -> bool:
+        with self.connect() as conn:
+            cursor = conn.execute("DELETE FROM railway_cli_session_backups WHERE account_id = ?", (account_id,))
+            conn.execute(
+                """
+                UPDATE railway_accounts
+                SET cli_backup_present = 0,
+                    cli_backup_updated_at = NULL,
+                    cli_backup_size_bytes = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (account_id,),
+            )
+            conn.commit()
+        self.add_log("admin", "railway_cli_session_backup.delete", f"Deleted encrypted CLI session backup for account {account_id}")
+        return cursor.rowcount > 0
+
+    def cli_session_backup_stats(self) -> dict[str, int]:
+        with self.connect() as conn:
+            row = conn.execute("SELECT COUNT(*) AS count, COALESCE(SUM(size_bytes), 0) AS total_size FROM railway_cli_session_backups").fetchone()
+        return {"count": int(row["count"] if row else 0), "total_size": int(row["total_size"] if row else 0)}
 
     def create_cli_login_attempt(self, account_id: int) -> RailwayCliLogin:
         with self.connect() as conn:
@@ -1380,6 +1538,7 @@ class PostgresStore(SQLiteStore):
                 conn.execute(statement)
             self.ensure_railway_account_columns(conn)
             self.ensure_railway_cli_login_columns(conn)
+            self.ensure_cli_session_backup_schema(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
             self.ensure_session_columns(conn)
@@ -1404,7 +1563,10 @@ class PostgresStore(SQLiteStore):
                 error TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
                 updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
-                auth_type TEXT NOT NULL DEFAULT 'token'
+                auth_type TEXT NOT NULL DEFAULT 'token',
+                cli_backup_present INTEGER NOT NULL DEFAULT 0,
+                cli_backup_updated_at TEXT,
+                cli_backup_size_bytes INTEGER
             )
             """,
             """
@@ -1515,6 +1677,19 @@ class PostgresStore(SQLiteStore):
                 error TEXT NOT NULL DEFAULT '',
                 started_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
                 completed_at TEXT
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS railway_cli_session_backups (
+                id SERIAL PRIMARY KEY,
+                account_id INTEGER NOT NULL REFERENCES railway_accounts(id) ON DELETE CASCADE,
+                encrypted_blob TEXT NOT NULL,
+                sha256 TEXT,
+                size_bytes INTEGER,
+                created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                restored_at TEXT,
+                error TEXT
             )
             """,
             """

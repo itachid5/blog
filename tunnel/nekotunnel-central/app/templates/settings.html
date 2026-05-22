@@ -28,9 +28,12 @@
   <div><span>Railway CLI version</span><strong>{{ railway_cli.version }}</strong></div>
   <div><span>Railway CLI path exists</span><strong>{{ 'yes' if railway_cli.path_exists else 'no' }}</strong></div>
   <div><span>RAILWAY_CLI_PATH env value</span><strong>{{ railway_cli.env_path or '-' }}</strong></div>
+  <div><span>APP_SECRET strong enough</span><strong>{{ 'yes' if app_secret_strong else 'no' }}</strong></div>
   <div><span>RAILWAY_HOME_DIR</span><strong>{{ railway_cli.railway_home_dir }}</strong></div>
-  <div><span>RAILWAY_HOME_DIR exists</span><strong>{{ 'yes' if railway_cli.railway_home_exists else 'no' }}</strong></div>
-  <div><span>RAILWAY_HOME_DIR writable</span><strong>{{ 'yes' if railway_cli.railway_home_writable else 'no' }}</strong></div>
+  <div><span>Local Railway home exists</span><strong>{{ 'yes' if railway_cli.railway_home_exists else 'no' }}</strong></div>
+  <div><span>Local Railway home writable</span><strong>{{ 'yes' if railway_cli.railway_home_writable else 'no' }}</strong></div>
+  <div><span>CLI session backups</span><strong>{{ cli_backup_stats.count }}</strong></div>
+  <div><span>Total CLI backup plaintext size</span><strong>{{ cli_backup_stats.total_size }} bytes</strong></div>
   {% if railway_cli.persistent_disk_warning %}<div><span>Persistent disk warning</span><strong>{{ railway_cli.persistent_disk_warning }}</strong></div>{% endif %}
   <div><span>RAILWAY_API_TOKEN env present</span><strong>{{ 'yes' if railway_cli.env_token_present else 'no' }}</strong></div>
   <div><span>RAILWAY_API_TOKEN env masked</span><strong>{{ railway_cli.env_token_masked or '-' }}</strong></div>
@@ -38,5 +41,8 @@
   <div><span>Current working dir</span><strong>{{ railway_cli.cwd }}</strong></div>
   <div><span>Provision work dir</span><strong>{{ provision_work_dir }}</strong></div>
   <div><span>Provision work dir exists</span><strong>{{ 'yes' if provision_work_dir_exists else 'no' }}</strong></div>
+</div>
+<div class="panel">
+  <p class="alert alert-warning">Encrypted backups are sensitive. Keep APP_SECRET stable and private.</p>
 </div>
 {% endblock %}

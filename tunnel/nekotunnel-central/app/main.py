@@ -18,6 +18,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from .auth import is_logged_in, login_admin, logout_admin, require_admin
 from .config import settings
 from .railway_cli import (
+    app_secret_strong_enough,
+    backup_cli_session,
     check_cli_session,
     create_project,
     create_service,
@@ -28,6 +30,7 @@ from .railway_cli import (
     live_token_test,
     logout_cli_session,
     railway_cli_diagnostics,
+    restore_cli_session,
     railway_environment_config,
     railway_environment_edit_service_config,
     railway_environment_show,
@@ -86,8 +89,21 @@ def render(request: Request, template: str, context: dict | None = None):
     )
 
 
+def cli_local_session_state(account, railway_cli) -> str:
+    if account.auth_type != "cli_session":
+        return "-"
+    if account.status == "active":
+        return "active"
+    if not railway_cli.railway_home_exists:
+        return "missing"
+    return "unknown"
+
+
 def railway_auth_for_command(account, operation: str):
     if account.auth_type == "cli_session":
+        restore_result = restore_cli_session(account.id)
+        if restore_result.status != "success":
+            return None, "", f"Cannot use Railway CLI session for {operation}: {restore_result.error}"
         return account, "", ""
     token = account.token_encrypted_or_masked
     if not token or "..." in token:
@@ -127,13 +143,15 @@ def dashboard(request: Request):
 @app.get("/railway-accounts")
 def railway_accounts(request: Request):
     accounts = store.railway_accounts
+    railway_cli = railway_cli_diagnostics()
     return render(
         request,
         "railway_accounts.html",
         {
             "accounts": accounts,
-            "railway_cli": railway_cli_diagnostics(),
+            "railway_cli": railway_cli,
             "cli_login_attempts": {account.id: store.latest_cli_login_attempt(account.id) for account in accounts},
+            "local_session_states": {account.id: cli_local_session_state(account, railway_cli) for account in accounts},
         },
     )
 
@@ -375,9 +393,75 @@ def check_railway_cli_session(request: Request, account_id: int):
         flash(request, "warning", "Check CLI Login is only available for CLI-session accounts.")
         return RedirectResponse("/railway-accounts", status_code=303)
     result = check_cli_session()
-    store.update_railway_account_status(account.id, "active" if result.status == "success" else "failed", "" if result.status == "success" else result.error)
     store.add_provision_log(account.id, "check_cli_session", account.label, result.status, result.command, result.stdout, result.stderr, result.error, result.duration_ms, None, account.label)
-    flash(request, "success" if result.status == "success" else "danger", "Railway CLI session is active." if result.status == "success" else result.error)
+    if result.status == "failed" and account.cli_backup_present:
+        restore_result = restore_cli_session(account.id)
+        if restore_result.status == "success":
+            flash(request, "success", "Railway CLI session restored from encrypted backup.")
+            return RedirectResponse("/railway-accounts", status_code=303)
+    store.update_railway_account_status(account.id, "active" if result.status == "success" else "failed", "" if result.status == "success" else result.error)
+    if result.status == "success":
+        backup_result = backup_cli_session(account.id)
+        if backup_result.status == "success":
+            flash(request, "success", "CLI login active and encrypted backup saved.")
+        else:
+            flash(request, "warning", backup_result.error or "Railway CLI session is active, but encrypted backup failed.")
+    else:
+        flash(request, "danger", result.error)
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/backup-cli-session")
+def backup_railway_cli_session(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Backup CLI Session is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    result = backup_cli_session(account.id)
+    if result.status == "success":
+        flash(request, "success", f"Encrypted CLI session backup saved ({result.size_bytes} bytes).")
+    else:
+        flash(request, "danger", result.error or "CLI session backup failed.")
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/restore-cli-session")
+def restore_railway_cli_session(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Restore CLI Session is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    result = restore_cli_session(account.id)
+    flash(request, "success" if result.status == "success" else "danger", "Railway CLI session restored." if result.status == "success" else result.error)
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.post("/railway-accounts/{account_id}/delete-cli-backup")
+def delete_railway_cli_backup(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Delete Saved CLI Backup is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    ok = store.delete_cli_session_backup(account.id)
+    flash(request, "success" if ok else "warning", "Encrypted CLI session backup deleted." if ok else "No saved CLI backup was present.")
     return RedirectResponse("/railway-accounts", status_code=303)
 
 
@@ -1334,6 +1418,8 @@ def settings_page(request: Request):
         {
             "database_info": store.database_info(),
             "railway_cli": railway_cli_diagnostics(),
+            "app_secret_strong": app_secret_strong_enough(),
+            "cli_backup_stats": store.cli_session_backup_stats(),
             "provision_work_dir": provision_work_dir,
             "provision_work_dir_exists": provision_work_dir.exists(),
             "slot_counts": stats,

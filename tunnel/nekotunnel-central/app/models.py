@@ -13,6 +13,9 @@ class RailwayAccount:
     created_at: str
     updated_at: str
     auth_type: str = "token"
+    cli_backup_present: int = 0
+    cli_backup_updated_at: str | None = None
+    cli_backup_size_bytes: int | None = None
 
     @property
     def workspace(self) -> str:

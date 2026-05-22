@@ -33,7 +33,7 @@
   <h2>Accounts</h2>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>ID</th><th>Label</th><th>Type</th><th>Workspace</th><th>Token/session</th><th>API accepted</th><th>Status</th><th>Browserless login</th><th>Actions</th></tr></thead>
+      <thead><tr><th>ID</th><th>Label</th><th>Type</th><th>Workspace</th><th>Token/session</th><th>API accepted</th><th>Status</th><th>CLI backup</th><th>Browserless login</th><th>Actions</th></tr></thead>
       <tbody>
       {% for account in accounts %}
         {% set attempt = cli_login_attempts.get(account.id) %}
@@ -45,6 +45,16 @@
           <td>{% if account.auth_type == 'cli_session' %}<code>CLI session</code>{% else %}<code>{{ account.token_prefix }}</code>{% endif %}</td>
           <td>{% if account.auth_type == 'token' %}{{ 'yes' if account.status == 'valid' else 'no' }}{% else %}-{% endif %}</td>
           <td><span class="badge">{{ account.status }}</span></td>
+          <td>
+            {% if account.auth_type == 'cli_session' %}
+              <div><span>Local session:</span> <strong>{{ local_session_states.get(account.id, 'unknown') }}</strong></div>
+              <div><span>DB encrypted backup:</span> <strong>{{ 'present' if account.cli_backup_present else 'missing' }}</strong></div>
+              <div><span>Backup updated:</span> <strong>{{ account.cli_backup_updated_at or '-' }}</strong></div>
+              <div><span>Backup size:</span> <strong>{{ account.cli_backup_size_bytes or '-' }}</strong></div>
+            {% else %}
+              -
+            {% endif %}
+          </td>
           <td>
             {% if account.auth_type == 'cli_session' %}
               {% if attempt %}
@@ -76,10 +86,13 @@
           </td>
           <td class="actions">
             {% if account.auth_type == 'cli_session' %}
-              <form method="post" action="/railway-accounts/{{ account.id }}/browserless-login/start"><button type="submit">Start Browserless Login</button></form>
-              <form method="get" action="/railway-accounts"><button type="submit">Refresh Status</button></form>
+              <form method="post" action="/railway-accounts/{{ account.id }}/backup-cli-session"><button type="submit">Backup CLI Session</button></form>
+              <form method="post" action="/railway-accounts/{{ account.id }}/restore-cli-session"><button type="submit">Restore CLI Session</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/check-cli-session"><button type="submit">Check CLI Login</button></form>
+              <form method="post" action="/railway-accounts/{{ account.id }}/browserless-login/start"><button type="submit">Start Browserless Login</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/logout-cli-session"><button type="submit">Logout CLI Session</button></form>
+              <form method="post" action="/railway-accounts/{{ account.id }}/delete-cli-backup"><button type="submit">Delete Saved CLI Backup</button></form>
+              <form method="get" action="/railway-accounts"><button type="submit">Refresh Status</button></form>
             {% else %}
               <form method="post" action="/railway-accounts/{{ account.id }}/live-token-test"><button type="submit">Run live token test</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/create-test-project"><button type="submit">Create test project</button></form>
@@ -90,7 +103,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="9" class="empty">No Railway accounts yet.</td></tr>
+        <tr><td colspan="10" class="empty">No Railway accounts yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>

@@ -1,4 +1,8 @@
+import base64
 import errno
+import fnmatch
+import hashlib
+import io
 import json
 import logging
 import os
@@ -9,6 +13,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import tarfile
 import threading
 import time
 import urllib.error
@@ -17,13 +22,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from cryptography.fernet import Fernet, InvalidToken
+
 from .config import settings
-from .storage import mask_token
+from .storage import mask_token, store
 
 
 MISSING_CLI_ERROR = "Railway CLI is not installed. Install with: bash <(curl -fsSL railway.com/install.sh) -y"
 RAILWAY_TOKEN_REJECTED_ERROR = "Railway rejected this token. Copy the full token using Railway's copy button and add it again."
 RAILWAY_GRAPHQL_URL = "https://backboard.railway.com/graphql/v2"
+CLI_BACKUP_SECRET_ERROR = "Set a strong APP_SECRET before saving Railway CLI session backups."
+CLI_BACKUP_TOO_LARGE_ERROR = "CLI session backup too large. Cache/log files may be included."
+MAX_CLI_BACKUP_BYTES = 1024 * 1024
+EXCLUDED_BACKUP_DIRS = {"cache", "logs", "tmp", "node_modules", "__pycache__"}
+EXCLUDED_BACKUP_PATTERNS = ("*.log", "*.zip", "*.tar.gz", "*.gz", "*.exe")
 logger = logging.getLogger("nekotunnel-central.railway")
 
 
@@ -53,6 +65,14 @@ class RailwayCommandResult:
     duration_ms: int
     workdir: Path | None = None
     error_code: str = ""
+
+
+@dataclass
+class CliSessionBackupResult:
+    status: str
+    error: str = ""
+    sha256: str = ""
+    size_bytes: int = 0
 
 
 def _is_executable(path: str) -> bool:
@@ -151,6 +171,151 @@ def _effective_railway_home_dir() -> str:
     fallback_home = Path("/tmp/railway")
     fallback_home.mkdir(parents=True, exist_ok=True)
     return str(fallback_home)
+
+
+def app_secret_strong_enough() -> bool:
+    secret = settings.app_secret.strip()
+    if not secret:
+        return False
+    lowered = secret.lower()
+    weak_values = {"change-this-secret", "change-me", "dev-session-secret-change-me", "secret", "password"}
+    return lowered not in weak_values and "change-this" not in lowered and len(secret) >= 32
+
+
+def _fernet() -> Fernet:
+    if not app_secret_strong_enough():
+        raise ValueError(CLI_BACKUP_SECRET_ERROR)
+    digest = hashlib.sha256(settings.app_secret.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def _excluded_backup_path(relative_path: Path) -> bool:
+    parts = relative_path.parts
+    if any(part in EXCLUDED_BACKUP_DIRS for part in parts):
+        return True
+    name = relative_path.name
+    return any(fnmatch.fnmatch(name, pattern) for pattern in EXCLUDED_BACKUP_PATTERNS)
+
+
+def _safe_backup_relative_path(path: Path, root: Path) -> Path | None:
+    try:
+        relative_path = path.relative_to(root)
+    except ValueError:
+        return None
+    if not relative_path.parts or path.is_symlink() or any(part in {"", ".", ".."} for part in relative_path.parts):
+        return None
+    return relative_path
+
+
+def _create_cli_session_archive(railway_home_dir: Path) -> bytes:
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+        for path in sorted(railway_home_dir.rglob("*")):
+            relative_path = _safe_backup_relative_path(path, railway_home_dir)
+            if relative_path is None or _excluded_backup_path(relative_path):
+                if path.is_dir():
+                    continue
+                continue
+            archive.add(path, arcname=str(relative_path), recursive=False)
+            if buffer.tell() > MAX_CLI_BACKUP_BYTES:
+                raise ValueError(CLI_BACKUP_TOO_LARGE_ERROR)
+    data = buffer.getvalue()
+    if len(data) > MAX_CLI_BACKUP_BYTES:
+        raise ValueError(CLI_BACKUP_TOO_LARGE_ERROR)
+    return data
+
+
+def _safe_tar_member(member: tarfile.TarInfo) -> bool:
+    path = Path(member.name)
+    return not path.is_absolute() and all(part not in {"", ".", ".."} for part in path.parts) and not member.issym() and not member.islnk()
+
+
+def backup_cli_session(account_id: int) -> CliSessionBackupResult:
+    account = store.get_account(account_id)
+    if not account or account.auth_type != "cli_session":
+        return CliSessionBackupResult("failed", "CLI session backup is only available for CLI-session accounts.")
+    railway_home_dir = Path(_effective_railway_home_dir())
+    if not railway_home_dir.exists():
+        error = "Railway CLI session directory is missing."
+        store.add_provision_log(account.id, "cli_session_backup", account.label, "failed", "backup railway home", "", "", error, 0, None, account.label)
+        return CliSessionBackupResult("failed", error)
+    try:
+        plaintext = _create_cli_session_archive(railway_home_dir)
+        digest = hashlib.sha256(plaintext).hexdigest()
+        encrypted_blob = _fernet().encrypt(plaintext).decode("utf-8")
+        store.save_cli_session_backup(account.id, encrypted_blob, digest, len(plaintext))
+        store.add_provision_log(account.id, "cli_session_backup", account.label, "success", "backup railway home", "", "", "", 0, None, account.label)
+        return CliSessionBackupResult("success", "", digest, len(plaintext))
+    except (OSError, ValueError) as exc:
+        error = str(exc)
+    except Exception:
+        logger.exception("CLI session backup failed for account %s", account_id)
+        error = "CLI session backup failed."
+    store.add_provision_log(account.id, "cli_session_backup", account.label, "failed", "backup railway home", "", "", error, 0, None, account.label)
+    return CliSessionBackupResult("failed", error)
+
+
+def _extract_cli_session_archive(data: bytes, railway_home_dir: Path) -> None:
+    railway_home_dir.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+        members = archive.getmembers()
+        for member in members:
+            if not _safe_tar_member(member):
+                raise ValueError("CLI session backup contains an unsafe path.")
+        for member in members:
+            archive.extract(member, railway_home_dir)
+    for path in railway_home_dir.rglob("*"):
+        try:
+            if path.is_dir():
+                path.chmod(0o700)
+            elif path.is_file():
+                path.chmod(0o600)
+        except OSError:
+            pass
+
+
+def restore_cli_session(account_id: int) -> CliSessionBackupResult:
+    account = store.get_account(account_id)
+    if not account or account.auth_type != "cli_session":
+        return CliSessionBackupResult("failed", "CLI session restore is only available for CLI-session accounts.")
+    railway_home_dir = Path(_effective_railway_home_dir())
+    if railway_home_dir.exists() and check_cli_session().status == "success":
+        store.update_railway_account_status(account.id, "active", "")
+        return CliSessionBackupResult("success")
+    backup = store.latest_cli_session_backup(account.id)
+    if not backup:
+        error = "No encrypted CLI session backup found."
+        store.update_railway_account_status(account.id, "failed", error)
+        return CliSessionBackupResult("failed", error)
+    try:
+        plaintext = _fernet().decrypt(backup["encrypted_blob"].encode("utf-8"))
+        digest = hashlib.sha256(plaintext).hexdigest()
+        expected_digest = backup.get("sha256") or ""
+        if expected_digest and digest != expected_digest:
+            raise ValueError("CLI session backup integrity check failed.")
+        _extract_cli_session_archive(plaintext, railway_home_dir)
+        result = check_cli_session()
+        if result.status == "success":
+            store.mark_cli_session_backup_restored(account.id)
+            store.update_railway_account_status(account.id, "active", "")
+            store.add_provision_log(account.id, "cli_session_restore", account.label, "success", "restore railway home", "", "", "", 0, None, account.label)
+            return CliSessionBackupResult("success", "", digest, len(plaintext))
+        error = short_cli_error(result.error or result.stderr or result.stdout)
+    except InvalidToken:
+        error = "CLI session backup could not be decrypted. APP_SECRET may have changed."
+    except (OSError, tarfile.TarError, ValueError) as exc:
+        error = str(exc)
+    except Exception:
+        logger.exception("CLI session restore failed for account %s", account_id)
+        error = "CLI session restore failed."
+    store.mark_cli_session_backup_error(account.id, error)
+    store.update_railway_account_status(account.id, "failed", short_cli_error(error))
+    store.add_provision_log(account.id, "cli_session_restore", account.label, "failed", "restore railway home", "", "", short_cli_error(error), 0, None, account.label)
+    return CliSessionBackupResult("failed", short_cli_error(error))
+
+
+def short_cli_error(error: str) -> str:
+    return (error or "").strip()[:500]
 
 
 def _railway_env(auth) -> dict[str, str]:
