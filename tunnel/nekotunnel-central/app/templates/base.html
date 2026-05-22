@@ -1,34 +1,91 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ settings.app_name }}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('nekotunnel-theme') || 'dark');
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <nav class="topnav">
-    <a class="brand" href="/">NekoTunnel Central</a>
-    <button class="nav-toggle" type="button" aria-label="Toggle navigation" onclick="document.body.classList.toggle('nav-open')">Menu</button>
-    <div class="nav-links">
-      <a href="/" class="{% if current_path == '/' %}active{% endif %}">Dashboard</a>
-      <a href="/railway-accounts" class="{% if current_path == '/railway-accounts' %}active{% endif %}">Railway Accounts</a>
-      <a href="/railway-billing" class="{% if current_path == '/railway-billing' %}active{% endif %}">Railway Billing</a>
-      <a href="/projects" class="{% if current_path == '/projects' %}active{% endif %}">Projects</a>
-      <a href="/slots" class="{% if current_path == '/slots' %}active{% endif %}">Slots</a>
-      <a href="/users" class="{% if current_path == '/users' %}active{% endif %}">Users</a>
-      <a href="/sessions" class="{% if current_path == '/sessions' %}active{% endif %}">Sessions</a>
-      <a href="/logs" class="{% if current_path == '/logs' %}active{% endif %}">Logs</a>
-      <a href="/provision-logs" class="{% if current_path == '/provision-logs' %}active{% endif %}">Provision Logs</a>
-      <a href="/settings" class="{% if current_path == '/settings' %}active{% endif %}">Settings</a>
-      <form method="post" action="/logout" class="logout-form"><button type="submit">Logout</button></form>
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+    <div class="sidebar-header">
+      <a class="brand" href="/">
+        <span class="logo-mark">NT</span>
+        <span>
+          <strong>NekoTunnel</strong>
+          <small>Central</small>
+        </span>
+      </a>
+      <button class="theme-toggle" id="themeToggleBtn" type="button" onclick="toggleTheme()" aria-label="Toggle theme">
+        <i class="ph-light ph-moon" aria-hidden="true"></i>
+        <span class="theme-fallback">◐</span>
+      </button>
     </div>
-  </nav>
-  <main class="container">
-    {% for flash in flashes %}
-      <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
-    {% endfor %}
-    {% block content %}{% endblock %}
+
+    <nav class="nav-menu">
+      <div class="nav-group">
+        <div class="nav-group-title"><i class="ph-light ph-gauge" aria-hidden="true"></i> Operations</div>
+        <ul class="nav-items">
+          <li><a href="/" class="nav-item {% if current_path == '/' %}active{% endif %}">Dashboard</a></li>
+          <li><a href="/railway-accounts" class="nav-item {% if current_path.startswith('/railway-accounts') %}active{% endif %}">Railway Accounts</a></li>
+          <li><a href="/railway-billing" class="nav-item {% if current_path.startswith('/railway-billing') %}active{% endif %}">Railway Billing</a></li>
+          <li><a href="/projects" class="nav-item {% if current_path.startswith('/projects') %}active{% endif %}">Projects</a></li>
+          <li><a href="/slots" class="nav-item {% if current_path.startswith('/slots') %}active{% endif %}">Slots</a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title"><i class="ph-light ph-users-three" aria-hidden="true"></i> Access</div>
+        <ul class="nav-items">
+          <li><a href="/users" class="nav-item {% if current_path.startswith('/users') %}active{% endif %}">Users</a></li>
+          <li><a href="/sessions" class="nav-item {% if current_path.startswith('/sessions') %}active{% endif %}">Sessions</a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title"><i class="ph-light ph-activity" aria-hidden="true"></i> Observability</div>
+        <ul class="nav-items">
+          <li><a href="/logs" class="nav-item {% if current_path == '/logs' %}active{% endif %}">Logs</a></li>
+          <li><a href="/provision-logs" class="nav-item {% if current_path.startswith('/provision-logs') %}active{% endif %}">Provision Logs</a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title"><i class="ph-light ph-sliders" aria-hidden="true"></i> System</div>
+        <ul class="nav-items">
+          <li><a href="/settings" class="nav-item {% if current_path.startswith('/settings') %}active{% endif %}">Settings</a></li>
+          <li>
+            <form method="post" action="/logout" class="logout-form">
+              <button class="nav-item nav-logout" type="submit">Logout</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <header class="topbar">
+      <button class="menu-btn" type="button" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <i class="ph-light ph-list" aria-hidden="true"></i>
+        <span class="menu-fallback">☰</span>
+      </button>
+      <div class="dashboard-title">{{ settings.app_name }}</div>
+    </header>
+
+    <div class="content-body">
+      {% for flash in flashes %}
+        <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+      {% endfor %}
+      {% block content %}{% endblock %}
+    </div>
   </main>
 </body>
 </html>
