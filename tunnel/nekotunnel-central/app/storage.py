@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import re
 import secrets
@@ -16,6 +17,7 @@ except ImportError:
 from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayBillingSnapshot, RailwayCliLogin, RailwayProject, Slot, TunnelSession, UserToken
 
 
+logger = logging.getLogger("nekotunnel-central.storage")
 DB_PATH = Path("data/nekotunnel.db")
 EXPECTED_TABLES = (
     "railway_accounts",
@@ -87,8 +89,19 @@ class PostgresConnection:
 
     def execute(self, sql: str, params: tuple | list | None = None) -> PostgresCursor:
         converted = self.convert_sql(sql)
+        values = tuple(params or ())
         cursor = self.conn.cursor()
-        cursor.execute(converted, tuple(params or ()))
+        try:
+            cursor.execute(converted, values)
+        except (IndexError, TypeError) as exc:
+            logger.exception(
+                "PostgreSQL SQL placeholder mismatch: original=%r converted=%r placeholder_count=%s params_count=%s",
+                sql,
+                converted,
+                self.placeholder_count(converted),
+                len(values),
+            )
+            raise RuntimeError("Database query placeholder mismatch") from exc
         lastrowid = self.last_insert_id(sql)
         return PostgresCursor(cursor, lastrowid)
 
@@ -112,8 +125,11 @@ class PostgresConnection:
 
     @staticmethod
     def convert_sql(sql: str) -> str:
-        converted = sql.replace("?", "%s")
-        return converted
+        return sql.replace("%", "%%").replace("?", "%s")
+
+    @staticmethod
+    def placeholder_count(sql: str) -> int:
+        return len(re.findall(r"(?<!%)%s", sql))
 
 
 class SQLiteStore:
@@ -1623,10 +1639,11 @@ class SQLiteStore:
                   AND COALESCE(server_addr, '') != ''
                   AND COALESCE(server_port, '') != ''
                   AND COALESCE(frp_token_hash_or_encrypted, '') != ''
-                  AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE '%...%'
+                  AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE ?
                 ORDER BY id ASC
                 LIMIT 1
-                """
+                """,
+                ("%...%",),
             ).fetchone()
             if not slot:
                 conn.rollback()
@@ -2021,11 +2038,12 @@ class PostgresStore(SQLiteStore):
                   AND COALESCE(server_addr, '') != ''
                   AND COALESCE(server_port, '') != ''
                   AND COALESCE(frp_token_hash_or_encrypted, '') != ''
-                  AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE '%...%'
+                  AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE ?
                 ORDER BY id ASC
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
-                """
+                """,
+                ("%...%",),
             ).fetchone()
             if not slot:
                 conn.rollback()

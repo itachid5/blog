@@ -2003,10 +2003,15 @@ async def api_connect(request: Request):
     if local_port < 1 or local_port > 65535:
         return JSONResponse({"ok": False, "error": "invalid_local_port"}, status_code=400)
 
-    allocation, error = store.allocate_session(user, local_port, str(payload.get("client_info") or ""))
+    try:
+        allocation, error = store.allocate_session(user, local_port, str(payload.get("client_info") or ""))
+    except Exception:
+        logger.exception("/api/connect failed while allocating session")
+        return JSONResponse({"ok": False, "error": "server_error"}, status_code=500)
     if error:
+        public_error = "no_available_slot" if error == "no_free_slot" else error
         status_code = 409 if error in {"no_free_slot", "max_sessions_reached"} else 400
-        return JSONResponse({"ok": False, "error": error}, status_code=status_code)
+        return JSONResponse({"ok": False, "error": public_error}, status_code=status_code)
 
     return {
         "ok": True,
