@@ -2034,6 +2034,56 @@ def api_user(payload: dict):
     return user
 
 
+def token_prefix_only(token: str) -> str:
+    token = str(token or "")
+    return f"{token[:8]}..." if token else "-"
+
+
+def short_exception(exc: Exception | None, fallback: str) -> str:
+    if exc is None:
+        return fallback[:300]
+    message = f"{type(exc).__name__}: {exc}"
+    return message[:300] if message else fallback[:300]
+
+
+def log_api_connect_failed(
+    payload: dict,
+    local_port: int | str | None = None,
+    protocol: str | None = None,
+    endpoint_id: str | None = None,
+    error: str = "server_error",
+    exc: Exception | None = None,
+) -> None:
+    token = json_token(payload)
+    safe_protocol = str(protocol or payload.get("protocol") or "tcp").lower()
+    safe_local_port = local_port if local_port is not None else payload.get("local_port")
+    safe_endpoint_id = str(endpoint_id if endpoint_id is not None else payload.get("endpoint_id") or "")
+    exception_short = short_exception(exc, error)
+    details = json.dumps(
+        {
+            "token_prefix": token_prefix_only(token),
+            "local_port": safe_local_port,
+            "protocol": safe_protocol,
+            "endpoint_id": safe_endpoint_id[:12] if safe_endpoint_id else "-",
+            "error": error,
+            "exception": exception_short,
+        },
+        sort_keys=True,
+    )
+    if exc is not None:
+        logger.exception("api_connect_failed %s", details)
+    else:
+        logger.info("api_connect_failed %s", details)
+    try:
+        store.add_log("api", "api_connect_failed", details)
+    except Exception:
+        logger.warning("could not write api_connect_failed audit log", exc_info=True)
+    try:
+        store.add_provision_log(None, "api_connect_failed", "api_connect", "failed", "", "", "", exception_short, 0)
+    except Exception:
+        logger.warning("could not write api_connect_failed provision log", exc_info=True)
+
+
 def normalize_tcp_mux(value: object, local_port: int) -> bool:
     if value is None:
         return True
@@ -2065,16 +2115,20 @@ async def api_connect(request: Request):
 
     user = api_user(payload)
     if not user:
+        log_api_connect_failed(payload, error="invalid_token")
         return JSONResponse({"ok": False, "error": "invalid_token"}, status_code=401)
     try:
         local_port = int(payload.get("local_port"))
     except (TypeError, ValueError):
+        log_api_connect_failed(payload, error="invalid_local_port")
         return JSONResponse({"ok": False, "error": "invalid_local_port"}, status_code=400)
     if local_port < 1 or local_port > 65535:
+        log_api_connect_failed(payload, local_port, error="invalid_local_port")
         return JSONResponse({"ok": False, "error": "invalid_local_port"}, status_code=400)
 
     protocol = str(payload.get("protocol") or "tcp").lower()
     if protocol != "tcp":
+        log_api_connect_failed(payload, local_port, protocol, error="invalid_protocol")
         return JSONResponse({"ok": False, "error": "invalid_protocol"}, status_code=400)
 
     client_id = str(payload.get("client_id") or "").strip()
@@ -2082,6 +2136,7 @@ async def api_connect(request: Request):
     try:
         tcp_mux = normalize_tcp_mux(payload.get("tcp_mux"), local_port)
     except ValueError:
+        log_api_connect_failed(payload, local_port, protocol, endpoint_id, error="invalid_tcp_mux")
         return JSONResponse({"ok": False, "error": "invalid_tcp_mux"}, status_code=400)
     profile = connection_profile(local_port, tcp_mux, "tcp_mux" in payload)
     route_mode = "mux"
@@ -2100,10 +2155,11 @@ async def api_connect(request: Request):
             route_mode=route_mode,
             connection_profile=profile,
         )
-    except Exception:
-        logger.exception("/api/connect failed while allocating session")
+    except Exception as exc:
+        log_api_connect_failed(payload, local_port, protocol, endpoint_id, error="server_error", exc=exc)
         return JSONResponse({"ok": False, "error": "server_error"}, status_code=500)
     if error:
+        log_api_connect_failed(payload, local_port, protocol, endpoint_id, error=error)
         if error == "session_limit_reached":
             return JSONResponse({"ok": False, "error": error, "max_active_sessions": user.max_sessions}, status_code=409)
         if error == "port_already_active":

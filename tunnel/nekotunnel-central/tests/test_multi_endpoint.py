@@ -104,6 +104,29 @@ def test_api_connect_maps_no_available_slot(tmp_path, monkeypatch):
     assert response.json() == {"ok": False, "error": "no_available_slot"}
 
 
+def test_api_connect_failure_logs_safe_details(tmp_path, monkeypatch):
+    store = make_store(tmp_path)
+    _user, token = store.create_user_token("alice", 3)
+    monkeypatch.setattr(main, "store", store)
+    client = TestClient(main.app)
+
+    response = client.post(
+        "/api/connect",
+        json={"token": token, "protocol": "tcp", "local_port": 22, "endpoint_id": "endpoint-abcdef123456"},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"ok": False, "error": "no_available_slot"}
+    audit = [log for log in store.list_logs() if log.action == "api_connect_failed"]
+    provision = [log for log in store.list_provision_logs() if log.action == "api_connect_failed"]
+    assert audit
+    assert provision
+    assert token not in audit[0].details
+    assert token[:8] in audit[0].details
+    assert "endpoint-abc" in audit[0].details
+    assert provision[0].error == "no_available_slot"
+
+
 def test_api_connect_maps_session_limit_reached(tmp_path, monkeypatch):
     store = make_store(tmp_path)
     _user, token = store.create_user_token("alice", 1)

@@ -716,6 +716,12 @@ class SQLiteStore:
             "reconnect_count": "INTEGER NOT NULL DEFAULT 0",
             "grace_until": "TEXT",
             "last_disconnect_reason": "TEXT",
+            "tcp_mux": "INTEGER",
+            "route_mode": "TEXT",
+            "connection_profile": "TEXT",
+            "control_disconnect_count": "INTEGER NOT NULL DEFAULT 0",
+            "last_control_disconnect_reason": "TEXT",
+            "public_address_changed": "INTEGER",
         }
         for name, definition in definitions.items():
             if name not in columns:
@@ -2334,7 +2340,13 @@ class PostgresStore(SQLiteStore):
                 client_id TEXT,
                 reconnect_count INTEGER NOT NULL DEFAULT 0,
                 grace_until TEXT,
-                last_disconnect_reason TEXT
+                last_disconnect_reason TEXT,
+                tcp_mux INTEGER,
+                route_mode TEXT,
+                connection_profile TEXT,
+                control_disconnect_count INTEGER NOT NULL DEFAULT 0,
+                last_control_disconnect_reason TEXT,
+                public_address_changed INTEGER
             )
             """,
             """
