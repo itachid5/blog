@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <h1>Railway Billing Discovery</h1>
+  <p class="muted">Safe discovery snapshots for Railway CLI-session accounts. Billing data may be unavailable from Railway CLI/API.</p>
+</section>
+<div class="panel">
+  <div class="actions">
+    <a class="button-link {% if not selected_account_id %}active{% endif %}" href="/railway-billing">All accounts</a>
+    {% for account in accounts if account.auth_type == 'cli_session' %}
+      <a class="button-link {% if selected_account_id == account.id %}active{% endif %}" href="/railway-billing?account_id={{ account.id }}">{{ account.label }}</a>
+    {% endfor %}
+  </div>
+</div>
+<div class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th><th>Account</th><th>Status</th><th>Plan</th><th>Subscription</th><th>Credits</th><th>Usage</th><th>Billing period</th><th>Trial</th><th>Promo</th><th>Error</th><th>Discovery details</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for snapshot in snapshots %}
+        {% set summary = summaries.get(snapshot.id, {}) %}
+        <tr>
+          <td>{{ snapshot.updated_at or snapshot.created_at }}</td>
+          <td>{{ account_label(accounts, snapshot.account_id) }}</td>
+          <td><span class="badge status-{{ snapshot.discovery_status }}">{{ snapshot.discovery_status }}</span></td>
+          <td>{{ snapshot.plan_name or '-' }}</td>
+          <td>{{ snapshot.subscription_status or '-' }}</td>
+          <td>{{ snapshot.credits_remaining or '-' }}</td>
+          <td>{{ snapshot.current_usage or '-' }}</td>
+          <td>{{ snapshot.billing_period_start or '-' }} → {{ snapshot.billing_period_end or '-' }}</td>
+          <td>{{ snapshot.trial_expires_at or '-' }}</td>
+          <td>{{ snapshot.promo_expires_at or '-' }}</td>
+          <td>{{ snapshot.error or '-' }}</td>
+          <td>
+            <details>
+              <summary>View safe summary</summary>
+              {% if summary.days_remaining %}<div><strong>Days remaining:</strong> {{ summary.days_remaining }}</div>{% endif %}
+              {% if summary.available_commands %}
+                <h3>Available CLI commands</h3>
+                <pre>{{ summary.available_commands | tojson(indent=2) }}</pre>
+              {% endif %}
+              {% if summary.graphql %}
+                <h3>GraphQL discovery</h3>
+                <pre>{{ summary.graphql | tojson(indent=2) }}</pre>
+              {% endif %}
+              {% if summary.commands %}
+                <h3>Command outputs</h3>
+                <pre>{{ summary.commands | tojson(indent=2) }}</pre>
+              {% endif %}
+              {% if summary.raw_summary %}
+                <h3>Raw summary</h3>
+                <pre>{{ summary.raw_summary }}</pre>
+              {% endif %}
+            </details>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="12" class="empty">No billing discovery snapshots yet. {{ billing_unavailable_error }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

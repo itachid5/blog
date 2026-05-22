@@ -153,6 +153,25 @@ class RailwayCliLogin:
 
 
 @dataclass
+class RailwayBillingSnapshot:
+    id: int
+    account_id: int
+    plan_name: str | None
+    subscription_status: str | None
+    credits_remaining: str | None
+    current_usage: str | None
+    billing_period_start: str | None
+    billing_period_end: str | None
+    trial_expires_at: str | None
+    promo_expires_at: str | None
+    raw_summary: str | None
+    discovery_status: str
+    error: str | None
+    created_at: str
+    updated_at: str
+
+
+@dataclass
 class ProvisionLog:
     id: int
     railway_account_id: int | None

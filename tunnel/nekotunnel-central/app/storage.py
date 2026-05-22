@@ -14,7 +14,7 @@ except ImportError:
     psycopg2 = None
     DictCursor = None
 
-from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayCliLogin, RailwayProject, Slot, TunnelSession, UserToken
+from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayBillingSnapshot, RailwayCliLogin, RailwayProject, Slot, TunnelSession, UserToken
 
 
 DB_PATH = Path("data/nekotunnel.db")
@@ -28,9 +28,10 @@ EXPECTED_TABLES = (
     "provision_logs",
     "railway_cli_logins",
     "railway_cli_session_backups",
+    "railway_billing_snapshots",
     "app_settings",
 )
-SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs", "railway_cli_logins", "railway_cli_session_backups"}
+SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs", "railway_cli_logins", "railway_cli_session_backups", "railway_billing_snapshots"}
 INDEX_STATEMENTS = (
     "CREATE INDEX IF NOT EXISTS idx_users_token_hash ON users(token_hash)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_user_status ON sessions(user_id, status)",
@@ -40,6 +41,7 @@ INDEX_STATEMENTS = (
     "CREATE INDEX IF NOT EXISTS idx_slots_railway_project ON slots(railway_project_id)",
     "CREATE INDEX IF NOT EXISTS idx_slots_railway_account ON slots(railway_account_id)",
     "CREATE INDEX IF NOT EXISTS idx_projects_railway_account ON railway_projects(railway_account_id)",
+    "CREATE INDEX IF NOT EXISTS idx_billing_snapshots_account_created ON railway_billing_snapshots(account_id, created_at)",
     "CREATE INDEX IF NOT EXISTS idx_provision_logs_status_created ON provision_logs(status, created_at)",
     "CREATE INDEX IF NOT EXISTS idx_provision_logs_action_created ON provision_logs(action, created_at)",
 )
@@ -272,6 +274,25 @@ class SQLiteStore:
                     FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS railway_billing_snapshots (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    plan_name TEXT,
+                    subscription_status TEXT,
+                    credits_remaining TEXT,
+                    current_usage TEXT,
+                    billing_period_start TEXT,
+                    billing_period_end TEXT,
+                    trial_expires_at TEXT,
+                    promo_expires_at TEXT,
+                    raw_summary TEXT,
+                    discovery_status TEXT NOT NULL DEFAULT 'unavailable',
+                    error TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
+                );
+
                 CREATE TABLE IF NOT EXISTS app_settings (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL DEFAULT '',
@@ -282,6 +303,7 @@ class SQLiteStore:
             self.ensure_railway_account_columns(conn)
             self.ensure_railway_cli_login_columns(conn)
             self.ensure_cli_session_backup_schema(conn)
+            self.ensure_railway_billing_snapshot_schema(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
             self.ensure_session_columns(conn)
@@ -448,6 +470,73 @@ class SQLiteStore:
         for name, definition in definitions.items():
             if name not in columns:
                 conn.execute(f"ALTER TABLE railway_cli_session_backups ADD COLUMN {name} {definition}")
+
+    def ensure_railway_billing_snapshot_schema(self, conn: sqlite3.Connection) -> None:
+        if self.database_type == "postgres":
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS railway_billing_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    account_id INTEGER NOT NULL REFERENCES railway_accounts(id) ON DELETE CASCADE,
+                    plan_name TEXT,
+                    subscription_status TEXT,
+                    credits_remaining TEXT,
+                    current_usage TEXT,
+                    billing_period_start TEXT,
+                    billing_period_end TEXT,
+                    trial_expires_at TEXT,
+                    promo_expires_at TEXT,
+                    raw_summary TEXT,
+                    discovery_status TEXT NOT NULL DEFAULT 'unavailable',
+                    error TEXT,
+                    created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                    updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text)
+                )
+                """
+            )
+        else:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS railway_billing_snapshots (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    account_id INTEGER NOT NULL,
+                    plan_name TEXT,
+                    subscription_status TEXT,
+                    credits_remaining TEXT,
+                    current_usage TEXT,
+                    billing_period_start TEXT,
+                    billing_period_end TEXT,
+                    trial_expires_at TEXT,
+                    promo_expires_at TEXT,
+                    raw_summary TEXT,
+                    discovery_status TEXT NOT NULL DEFAULT 'unavailable',
+                    error TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (account_id) REFERENCES railway_accounts(id) ON DELETE CASCADE
+                )
+                """
+            )
+        columns = self.table_columns(conn, "railway_billing_snapshots")
+        definitions = {
+            "account_id": "INTEGER NOT NULL DEFAULT 0",
+            "plan_name": "TEXT",
+            "subscription_status": "TEXT",
+            "credits_remaining": "TEXT",
+            "current_usage": "TEXT",
+            "billing_period_start": "TEXT",
+            "billing_period_end": "TEXT",
+            "trial_expires_at": "TEXT",
+            "promo_expires_at": "TEXT",
+            "raw_summary": "TEXT",
+            "discovery_status": "TEXT NOT NULL DEFAULT 'unavailable'",
+            "error": "TEXT",
+            "created_at": "TEXT NOT NULL DEFAULT ''",
+            "updated_at": "TEXT NOT NULL DEFAULT ''",
+        }
+        for name, definition in definitions.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE railway_billing_snapshots ADD COLUMN {name} {definition}")
 
     def ensure_railway_project_columns(self, conn: sqlite3.Connection) -> None:
         columns = self.table_columns(conn, "railway_projects")
@@ -790,6 +879,100 @@ class SQLiteStore:
         with self.connect() as conn:
             row = conn.execute("SELECT COUNT(*) AS count, COALESCE(SUM(size_bytes), 0) AS total_size FROM railway_cli_session_backups").fetchone()
         return {"count": int(row["count"] if row else 0), "total_size": int(row["total_size"] if row else 0)}
+
+    def save_railway_billing_snapshot(
+        self,
+        account_id: int,
+        plan_name: str | None = None,
+        subscription_status: str | None = None,
+        credits_remaining: str | None = None,
+        current_usage: str | None = None,
+        billing_period_start: str | None = None,
+        billing_period_end: str | None = None,
+        trial_expires_at: str | None = None,
+        promo_expires_at: str | None = None,
+        raw_summary: str | None = None,
+        discovery_status: str = "unavailable",
+        error: str | None = None,
+    ) -> RailwayBillingSnapshot:
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO railway_billing_snapshots (
+                    account_id, plan_name, subscription_status, credits_remaining, current_usage,
+                    billing_period_start, billing_period_end, trial_expires_at, promo_expires_at,
+                    raw_summary, discovery_status, error
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    account_id,
+                    plan_name,
+                    subscription_status,
+                    credits_remaining,
+                    current_usage,
+                    billing_period_start,
+                    billing_period_end,
+                    trial_expires_at,
+                    promo_expires_at,
+                    raw_summary,
+                    discovery_status,
+                    error[:1000] if error else None,
+                ),
+            )
+            conn.commit()
+            snapshot_id = cursor.lastrowid
+        self.add_log("admin", "railway_billing_snapshot.save", f"Saved billing discovery snapshot for account {account_id}: {discovery_status}")
+        return self.get_railway_billing_snapshot(snapshot_id)
+
+    def get_railway_billing_snapshot(self, snapshot_id: int) -> RailwayBillingSnapshot | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM railway_billing_snapshots WHERE id = ?", (snapshot_id,)).fetchone()
+        return RailwayBillingSnapshot(**dict(row)) if row else None
+
+    def latest_railway_billing_snapshot(self, account_id: int) -> RailwayBillingSnapshot | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT * FROM railway_billing_snapshots
+                WHERE account_id = ?
+                ORDER BY {self.order_by_timestamp('created_at')}, id DESC
+                LIMIT 1
+                """,
+                (account_id,),
+            ).fetchone()
+        return RailwayBillingSnapshot(**dict(row)) if row else None
+
+    def latest_billing_snapshots_by_account(self) -> dict[int, RailwayBillingSnapshot]:
+        snapshots: dict[int, RailwayBillingSnapshot] = {}
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"SELECT * FROM railway_billing_snapshots ORDER BY {self.order_by_timestamp('created_at')}, id DESC"
+            ).fetchall()
+        for row in rows:
+            snapshot = RailwayBillingSnapshot(**dict(row))
+            snapshots.setdefault(snapshot.account_id, snapshot)
+        return snapshots
+
+    def list_railway_billing_snapshots(self, account_id: int | None = None, limit: int = 100) -> list[RailwayBillingSnapshot]:
+        limit = max(1, min(int(limit), 500))
+        with self.connect() as conn:
+            if account_id is None:
+                rows = conn.execute(
+                    f"SELECT * FROM railway_billing_snapshots ORDER BY {self.order_by_timestamp('created_at')}, id DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"""
+                    SELECT * FROM railway_billing_snapshots
+                    WHERE account_id = ?
+                    ORDER BY {self.order_by_timestamp('created_at')}, id DESC
+                    LIMIT ?
+                    """,
+                    (account_id, limit),
+                ).fetchall()
+        return [RailwayBillingSnapshot(**dict(row)) for row in rows]
 
     def create_cli_login_attempt(self, account_id: int) -> RailwayCliLogin:
         with self.connect() as conn:
@@ -1552,6 +1735,7 @@ class PostgresStore(SQLiteStore):
             self.ensure_railway_account_columns(conn)
             self.ensure_railway_cli_login_columns(conn)
             self.ensure_cli_session_backup_schema(conn)
+            self.ensure_railway_billing_snapshot_schema(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
             self.ensure_session_columns(conn)
@@ -1703,6 +1887,25 @@ class PostgresStore(SQLiteStore):
                 updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
                 restored_at TEXT,
                 error TEXT
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS railway_billing_snapshots (
+                id SERIAL PRIMARY KEY,
+                account_id INTEGER NOT NULL REFERENCES railway_accounts(id) ON DELETE CASCADE,
+                plan_name TEXT,
+                subscription_status TEXT,
+                credits_remaining TEXT,
+                current_usage TEXT,
+                billing_period_start TEXT,
+                billing_period_end TEXT,
+                trial_expires_at TEXT,
+                promo_expires_at TEXT,
+                raw_summary TEXT,
+                discovery_status TEXT NOT NULL DEFAULT 'unavailable',
+                error TEXT,
+                created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text)
             )
             """,
             """

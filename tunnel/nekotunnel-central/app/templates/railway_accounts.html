@@ -33,10 +33,11 @@
   <h2>Accounts</h2>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>ID</th><th>Label</th><th>Type</th><th>Workspace</th><th>Token/session</th><th>API accepted</th><th>Status</th><th>CLI backup</th><th>Browserless login</th><th>Actions</th></tr></thead>
+      <thead><tr><th>ID</th><th>Label</th><th>Type</th><th>Workspace</th><th>Token/session</th><th>API accepted</th><th>Status</th><th>CLI backup</th><th>Billing</th><th>Browserless login</th><th>Actions</th></tr></thead>
       <tbody>
       {% for account in accounts %}
         {% set attempt = cli_login_attempts.get(account.id) %}
+        {% set billing = billing_snapshots.get(account.id) %}
         <tr>
           <td>{{ account.id }}</td>
           <td>{{ account.label }}</td>
@@ -51,6 +52,25 @@
               <div><span>DB encrypted backup:</span> <strong>{{ 'present' if account.cli_backup_present else 'missing' }}</strong></div>
               <div><span>Backup updated:</span> <strong>{{ account.cli_backup_updated_at or '-' }}</strong></div>
               <div><span>Backup size:</span> <strong>{{ account.cli_backup_size_bytes or '-' }}</strong></div>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if account.auth_type == 'cli_session' %}
+              {% if billing %}
+                <div><span>Plan:</span> <strong>{{ billing.plan_name or '-' }}</strong></div>
+                <div><span>Subscription:</span> <strong>{{ billing.subscription_status or '-' }}</strong></div>
+                <div><span>Credits:</span> <strong>{{ billing.credits_remaining or '-' }}</strong></div>
+                <div><span>Usage:</span> <strong>{{ billing.current_usage or '-' }}</strong></div>
+                <div><span>Billing period:</span> <strong>{{ billing.billing_period_start or '-' }} → {{ billing.billing_period_end or '-' }}</strong></div>
+                <div><span>Trial expires:</span> <strong>{{ billing.trial_expires_at or '-' }}</strong></div>
+                <div><span>Promo expires:</span> <strong>{{ billing.promo_expires_at or '-' }}</strong></div>
+                <div><span>Last checked:</span> <strong>{{ billing.updated_at or billing.created_at }}</strong></div>
+                {% if billing.error %}<div class="alert alert-warning">{{ billing.error }}</div>{% endif %}
+              {% else %}
+                <span class="muted">No billing discovery snapshot yet.</span>
+              {% endif %}
             {% else %}
               -
             {% endif %}
@@ -89,6 +109,8 @@
               <form method="post" action="/railway-accounts/{{ account.id }}/backup-cli-session"><button type="submit">Backup CLI Session</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/restore-cli-session"><button type="submit">Restore CLI Session</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/check-cli-session"><button type="submit">Check CLI Login</button></form>
+              <form method="post" action="/railway-accounts/{{ account.id }}/refresh-billing"><button type="submit">Refresh Billing Info</button></form>
+              <form method="get" action="/railway-billing"><input type="hidden" name="account_id" value="{{ account.id }}"><button type="submit">View Billing Discovery Log</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/browserless-login/start"><button type="submit">Start Browserless Login</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/logout-cli-session"><button type="submit">Logout CLI Session</button></form>
               <form method="post" action="/railway-accounts/{{ account.id }}/delete-cli-backup"><button type="submit">Delete Saved CLI Backup</button></form>
@@ -103,7 +125,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="10" class="empty">No Railway accounts yet.</td></tr>
+        <tr><td colspan="11" class="empty">No Railway accounts yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>

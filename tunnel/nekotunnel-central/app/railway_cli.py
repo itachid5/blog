@@ -75,6 +75,25 @@ class CliSessionBackupResult:
     size_bytes: int = 0
 
 
+@dataclass
+class RailwayBillingDiscoveryResult:
+    plan_name: str | None
+    subscription_status: str | None
+    credits_remaining: str | None
+    current_usage: str | None
+    billing_period_start: str | None
+    billing_period_end: str | None
+    trial_expires_at: str | None
+    promo_expires_at: str | None
+    raw_summary: str
+    discovery_status: str
+    error: str
+    duration_ms: int
+
+
+BILLING_UNAVAILABLE_ERROR = "Billing details could not be fetched from Railway CLI/API. You may need to view Workspace Settings → Billing in Railway dashboard."
+
+
 def _is_executable(path: str) -> bool:
     return Path(path).is_file() and os.access(path, os.X_OK)
 
@@ -485,6 +504,158 @@ def _parse_browserless_output(stdout: str, stderr: str) -> tuple[str | None, str
     login_url = url_match.group(0).rstrip(".,);]") if url_match else None
     code_match = DEVICE_CODE_RE.search(combined.upper())
     return login_url, code_match.group(0) if code_match else None
+
+
+def _safe_billing_text(text: str, limit: int = 4000) -> str:
+    cleaned = strip_ansi(text or "")
+    cleaned = DEVICE_CODE_RE.sub("[redacted-code]", cleaned)
+    return cleaned.strip()[:limit]
+
+
+def _billing_command_supported(result: RailwayCommandResult) -> bool:
+    combined = f"{result.stdout}\n{result.stderr}\n{result.error}".lower()
+    if result.status == "success":
+        return True
+    return not any(marker in combined for marker in ("unknown command", "unrecognized command", "invalid command", "unknown subcommand"))
+
+
+def _billing_command_summary(result: RailwayCommandResult) -> dict[str, object]:
+    return {
+        "command": result.command,
+        "status": result.status,
+        "stdout": _safe_billing_text(result.stdout),
+        "stderr": _safe_billing_text(result.stderr),
+        "error": _safe_billing_text(result.error, 1000),
+        "duration_ms": result.duration_ms,
+    }
+
+
+def _json_values_by_key(value: object, keys: set[str]) -> list[str]:
+    found: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            normalized = re.sub(r"[^a-z0-9]", "", str(key).lower())
+            if normalized in keys and item not in (None, ""):
+                if isinstance(item, (str, int, float, bool)):
+                    found.append(str(item))
+                else:
+                    found.append(json.dumps(item)[:500])
+            found.extend(_json_values_by_key(item, keys))
+    elif isinstance(value, list):
+        for item in value:
+            found.extend(_json_values_by_key(item, keys))
+    return found
+
+
+def _first_json_value(payloads: list[object], keys: set[str]) -> str | None:
+    for payload in payloads:
+        values = _json_values_by_key(payload, keys)
+        if values:
+            return values[0]
+    return None
+
+
+def _first_text_match(text: str, patterns: tuple[str, ...]) -> str | None:
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+        if match:
+            return match.group(1).strip()[:500]
+    return None
+
+
+def _parse_billing_fields(command_summaries: list[dict[str, object]]) -> dict[str, str | None]:
+    text = "\n".join(str(item.get("stdout", "")) for item in command_summaries)
+    payloads: list[object] = []
+    for item in command_summaries:
+        stdout = str(item.get("stdout", "")).strip()
+        if not stdout:
+            continue
+        try:
+            payloads.append(json.loads(stdout))
+        except json.JSONDecodeError:
+            for line in stdout.splitlines():
+                try:
+                    payloads.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return {
+        "plan_name": _first_json_value(payloads, {"plan", "planname", "name"}) or _first_text_match(text, (r"plan\s*[:=]\s*([^\n]+)",)),
+        "subscription_status": _first_json_value(payloads, {"subscriptionstatus", "status"}) or _first_text_match(text, (r"subscription\s*(?:status)?\s*[:=]\s*([^\n]+)", r"status\s*[:=]\s*([^\n]+)")),
+        "credits_remaining": _first_json_value(payloads, {"creditsremaining", "remainingcredits", "credits"}) or _first_text_match(text, (r"credits?\s*(?:remaining)?\s*[:=]\s*([^\n]+)", r"remaining\s*credits?\s*[:=]\s*([^\n]+)")),
+        "current_usage": _first_json_value(payloads, {"currentusage", "usage", "currentperiodusage"}) or _first_text_match(text, (r"(?:current\s*)?usage\s*[:=]\s*([^\n]+)",)),
+        "billing_period_start": _first_json_value(payloads, {"billingperiodstart", "periodstart", "currentperiodstart"}) or _first_text_match(text, (r"billing\s*period\s*start\s*[:=]\s*([^\n]+)", r"period\s*start\s*[:=]\s*([^\n]+)")),
+        "billing_period_end": _first_json_value(payloads, {"billingperiodend", "periodend", "currentperiodend"}) or _first_text_match(text, (r"billing\s*period\s*end\s*[:=]\s*([^\n]+)", r"period\s*end\s*[:=]\s*([^\n]+)")),
+        "trial_expires_at": _first_json_value(payloads, {"trialexpiresat", "trialexpiration", "trialendsat"}) or _first_text_match(text, (r"trial\s*(?:expires|ends)\s*[:=]\s*([^\n]+)",)),
+        "promo_expires_at": _first_json_value(payloads, {"promoexpiresat", "promoexpiration", "promocreditexpiresat"}) or _first_text_match(text, (r"promo\s*(?:credit\s*)?(?:expires|ends)\s*[:=]\s*([^\n]+)",)),
+    }
+
+
+def discover_railway_billing(account) -> RailwayBillingDiscoveryResult:
+    started = time.monotonic()
+    if _account_auth_type(account) != "cli_session":
+        return RailwayBillingDiscoveryResult(None, None, None, None, None, None, None, None, "{}", "unsupported", "Billing discovery is only available for CLI-session accounts.", 0)
+
+    help_commands = {
+        "root": ["--help"],
+        "usage": ["usage", "--help"],
+        "billing": ["billing", "--help"],
+        "plan": ["plan", "--help"],
+        "workspace": ["workspace", "--help"],
+        "team": ["team", "--help"],
+    }
+    help_results: dict[str, dict[str, object]] = {}
+    supported: dict[str, bool] = {}
+    for name, args in help_commands.items():
+        result = run_railway_command(account, args, timeout=45)
+        help_results[name] = _billing_command_summary(result)
+        supported[name] = _billing_command_supported(result)
+
+    command_summaries: list[dict[str, object]] = []
+    for name in ("usage", "billing"):
+        if not supported.get(name):
+            continue
+        plain = run_railway_command(account, [name], timeout=60)
+        command_summaries.append(_billing_command_summary(plain))
+        help_text = f"{help_results[name].get('stdout', '')}\n{help_results[name].get('stderr', '')}".lower()
+        if "--json" in help_text or plain.status == "success":
+            json_result = run_railway_command(account, [name, "--json"], timeout=60)
+            if json_result.status == "success" or "unknown" not in f"{json_result.stderr}\n{json_result.error}".lower():
+                command_summaries.append(_billing_command_summary(json_result))
+
+    for name in ("plan", "workspace", "team"):
+        if supported.get(name):
+            result = run_railway_command(account, [name], timeout=60)
+            command_summaries.append(_billing_command_summary(result))
+
+    parsed = _parse_billing_fields(command_summaries)
+    days_remaining = _first_text_match("\n".join(str(item.get("stdout", "")) for item in command_summaries), (r"days?\s*remaining\s*[:=]\s*([^\n]+)",))
+    has_fields = any(parsed.values())
+    successful_commands = [item for item in command_summaries if item.get("status") == "success"]
+    discovery_status = "success" if has_fields else "partial" if successful_commands else "unavailable"
+    error = "" if has_fields else BILLING_UNAVAILABLE_ERROR
+    summary = {
+        "available_commands": supported,
+        "help": help_results,
+        "commands": command_summaries,
+        "graphql": {"status": "unavailable", "reason": "No safe CLI-session GraphQL auth export is available."},
+        "days_remaining": days_remaining,
+        "parsed_fields": parsed,
+    }
+    duration_ms = int((time.monotonic() - started) * 1000)
+    return RailwayBillingDiscoveryResult(
+        parsed["plan_name"],
+        parsed["subscription_status"],
+        parsed["credits_remaining"],
+        parsed["current_usage"],
+        parsed["billing_period_start"],
+        parsed["billing_period_end"],
+        parsed["trial_expires_at"],
+        parsed["promo_expires_at"],
+        json.dumps(summary, indent=2, sort_keys=True),
+        discovery_status,
+        error,
+        duration_ms,
+    )
 
 
 def start_browserless_login(attempt_id: int, update_attempt: Callable[..., bool]) -> RailwayCommandResult:

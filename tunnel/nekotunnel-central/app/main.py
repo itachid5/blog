@@ -18,6 +18,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .auth import is_logged_in, login_admin, logout_admin, require_admin
 from .config import settings
 from .railway_cli import (
+    BILLING_UNAVAILABLE_ERROR,
     app_secret_strong_enough,
     backup_cli_session,
     check_cli_session,
@@ -26,6 +27,7 @@ from .railway_cli import (
     create_test_project,
     deploy_service,
     deployment_id_from_output,
+    discover_railway_billing,
     link_project,
     link_project_by_ids,
     live_token_test,
@@ -98,6 +100,16 @@ def cli_local_session_state(account, railway_cli) -> str:
     if not railway_cli.railway_home_exists:
         return "missing"
     return "unknown"
+
+
+def billing_summary(raw_summary: str | None) -> dict:
+    if not raw_summary:
+        return {}
+    try:
+        parsed = json.loads(raw_summary)
+    except json.JSONDecodeError:
+        return {"raw_summary": raw_summary}
+    return parsed if isinstance(parsed, dict) else {"raw_summary": parsed}
 
 
 def railway_auth_for_command(account, operation: str):
@@ -188,6 +200,86 @@ def railway_accounts(request: Request):
             "railway_cli": railway_cli,
             "cli_login_attempts": {account.id: store.latest_cli_login_attempt(account.id) for account in accounts},
             "local_session_states": {account.id: cli_local_session_state(account, railway_cli) for account in accounts},
+            "billing_snapshots": store.latest_billing_snapshots_by_account(),
+            "billing_unavailable_error": BILLING_UNAVAILABLE_ERROR,
+        },
+    )
+
+
+@app.post("/railway-accounts/{account_id}/refresh-billing")
+def refresh_railway_billing(request: Request, account_id: int):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    account = store.get_account(account_id)
+    if not account:
+        flash(request, "danger", "Railway account not found.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.auth_type != "cli_session":
+        flash(request, "warning", "Billing discovery is only available for CLI-session accounts.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+    if account.status == "disabled":
+        flash(request, "danger", "Railway account is disabled.")
+        return RedirectResponse("/railway-accounts", status_code=303)
+
+    restore_result = restore_cli_session(account.id)
+    if restore_result.status != "success":
+        error = f"Cannot refresh billing info: {restore_result.error}"
+        store.save_railway_billing_snapshot(account.id, raw_summary=json.dumps({"restore_cli_session": restore_result.error}), discovery_status="unavailable", error=error)
+        store.add_provision_log(account.id, "refresh_billing_info", account.label, "failed", "restore_cli_session", "", "", error, restore_result.duration_ms, None, account.label)
+        flash(request, "danger", error)
+        return RedirectResponse("/railway-accounts", status_code=303)
+
+    result = discover_railway_billing(account)
+    store.save_railway_billing_snapshot(
+        account.id,
+        result.plan_name,
+        result.subscription_status,
+        result.credits_remaining,
+        result.current_usage,
+        result.billing_period_start,
+        result.billing_period_end,
+        result.trial_expires_at,
+        result.promo_expires_at,
+        result.raw_summary,
+        result.discovery_status,
+        result.error or None,
+    )
+    store.add_provision_log(
+        account.id,
+        "refresh_billing_info",
+        account.label,
+        result.discovery_status,
+        "railway billing discovery",
+        result.raw_summary,
+        "",
+        result.error,
+        result.duration_ms,
+        None,
+        account.label,
+    )
+    if result.discovery_status == "success":
+        flash(request, "success", "Railway billing info refreshed.")
+    elif result.discovery_status == "partial":
+        flash(request, "warning", result.error or "Railway billing discovery completed with partial details.")
+    else:
+        flash(request, "warning", result.error or BILLING_UNAVAILABLE_ERROR)
+    return RedirectResponse("/railway-accounts", status_code=303)
+
+
+@app.get("/railway-billing")
+def railway_billing(request: Request, account_id: Annotated[int | None, Query()] = None):
+    accounts = store.railway_accounts
+    snapshots = store.list_railway_billing_snapshots(account_id, 100)
+    return render(
+        request,
+        "railway_billing.html",
+        {
+            "accounts": accounts,
+            "snapshots": snapshots,
+            "selected_account_id": account_id,
+            "summaries": {snapshot.id: billing_summary(snapshot.raw_summary) for snapshot in snapshots},
+            "billing_unavailable_error": BILLING_UNAVAILABLE_ERROR,
         },
     )
 
