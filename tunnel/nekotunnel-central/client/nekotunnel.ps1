@@ -316,7 +316,8 @@ function Start-Background([string[]]$StartArgs) {
     $Encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($CommandText))
     $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $Encoded"
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
-    $Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel LeastPrivilege
+    # Windows ScheduledTask RunLevel supports only Limited or Highest.
+    $Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
     Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Force | Out-Null
     Start-ScheduledTask -TaskName $TaskName
     Write-Host "NekoTunnel background task started."
