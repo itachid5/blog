@@ -352,6 +352,9 @@ def railway_error_message(stdout: str, stderr: str, fallback: str) -> str:
     error_code = classify_railway_error(stdout, stderr, fallback)
     if error_code == "token_rejected":
         return RAILWAY_TOKEN_REJECTED_ERROR
+    combined = f"{stdout}\n{stderr}\n{fallback}".lower()
+    if "error decoding response body" in combined or "expected value at line 1 column 1" in combined:
+        return "Railway command did not return JSON"
     return fallback
 
 
@@ -710,6 +713,18 @@ def link_project(project_name: str, auth, workdir: Path, workspace: str | None =
     if workspace:
         args.extend(["--workspace", workspace])
     args.append("--json")
+    return run_railway_command(auth, args, workdir=workdir, timeout=90)
+
+
+def link_project_by_ids(project_id: str, environment_id: str, auth, workdir: Path) -> RailwayCommandResult:
+    args = ["link", "--project", project_id]
+    if environment_id:
+        result = run_railway_command(auth, [*args, "--environment", environment_id], workdir=workdir, timeout=90)
+        if result.status == "success":
+            return result
+        combined = f"{result.stdout}\n{result.stderr}\n{result.error}".lower()
+        if "environment" not in combined and "unknown" not in combined and "unexpected" not in combined and "usage:" not in combined:
+            return result
     return run_railway_command(auth, args, workdir=workdir, timeout=90)
 
 

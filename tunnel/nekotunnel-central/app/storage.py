@@ -948,6 +948,19 @@ class SQLiteStore:
             conn.commit()
         return cursor.rowcount > 0
 
+    def update_railway_project_workdir(self, project_id: int, workdir: str) -> bool:
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE railway_projects
+                SET workdir = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (workdir, project_id),
+            )
+            conn.commit()
+        return cursor.rowcount > 0
+
     def delete_railway_project(self, project_id: int) -> bool:
         project = self.get_railway_project(project_id)
         if not project:

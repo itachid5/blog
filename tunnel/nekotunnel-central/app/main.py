@@ -27,6 +27,7 @@ from .railway_cli import (
     deploy_service,
     deployment_id_from_output,
     link_project,
+    link_project_by_ids,
     live_token_test,
     logout_cli_session,
     railway_cli_diagnostics,
@@ -109,6 +110,41 @@ def railway_auth_for_command(account, operation: str):
     if not token or "..." in token:
         return None, "", f"Saved Railway token is masked and cannot be used for {operation}. Re-add the account token and try again."
     return token, token, ""
+
+
+def project_workdir(project) -> Path:
+    project_id = (project.project_id or "local").strip() or "local"
+    return Path("data") / "provision-work" / "projects" / f"{safe_project_name(project.project_name)}-{project_id}"
+
+
+def ensure_railway_project_link(project, account, auth):
+    if not project.project_id:
+        return False, Path(project.workdir), "Missing Railway project ID. Refresh project status before running Railway commands."
+    workdir = Path(project.workdir) if project.workdir else project_workdir(project)
+    if not workdir.exists():
+        workdir = project_workdir(project)
+        workdir.mkdir(parents=True, exist_ok=True)
+        store.update_railway_project_workdir(project.id, str(workdir))
+    else:
+        workdir.mkdir(parents=True, exist_ok=True)
+    (workdir / "README.md").touch(exist_ok=True)
+    result = link_project_by_ids(project.project_id, project.environment_id or "", auth, workdir)
+    store.add_provision_log(
+        account.id,
+        "ensure_project_link",
+        project.project_name,
+        result.status,
+        result.command,
+        f"project_id={project.project_id}\nenvironment_id={project.environment_id or ''}\nworkdir={workdir}\nauth_type={account.auth_type}\n{result.stdout}",
+        result.stderr,
+        result.error,
+        result.duration_ms,
+        None,
+        account.label,
+    )
+    if result.status != "success":
+        return False, workdir, short_error(result.error or result.stderr or result.stdout)
+    return True, workdir, ""
 
 
 @app.get("/login")
@@ -746,9 +782,9 @@ def discover_graphql_tcp_mutations(token: str) -> tuple[str, str, str]:
     return ("found" if names else "success"), output, ""
 
 
-def run_tcp_refresh(slot, account, auth, action: str, pending_message: str = TCP_PROXY_PENDING_MESSAGE) -> tuple[str, str]:
+def run_tcp_refresh(slot, account, auth, action: str, pending_message: str = TCP_PROXY_PENDING_MESSAGE, workdir: Path | None = None) -> tuple[str, str]:
     service_name = (slot.service_name or "final").strip() or "final"
-    result = refresh_tcp_proxy(service_name, auth, slot_workdir(slot))
+    result = refresh_tcp_proxy(service_name, auth, workdir or slot_workdir(slot))
     if result.status == "success":
         parsed = parse_tcp_proxy(result.stdout)
         if parsed:
@@ -795,6 +831,21 @@ def existing_slot_workdir(slot) -> Path | None:
     if slot.workdir:
         return Path(slot.workdir)
     return None
+
+
+def slot_project(slot):
+    if slot.railway_project_id:
+        return store.get_railway_project(slot.railway_project_id)
+    return None
+
+
+def ensure_slot_project_link(slot, account, auth):
+    project = slot_project(slot)
+    if not project:
+        workdir = slot_workdir(slot)
+        workdir.mkdir(parents=True, exist_ok=True)
+        return True, workdir, ""
+    return ensure_railway_project_link(project, account, auth)
 
 
 def slot_account(slot):
@@ -864,6 +915,11 @@ def write_server_files(slot, account, token: str, service_name: str, workdir: Pa
 @app.get("/projects")
 def projects(request: Request):
     projects_list = store.projects
+    project_link_restore_ids = {
+        project.id
+        for project in projects_list
+        if project.project_id and project.environment_id and (not project.workdir or not (Path(project.workdir) / ".railway").exists())
+    }
     return render(
         request,
         "projects.html",
@@ -872,6 +928,7 @@ def projects(request: Request):
             "projects": projects_list,
             "service_counts": store.project_service_counts(),
             "next_service_names": {project.id: store.next_service_name(project.id) for project in projects_list},
+            "project_link_restore_ids": project_link_restore_ids,
         },
     )
 
@@ -951,7 +1008,12 @@ def refresh_project_status(request: Request, project_id: int):
         store.add_provision_log(account.id, "create_project", project.project_name, "failed", "railway status --json", "", "", error, 0, None, account.label)
         flash(request, "danger", error)
         return RedirectResponse("/projects", status_code=303)
-    result = railway_status(auth, Path(project.workdir))
+    link_ok, workdir, link_error = ensure_railway_project_link(project, account, auth)
+    if not link_ok:
+        store.update_railway_project_status(project.id, "failed", link_error)
+        flash(request, "danger", link_error)
+        return RedirectResponse("/projects", status_code=303)
+    result = railway_status(auth, workdir)
     store.add_provision_log(account.id, "create_project", project.project_name, result.status, result.command, result.stdout, result.stderr, result.error, result.duration_ms, None, account.label)
     if result.status == "success":
         ids = parse_railway_status_ids(result.stdout)
@@ -997,9 +1059,13 @@ def create_project_service(request: Request, project_id: int, service_name: Anno
         flash(request, "danger", f"Service name already exists in this project: {clean_service_name}")
         return RedirectResponse("/projects", status_code=303)
 
+    link_ok, workdir, link_error = ensure_railway_project_link(project, account, auth)
+    if not link_ok:
+        flash(request, "danger", link_error)
+        return RedirectResponse("/projects", status_code=303)
+
     frp_token = f"frp_{secrets.token_urlsafe(32)}"
     slot = store.create_service_slot(project, clean_service_name, frp_token)
-    workdir = Path(project.workdir)
     ok, error, workdir = write_server_files(slot, account, token, clean_service_name, workdir)
     if not ok:
         store.mark_slot_deploy_failed(slot.id, error)
@@ -1094,7 +1160,12 @@ def create_service_and_deploy(request: Request, slot_id: int):
         return RedirectResponse("/slots", status_code=303)
 
     service_name = (slot.service_name or "final").strip() or "final"
-    ok, error, workdir = write_server_files(slot, account, token, service_name)
+    link_ok, workdir, link_error = ensure_slot_project_link(slot, account, auth)
+    if not link_ok:
+        store.mark_slot_deploy_failed(slot.id, link_error)
+        flash(request, "danger", link_error)
+        return RedirectResponse("/slots", status_code=303)
+    ok, error, workdir = write_server_files(slot, account, token, service_name, workdir)
     if not ok:
         store.mark_slot_deploy_failed(slot.id, error)
         flash(request, "danger", error)
@@ -1175,19 +1246,18 @@ def redeploy_service(request: Request, slot_id: int):
         store.add_provision_log(account.id, "redeploy_service", slot.project_name, "failed", "railway up", "", "", error, 0, slot.id, account.label, service_name)
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
-    workdir = existing_slot_workdir(slot)
-    if workdir is None:
-        error = "Missing project workdir. Cannot redeploy."
-        store.mark_slot_deploy_failed(slot.id, error)
-        store.add_provision_log(account.id, "write_files", slot.project_name, "failed", "write Dockerfile frps.toml start.sh", "", "", error, 0, slot.id, account.label, service_name)
-        store.add_provision_log(account.id, "redeploy_service", slot.project_name, "failed", "railway up", "", "", error, 0, slot.id, account.label, service_name)
-        flash(request, "danger", error)
-        return RedirectResponse("/slots", status_code=303)
     auth, token, error = railway_auth_for_command(account, "redeployment")
     if error:
         store.mark_slot_deploy_failed(slot.id, error)
         store.add_provision_log(account.id, "redeploy_service", slot.project_name, "failed", "railway up", "", "", error, 0, slot.id, account.label, service_name)
         flash(request, "danger", error)
+        return RedirectResponse("/slots", status_code=303)
+
+    link_ok, workdir, link_error = ensure_slot_project_link(slot, account, auth)
+    if not link_ok:
+        store.mark_slot_deploy_failed(slot.id, link_error)
+        store.add_provision_log(account.id, "redeploy_service", slot.project_name, "failed", "railway up", "", "", link_error, 0, slot.id, account.label, service_name)
+        flash(request, "danger", link_error)
         return RedirectResponse("/slots", status_code=303)
 
     ok, error, workdir = write_server_files(slot, account, token, service_name, workdir)
@@ -1265,15 +1335,14 @@ def refresh_tcp(request: Request, slot_id: int):
         store.add_provision_log(account.id, "refresh_tcp", slot.project_name, "failed", "railway run", "", "", error, 0, slot.id, account.label, slot.service_name)
         flash(request, "danger", error)
         return RedirectResponse("/slots", status_code=303)
-    workdir = slot_workdir(slot)
-    if not workdir.exists():
-        error = "Missing linked project directory. Cannot run railway run."
-        store.mark_slot_tcp_failed(slot.id, error)
-        store.add_provision_log(account.id, "refresh_tcp", slot.project_name, "failed", "railway run", "", "", error, 0, slot.id, account.label, slot.service_name)
-        flash(request, "danger", error)
+    link_ok, workdir, link_error = ensure_slot_project_link(slot, account, auth)
+    if not link_ok:
+        store.mark_slot_tcp_failed(slot.id, link_error)
+        store.add_provision_log(account.id, "refresh_tcp", slot.project_name, "failed", "railway run", "", "", link_error, 0, slot.id, account.label, slot.service_name)
+        flash(request, "danger", link_error)
         return RedirectResponse("/slots", status_code=303)
 
-    category, message = run_tcp_refresh(slot, account, auth, "refresh_tcp")
+    category, message = run_tcp_refresh(slot, account, auth, "refresh_tcp", workdir=workdir)
     flash(request, category, message)
     return RedirectResponse("/slots", status_code=303)
 

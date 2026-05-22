@@ -33,7 +33,10 @@
           <td><code>{{ project.project_id or '-' }}</code></td>
           <td><code>{{ project.environment_id or '-' }}</code></td>
           <td><span class="badge status-{{ project.status }}">{{ project.status }}</span></td>
-          <td>{{ project.error or '-' }}</td>
+          <td>
+            {{ project.error or '-' }}
+            {% if project.id in project_link_restore_ids %}<div class="muted small">Project link will be restored automatically before the next action.</div>{% endif %}
+          </td>
           <td>{{ service_counts.get(project.id, 0) }}</td>
           <td class="actions">
             <form method="post" action="/projects/{{ project.id }}/services" class="inline-form">
