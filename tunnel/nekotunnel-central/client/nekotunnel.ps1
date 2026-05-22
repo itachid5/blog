@@ -17,6 +17,7 @@ function Show-Usage {
     Write-Host "  nekotunnel login <USER_TOKEN> [--api <API_URL>]"
     Write-Host "  nekotunnel api [<API_URL>]"
     Write-Host "  nekotunnel tcp <local_port> [--tcp-mux true|false]"
+    Write-Host "  nekotunnel self-test tcp <local_port> [--verbose] [--tcp-mux true|false]"
     Write-Host "  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL> [--tcp-mux true|false]"
     Write-Host "  nekotunnel start tcp <local_port>"
     Write-Host "  nekotunnel start tcp <local_port> --persist"
@@ -326,6 +327,7 @@ heartbeatTimeout = 120
 tcpMux = $TcpMuxValue
 tls.enable = true
 tls.disableCustomTLSFirstByte = true
+tls.serverName = "nekotunnel-control"
 
 [[proxies]]
 name = "$($Allocation.proxy_name)"

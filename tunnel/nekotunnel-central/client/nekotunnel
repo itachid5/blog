@@ -42,6 +42,7 @@ def usage() -> int:
     print("  nekotunnel login <USER_TOKEN> [--api <API_URL>]")
     print("  nekotunnel api [<API_URL>]")
     print("  nekotunnel tcp <local_port> [--tcp-mux true|false]")
+    print("  nekotunnel self-test tcp <local_port> [--verbose] [--tcp-mux true|false]")
     print("  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL> [--tcp-mux true|false]")
     print("  nekotunnel start tcp <local_port>")
     print("  nekotunnel start tcp <local_port> --persist")
@@ -408,6 +409,7 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
                 f"tcpMux = {str(tcp_mux).lower()}",
                 "tls.enable = true",
                 "tls.disableCustomTLSFirstByte = true",
+                'tls.serverName = "nekotunnel-control"',
                 "",
                 "[[proxies]]",
                 f'name = "{allocation["proxy_name"]}"',
@@ -455,6 +457,68 @@ def log_frpc_validation_error(protocol: str, local_port: int, message: str) -> N
             handle.write(f"frpc config validation failed: {message}\n")
     except OSError:
         pass
+
+
+def log_frpc_runtime_error(protocol: str, local_port: int, message: str) -> None:
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(frpc_log_path_for(protocol, local_port, "err"), "a", encoding="utf-8") as handle:
+            handle.write(f"{message}\n")
+    except OSError:
+        pass
+
+
+def short_session_id(session_id: str) -> str:
+    return session_id[:12] if session_id else "-"
+
+
+def frpc_failure_reason(lines: list[str], exit_code: int) -> str | None:
+    output = "\n".join(lines).lower()
+    if "eof" in output:
+        return "EOF"
+    if "session shutdown" in output:
+        return "session shutdown"
+    if "login to the server failed" in output or "connect to server error" in output:
+        return "login failed"
+    if exit_code != 0:
+        return f"exit code {exit_code}"
+    return None
+
+
+def frpc_context_message(reason: str, allocation: dict, session_id: str) -> str:
+    return (
+        f"frpc failed to connect to tunnel server: {reason}; "
+        f"server={allocation.get('server_addr', '-')}:{allocation.get('server_port', '-')}; "
+        f"route_mode={allocation.get('route_mode', 'mux')}; "
+        f"tcpMux={str(allocation.get('tcp_mux', '-')).lower()}; "
+        f"tls=true; session={short_session_id(session_id)}; "
+        "recommended_action=check slot mux routing and redeploy client/server templates if this persists"
+    )
+
+
+def stream_process_output(process: subprocess.Popen, stdout_target, stderr_target) -> tuple[list[str], list[threading.Thread]]:
+    lines: list[str] = []
+
+    def reader(stream, target) -> None:
+        try:
+            for line in iter(stream.readline, ""):
+                lines.append(line.rstrip("\n"))
+                if target is not None:
+                    target.write(line)
+                    target.flush()
+        finally:
+            try:
+                stream.close()
+            except Exception:
+                pass
+
+    threads = []
+    for stream, target in ((process.stdout, stdout_target), (process.stderr, stderr_target)):
+        if stream is not None:
+            thread = threading.Thread(target=reader, args=(stream, target), daemon=True)
+            thread.start()
+            threads.append(thread)
+    return lines, threads
 
 
 def heartbeat_loop(
@@ -823,9 +887,18 @@ def run_tcp_once(args: list[str]) -> int:
     stderr_file = None
     if "--foreground-service" in args:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
-        stdout_file = open(frpc_log_path_for(protocol, local_port, "out"), "ab", buffering=0)
-        stderr_file = open(frpc_log_path_for(protocol, local_port, "err"), "ab", buffering=0)
-    process = subprocess.Popen([str(frpc_path), "-c", str(config_path)], stdout=stdout_file, stderr=stderr_file)
+        stdout_file = open(frpc_log_path_for(protocol, local_port, "out"), "w", encoding="utf-8", buffering=1)
+        stderr_file = open(frpc_log_path_for(protocol, local_port, "err"), "w", encoding="utf-8", buffering=1)
+    stdout_target = stdout_file if stdout_file else sys.stdout
+    stderr_target = stderr_file if stderr_file else sys.stderr
+    process = subprocess.Popen(
+        [str(frpc_path), "-c", str(config_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+    frpc_lines, output_threads = stream_process_output(process, stdout_target, stderr_target)
 
     def stop(_signum=None, _frame=None):
         global SERVICE_STOPPING
@@ -848,12 +921,20 @@ def run_tcp_once(args: list[str]) -> int:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
+        for thread in output_threads:
+            thread.join(timeout=1)
         exit_code = process.returncode or 0
-        release = "--foreground-service" not in args or SERVICE_STOPPING
+        stopped_by_request = stop_event.is_set() and exit_code in {-15, -9, 130, 143}
+        reason = None if stopped_by_request else frpc_failure_reason(frpc_lines, exit_code)
+        release = "--foreground-service" not in args or SERVICE_STOPPING or reason is not None
         disconnect(api_url, user_token, session_id, release=release)
+        if reason:
+            message = frpc_context_message(reason, data, session_id)
+            print(message, flush=True)
+            log_frpc_runtime_error(protocol, local_port, message)
         if "--foreground-service" in args:
             state_data["frpc_exit_code"] = exit_code
-            state_data["last_error"] = f"frpc exited with code {exit_code}"
+            state_data["last_error"] = message if reason else f"frpc exited with code {exit_code}"
             state_data["ended_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
             save_state(state_data, state_path)
         else:
@@ -875,7 +956,108 @@ def run_tcp_once(args: list[str]) -> int:
         if config_path.exists():
             config_path.unlink()
 
+    if stop_event.is_set() and process.returncode in {-15, -9, 130, 143}:
+        return 0
     return process.returncode or 0
+
+
+def run_self_test(args: list[str]) -> int:
+    verbose = "--verbose" in args
+    filtered_args = [arg for arg in args if arg != "--verbose"]
+    endpoint = endpoint_from_args(filtered_args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    config = load_config()
+    api_url = config.get("API_URL", DEFAULT_API_URL).rstrip("/")
+    user_token = config.get("USER_TOKEN", "")
+    if not user_token:
+        print("No token configured. Run: nekotunnel token USER_TOKEN")
+        return 2
+
+    print(f"API connect: {api_url} token={mask_token(user_token)}")
+    try:
+        frpc_path = ensure_frpc(api_url)
+    except Exception as exc:
+        print(f"frpc prepare: failed: {exc}")
+        return 1
+    print(f"frpc binary: {frpc_path}")
+
+    client_id = machine_id()
+    endpoint_id = stable_endpoint_id(api_url, user_token, client_id, protocol, local_port)
+    status, data, body = post_json(
+        api_url,
+        "/api/connect",
+        {
+            "token": user_token,
+            "protocol": protocol,
+            "local_port": local_port,
+            "client_info": f"nekotunnel/{FRPC_VERSION} self-test",
+            "client_id": client_id,
+            "endpoint_id": endpoint_id,
+            "tcp_mux": parse_tcp_mux_option(filtered_args, local_port),
+        },
+    )
+    if not data or not data.get("ok"):
+        print(f"API connect: failed HTTP {status}: {body}")
+        return 1
+
+    session_id = data["session_id"]
+    config_path = APP_DIR / f"frpc-self-test-{session_id}.toml"
+    write_frpc_config(config_path, data, local_port)
+    print(f"API connect: ok session={short_session_id(session_id)} public_address={data['server_addr']}:{data['server_port']}")
+    print(f"config: route_mode={data.get('route_mode', 'mux')} tcpMux={str(data.get('tcp_mux', True)).lower()} tls=true")
+    if verbose:
+        print(f"config path: {config_path}")
+        print("config redacted:")
+        for line in config_path.read_text().splitlines():
+            if line.startswith("token ="):
+                print('token = "***"')
+            else:
+                print(line)
+
+    try:
+        verify_ok, verify_message = verify_frpc_config(frpc_path, config_path)
+        if verify_ok:
+            print(f"frpc verify: ok{f' ({verify_message})' if verbose and verify_message else ''}")
+        else:
+            print(f"frpc verify: failed: {verify_message}")
+            disconnect(api_url, user_token, session_id, release=True)
+            return 1
+
+        process = subprocess.Popen(
+            [str(frpc_path), "-c", str(config_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+        frpc_lines, output_threads = stream_process_output(process, sys.stdout if verbose else None, sys.stderr if verbose else None)
+        deadline = time.monotonic() + 8
+        while time.monotonic() < deadline and process.poll() is None:
+            time.sleep(0.25)
+        if process.poll() is None:
+            print("frpc login: ok")
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+            result = 0
+        else:
+            exit_code = process.returncode or 0
+            for thread in output_threads:
+                thread.join(timeout=1)
+            reason = frpc_failure_reason(frpc_lines, exit_code) or f"exit code {exit_code}"
+            print(frpc_context_message(reason, data, session_id))
+            result = 1
+        disconnect(api_url, user_token, session_id, release=True)
+        print("cleanup: released session")
+        return result
+    finally:
+        if config_path.exists():
+            config_path.unlink()
 
 
 def run_tcp(args: list[str]) -> int:
@@ -1124,10 +1306,20 @@ def run_logs(args: list[str]) -> int:
                 print("No log file yet.")
         return 0
 
-    endpoint = endpoint_from_args(args)
+    show_frpc = "--frpc" in args
+    show_report = "--report" in args
+    endpoint_args = [arg for arg in args if arg not in {"--frpc", "--report"}]
+    endpoint = endpoint_from_args(endpoint_args)
     if endpoint is None:
         return usage()
     protocol, local_port = endpoint
+    if show_report:
+        return show_log_report(protocol, local_port)
+    if show_frpc:
+        print_recent(log_path_for(protocol, local_port), "main")
+        print_recent(frpc_log_path_for(protocol, local_port, "out"), "frpc stdout")
+        print_recent(frpc_log_path_for(protocol, local_port, "err"), "frpc stderr")
+        return 0
     if systemd_available() and service_path_for(protocol, local_port).exists():
         return subprocess.call(["journalctl", "--user", "-u", service_name(protocol, local_port), "-f"])
     log_path = log_path_for(protocol, local_port)
@@ -1151,6 +1343,8 @@ def main() -> int:
         return 0
     if command == "tcp":
         return run_tcp(args[1:])
+    if command == "self-test":
+        return run_self_test(args[1:])
     if command == "rdp":
         print(rdp_unsupported_message())
         return 2

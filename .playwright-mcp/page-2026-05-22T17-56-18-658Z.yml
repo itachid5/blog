@@ -1,0 +1,9 @@
+- main [ref=e2]:
+  - generic [ref=e3]: NT
+  - heading "NekoTunnel Central" [level=1] [ref=e4]
+  - paragraph [ref=e5]: Admin token login
+  - generic [ref=e6]:
+    - generic [ref=e7]: Admin Token
+    - textbox "Admin Token" [active] [ref=e8]:
+      - /placeholder: Enter ADMIN_TOKEN
+    - button "Login" [ref=e9] [cursor=pointer]

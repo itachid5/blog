@@ -61,7 +61,7 @@ def test_frpc_config_uses_verified_v057_transport_keys(tmp_path):
     assert "loginFailExit" not in config
     assert "tcpMuxKeepaliveInterval" not in config
     assert "dialServerKeepalive" not in config
-    assert "tls.serverName" not in config
+    assert 'tls.serverName = "nekotunnel-control"' in config
     assert 'serverAddr = "example.com"' in config
     assert "serverPort = 7000" in config
     assert "[auth]" in config
@@ -168,6 +168,7 @@ def test_clients_have_detached_service_entrypoints():
     assert "last_100_frpc_" in linux
     assert "--frpc|--report" in linux
     assert "logs <all|tcp <local_port>>" in linux
+    assert "self-test tcp <local_port>" in linux
     assert "run-service" in windows
     assert 'New-ScheduledTaskAction -Execute "powershell.exe"' in windows
     assert "-WindowStyle Hidden" in windows
@@ -175,12 +176,13 @@ def test_clients_have_detached_service_entrypoints():
     assert 'loginFailExit' not in windows
     assert 'tls.disableCustomTLSFirstByte = true' in linux
     assert 'tls.disableCustomTLSFirstByte = true' in windows
-    assert 'tls.serverName' not in linux
-    assert 'tls.serverName' not in windows
+    assert 'tls.serverName = "nekotunnel-control"' in linux
+    assert 'tls.serverName = "nekotunnel-control"' in windows
     assert "-RedirectStandardOutput $FrpcOut -RedirectStandardError $FrpcErr" in windows
     assert "frpc_exit_at=" in windows
     assert "last_100_frpc_out" in windows
     assert "--frpc|--report" in windows
     assert "logs <all|tcp <local_port>>" in windows
+    assert "self-test tcp <local_port>" in windows
     assert "New-ScheduledTaskSettingsSet -Hidden" in windows
     assert "Unregister-ScheduledTask" in windows
