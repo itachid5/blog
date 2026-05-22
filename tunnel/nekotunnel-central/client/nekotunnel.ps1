@@ -305,7 +305,13 @@ function Start-Background([string[]]$StartArgs) {
     $Port = Parse-Port $StartArgs[1]
     Ensure-AppDir
     Save-BackgroundPort $Port
-    Copy-Item -Path $PSCommandPath -Destination $InstalledScriptPath -Force
+    $SourcePath = [System.IO.Path]::GetFullPath($PSCommandPath)
+    $DestPath = [System.IO.Path]::GetFullPath($InstalledScriptPath)
+    if ([StringComparer]::OrdinalIgnoreCase.Equals($SourcePath, $DestPath)) {
+        Write-Host "NekoTunnel client already installed."
+    } else {
+        Copy-Item -Path $SourcePath -Destination $DestPath -Force
+    }
     $CommandText = "& '$InstalledScriptPath' tcp $Port --foreground-service *> '$LogPath'"
     $Encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($CommandText))
     $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $Encoded"
