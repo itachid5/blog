@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 exec python3 - "$@" <<'PY'
+import hashlib
 import json
 import os
 import platform
@@ -14,6 +15,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 
 FRPC_VERSION = "0.57.0"
@@ -22,7 +24,10 @@ CONFIG_PATH = APP_DIR / "config"
 STATE_PATH = APP_DIR / "state"
 PID_PATH = APP_DIR / "nekotunnel.pid"
 LOG_PATH = APP_DIR / "nekotunnel.log"
-SERVICE_PATH = Path.home() / ".config" / "systemd" / "user" / "nekotunnel.service"
+LOG_DIR = APP_DIR / "logs"
+MACHINE_ID_PATH = APP_DIR / "machine_id"
+SYSTEMD_USER_DIR = Path.home() / ".config" / "systemd" / "user"
+SERVICE_PATH = SYSTEMD_USER_DIR / "nekotunnel.service"
 SERVICE_STOPPING = False
 
 
@@ -37,10 +42,16 @@ def usage() -> int:
     print("  nekotunnel tcp <local_port>")
     print("  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL>")
     print("  nekotunnel start tcp <local_port>")
-    print("  nekotunnel stop")
-    print("  nekotunnel restart")
+    print("  nekotunnel start tcp <local_port> --persist")
+    print("  nekotunnel install-service tcp <local_port>")
+    print("  nekotunnel install-system-service tcp <local_port> --user <name>")
+    print("  nekotunnel enable-boot")
+    print("  nekotunnel stop tcp <local_port>")
+    print("  nekotunnel stop all")
+    print("  nekotunnel restart tcp <local_port>")
     print("  nekotunnel status")
-    print("  nekotunnel logs")
+    print("  nekotunnel logs tcp <local_port>")
+    print("  nekotunnel logs all")
     print("  nekotunnel logout")
     return 2
 
@@ -71,6 +82,23 @@ def app_dir() -> Path:
     return APP_DIR
 
 
+def machine_id() -> str:
+    app_dir()
+    if MACHINE_ID_PATH.exists():
+        value = MACHINE_ID_PATH.read_text().strip()
+        if value:
+            return value
+    value = str(uuid.uuid4())
+    MACHINE_ID_PATH.write_text(value + "\n")
+    MACHINE_ID_PATH.chmod(0o600)
+    return value
+
+
+def stable_endpoint_id(api_url: str, token: str, client_id: str, protocol: str, local_port: int) -> str:
+    material = "|".join([api_url.rstrip("/"), client_id, protocol, str(local_port)])
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
 def shell_quote(value: str) -> str:
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
@@ -96,9 +124,68 @@ def save_config(api_url: str, token: str) -> None:
     write_config(config)
 
 
-def save_background_port(local_port: int) -> None:
+def endpoint_key(protocol: str, local_port: int) -> str:
+    return f"{protocol}-{local_port}"
+
+
+def endpoint_from_args(args: list[str]) -> tuple[str, int] | None:
+    endpoint_args = [arg for arg in args if arg != "--persist"]
+    if len(endpoint_args) != 2 or endpoint_args[0] != "tcp":
+        return None
+    return "tcp", parse_port(endpoint_args[1])
+
+
+def state_path_for(protocol: str, local_port: int) -> Path:
+    return APP_DIR / f"state-{endpoint_key(protocol, local_port)}.json"
+
+
+def pid_path_for(protocol: str, local_port: int) -> Path:
+    return APP_DIR / f"nekotunnel-{endpoint_key(protocol, local_port)}.pid"
+
+
+def log_path_for(protocol: str, local_port: int) -> Path:
+    return LOG_DIR / f"{endpoint_key(protocol, local_port)}.log"
+
+
+def service_name(protocol: str, local_port: int) -> str:
+    return f"nekotunnel-{endpoint_key(protocol, local_port)}.service"
+
+
+def service_path_for(protocol: str, local_port: int) -> Path:
+    return SYSTEMD_USER_DIR / service_name(protocol, local_port)
+
+
+def background_endpoints(config: dict[str, str] | None = None) -> list[dict[str, int | str]]:
+    config = config or load_config()
+    endpoints: list[dict[str, int | str]] = []
+    raw = config.get("BACKGROUND_ENDPOINTS", "")
+    if raw:
+        try:
+            decoded = json.loads(raw)
+            if isinstance(decoded, list):
+                for endpoint in decoded:
+                    if isinstance(endpoint, dict) and endpoint.get("protocol") == "tcp":
+                        endpoints.append({"protocol": "tcp", "port": parse_port(str(endpoint.get("port")))})
+        except (json.JSONDecodeError, ValueError):
+            pass
+    legacy_port = config.get("BACKGROUND_PORT")
+    if legacy_port:
+        try:
+            port = parse_port(legacy_port)
+            if not any(endpoint["protocol"] == "tcp" and endpoint["port"] == port for endpoint in endpoints):
+                endpoints.append({"protocol": "tcp", "port": port})
+        except ValueError:
+            pass
+    return endpoints
+
+
+def save_background_endpoint(protocol: str, local_port: int) -> None:
     config = load_config()
-    config["BACKGROUND_PORT"] = str(local_port)
+    endpoints = background_endpoints(config)
+    if not any(endpoint["protocol"] == protocol and endpoint["port"] == local_port for endpoint in endpoints):
+        endpoints.append({"protocol": protocol, "port": local_port})
+    config["BACKGROUND_ENDPOINTS"] = json.dumps(endpoints, separators=(",", ":"))
+    config.pop("BACKGROUND_PORT", None)
     write_config(config)
 
 
@@ -127,24 +214,24 @@ def mask_token(token: str) -> str:
     return token[:7] + "..." + token[-4:]
 
 
-def save_state(state: dict) -> None:
+def save_state(state: dict, path: Path = STATE_PATH) -> None:
     app_dir()
-    STATE_PATH.write_text(json.dumps(state, indent=2))
-    STATE_PATH.chmod(0o600)
+    path.write_text(json.dumps(state, indent=2))
+    path.chmod(0o600)
 
 
-def load_state() -> dict | None:
-    if not STATE_PATH.exists():
+def load_state(path: Path = STATE_PATH) -> dict | None:
+    if not path.exists():
         return None
     try:
-        return json.loads(STATE_PATH.read_text())
+        return json.loads(path.read_text())
     except json.JSONDecodeError:
         return {"error": "state file is not valid JSON"}
 
 
-def clear_state() -> None:
-    if STATE_PATH.exists():
-        STATE_PATH.unlink()
+def clear_state(path: Path = STATE_PATH) -> None:
+    if path.exists():
+        path.unlink()
 
 
 def command_for_port(local_port: int, server_addr: str, server_port: int | str) -> str:
@@ -248,8 +335,16 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
                 'method = "token"',
                 f'token = "{allocation["frp_token"]}"',
                 "",
+                "loginFailExit = false",
+                "",
                 "[transport]",
+                "protocol = \"tcp\"",
                 "tls.enable = true",
+                "tcpMux = true",
+                "tcpMuxKeepaliveInterval = 30",
+                "heartbeatInterval = 20",
+                "heartbeatTimeout = 120",
+                "dialServerKeepalive = 30",
                 "",
                 "[[proxies]]",
                 f'name = "{allocation["proxy_name"]}"',
@@ -265,25 +360,34 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
 
 
 def heartbeat_loop(api_url: str, token: str, session_id: str, interval: int, stop_event: threading.Event) -> None:
+    misses = 0
     while not stop_event.wait(interval):
-        status, data, body = post_json(api_url, "/api/heartbeat", {"token": token, "session_id": session_id})
+        try:
+            status, data, body = post_json(api_url, "/api/heartbeat", {"token": token, "session_id": session_id})
+        except Exception as exc:
+            misses += 1
+            print(f"API heartbeat failure {misses}: {exc}", flush=True)
+            continue
         if not data or not data.get("ok"):
-            print(f"Heartbeat failed with HTTP {status}: {body}", flush=True)
-            stop_event.set()
-            return
+            misses += 1
+            print(f"API heartbeat degraded {misses} with HTTP {status}: {body}", flush=True)
+            continue
+        if misses:
+            print("API heartbeat recovered", flush=True)
+        misses = 0
 
 
-def disconnect(api_url: str, token: str, session_id: str) -> bool:
+def disconnect(api_url: str, token: str, session_id: str, release: bool = True) -> bool:
     try:
-        post_json(api_url, "/api/disconnect", {"token": token, "session_id": session_id})
+        post_json(api_url, "/api/disconnect", {"token": token, "session_id": session_id, "release": release})
         return True
     except Exception as exc:
         print(f"Disconnect failed: {exc}", flush=True)
         return False
 
 
-def disconnect_saved_state() -> bool:
-    state = load_state()
+def disconnect_saved_state(path: Path = STATE_PATH) -> bool:
+    state = load_state(path)
     if not state or "error" in state:
         return True
     config = load_config()
@@ -291,11 +395,11 @@ def disconnect_saved_state() -> bool:
     token = config.get("USER_TOKEN", "")
     session_id = state.get("session_id")
     if api_url and token and session_id:
-        ok = disconnect(api_url, token, str(session_id))
+        ok = disconnect(api_url, token, str(session_id), release=True)
         if ok:
-            clear_state()
+            clear_state(path)
         return ok
-    clear_state()
+    clear_state(path)
     return True
 
 
@@ -343,16 +447,16 @@ def systemd_available() -> bool:
         return False
 
 
-def service_content() -> str:
+def service_content(protocol: str, local_port: int) -> str:
     executable = Path.home() / ".local" / "bin" / "nekotunnel"
     return f"""[Unit]
-Description=NekoTunnel background tunnel
+Description=NekoTunnel {protocol} {local_port} background tunnel
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart={executable} tcp ${{BACKGROUND_PORT}} --foreground-service
+ExecStart={executable} run-service {protocol} {local_port}
 Restart=always
 RestartSec=5
 EnvironmentFile={CONFIG_PATH}
@@ -363,37 +467,120 @@ WantedBy=default.target
 """
 
 
+def system_service_content(protocol: str, local_port: int, run_user: str) -> str:
+    executable = Path.home() / ".local" / "bin" / "nekotunnel"
+    return f"""[Unit]
+Description=NekoTunnel {protocol} {local_port} system tunnel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={run_user}
+ExecStart={executable} run-service {protocol} {local_port}
+Restart=always
+RestartSec=5
+EnvironmentFile={CONFIG_PATH}
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+
+def run_enable_boot() -> int:
+    user = os.environ.get("USER") or os.environ.get("LOGNAME") or "$USER"
+    if not shutil.which("loginctl"):
+        print(f"loginctl not found. To keep user services running after logout/reboot, run: loginctl enable-linger {user}")
+        return 1
+    result = subprocess.run(["loginctl", "enable-linger", user], check=False)
+    if result.returncode != 0:
+        print(f"Could not enable linger. Run: loginctl enable-linger {user}")
+        return result.returncode
+    print(f"Enabled linger for {user}.")
+    return 0
+
+
+def run_install_system_service(args: list[str]) -> int:
+    endpoint_args = []
+    run_user = os.environ.get("SUDO_USER") or os.environ.get("USER") or "root"
+    i = 0
+    while i < len(args):
+        if args[i] == "--user" and i + 1 < len(args):
+            run_user = args[i + 1]
+            i += 2
+        else:
+            endpoint_args.append(args[i])
+            i += 1
+    endpoint = endpoint_from_args(endpoint_args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    if hasattr(os, "geteuid") and os.geteuid() != 0:
+        print(f"Run as root: sudo nekotunnel install-system-service {protocol} {local_port} --user {run_user}")
+        return 1
+    save_background_endpoint(protocol, local_port)
+    service_path = Path("/etc/systemd/system") / service_name(protocol, local_port)
+    service_path.write_text(system_service_content(protocol, local_port, run_user))
+    subprocess.run(["systemctl", "daemon-reload"], check=False)
+    result = subprocess.run(["systemctl", "enable", "--now", service_path.name], check=False)
+    if result.returncode != 0:
+        print(f"Could not start system service {service_path.name}.")
+        return result.returncode
+    print(f"NekoTunnel system service {service_path.name} installed for {run_user}.")
+    return 0
+
+
 def run_status() -> int:
     config = load_config()
     api_url = config.get("API_URL")
     user_token = config.get("USER_TOKEN")
-    background_port = config.get("BACKGROUND_PORT")
+    endpoints = background_endpoints(config)
     frpc_path = APP_DIR / f"frpc-{FRPC_VERSION}" / "frpc"
-    state = load_state()
     print(f"API URL: {api_url or 'not configured'}")
     print(f"Token: {mask_token(user_token or '')}")
+    print(f"Machine ID: {machine_id()[:12]}")
     print(f"frpc v{FRPC_VERSION}: {'installed' if frpc_path.exists() else 'not installed'}")
-    print(f"Background port: {background_port or 'not configured'}")
-    if systemd_available():
-        result = subprocess.run(["systemctl", "--user", "is-active", "nekotunnel.service"], capture_output=True, text=True)
-        print(f"Background systemd: {result.stdout.strip() or 'inactive'}")
-    elif PID_PATH.exists():
-        pid = PID_PATH.read_text().strip()
-        running = pid.isdigit() and Path(f"/proc/{pid}").exists()
-        print(f"Background nohup: {'running' if running else 'stopped'}{f' (pid {pid})' if pid else ''}")
-    else:
-        print("Background nohup: not configured")
-    if state:
-        if "error" in state:
-            print(f"State: {state['error']}")
+    print("Background endpoints:")
+    if not endpoints:
+        print("  none configured")
+    for endpoint in endpoints:
+        protocol = str(endpoint["protocol"])
+        port = int(endpoint["port"])
+        key = endpoint_key(protocol, port)
+        if systemd_available():
+            service_path = service_path_for(protocol, port)
+            result = subprocess.run(["systemctl", "--user", "is-active", service_name(protocol, port)], capture_output=True, text=True)
+            running = result.stdout.strip() == "active"
+            exists = service_path.exists()
+            state_label = f"systemd task_exists={'yes' if exists else 'no'} running={'yes' if running else 'no'}"
         else:
-            print("Active session state:")
+            pid_path = pid_path_for(protocol, port)
+            pid = pid_path.read_text().strip() if pid_path.exists() else ""
+            running = pid.isdigit() and Path(f"/proc/{pid}").exists()
+            exists = pid_path.exists()
+            state_label = f"nohup task_exists={'yes' if exists else 'no'} running={'yes' if running else 'no'}{f' pid={pid}' if pid else ''}"
+        print(f"  {key}: {state_label}")
+        state = load_state(state_path_for(protocol, port))
+        if state and "error" not in state:
+            print(f"    session_id: {state.get('session_id', '-')}")
+            print(f"    remote: {state.get('server_addr', '-')}:{state.get('server_port', '-')}")
+            print(f"    endpoint_id: {str(state.get('endpoint_id', '-'))[:12]}")
+            print(f"    reconnect_count: {state.get('reconnect_count', 0)}")
+            print(f"    started_at: {state.get('started_at', '-')}")
+            if state.get("last_error"):
+                print(f"    last_error: {state.get('last_error')}")
+        elif state and "error" in state:
+            print(f"    last_error: {state['error']}")
+    state = load_state()
+    if state:
+        print("Foreground session state:")
+        if "error" in state:
+            print(f"  {state['error']}")
+        else:
             print(f"  session_id: {state.get('session_id', '-')}")
             print(f"  local_port: {state.get('local_port', '-')}")
             print(f"  remote: {state.get('server_addr', '-')}:{state.get('server_port', '-')}")
-            print(f"  started_at: {state.get('started_at', '-')}")
-    else:
-        print("Active session state: none")
     return 0
 
 
@@ -410,10 +597,21 @@ def run_tcp_once(args: list[str]) -> int:
         print(f"Could not prepare frpc v{FRPC_VERSION}: {exc}")
         return 1
 
+    protocol = "tcp"
+    client_id = machine_id()
+    endpoint_id = stable_endpoint_id(api_url, user_token, client_id, protocol, local_port)
+    state_path = state_path_for(protocol, local_port) if "--foreground-service" in args else STATE_PATH
     status, data, body = post_json(
         api_url,
         "/api/connect",
-        {"token": user_token, "local_port": local_port, "client_info": f"nekotunnel/{FRPC_VERSION}"},
+        {
+            "token": user_token,
+            "protocol": protocol,
+            "local_port": local_port,
+            "client_info": f"nekotunnel/{FRPC_VERSION}",
+            "client_id": client_id,
+            "endpoint_id": endpoint_id,
+        },
     )
     if not data:
         print(f"Connect failed with HTTP {status}: {body}")
@@ -425,20 +623,24 @@ def run_tcp_once(args: list[str]) -> int:
     session_id = data["session_id"]
     config_path = APP_DIR / f"frpc-{session_id}.toml"
     write_frpc_config(config_path, data, local_port)
-    save_state(
-        {
-            "session_id": session_id,
-            "slot_id": data.get("slot_id"),
-            "local_port": local_port,
-            "server_addr": data["server_addr"],
-            "server_port": data["server_port"],
-            "remote_port": data["remote_port"],
-            "proxy_name": data["proxy_name"],
-            "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-    )
+    state_data = {
+        "session_id": session_id,
+        "slot_id": data.get("slot_id"),
+        "protocol": protocol,
+        "local_port": local_port,
+        "server_addr": data["server_addr"],
+        "server_port": data["server_port"],
+        "remote_port": data["remote_port"],
+        "proxy_name": data["proxy_name"],
+        "client_id": data.get("client_id") or client_id,
+        "endpoint_id": data.get("endpoint_id") or endpoint_id,
+        "reconnect_count": data.get("reconnect_count", 0),
+        "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    save_state(state_data, state_path)
 
     print(f"Connected session: {session_id}", flush=True)
+    print(f"public_address={data['server_addr']}:{data['server_port']} reconnect_count={state_data['reconnect_count']}", flush=True)
     print(command_for_port(local_port, data["server_addr"], data["server_port"]), flush=True)
     print("Press Ctrl+C to disconnect.", flush=True)
 
@@ -473,8 +675,16 @@ def run_tcp_once(args: list[str]) -> int:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
-        disconnect(api_url, user_token, session_id)
-        clear_state()
+        exit_code = process.returncode or 0
+        release = "--foreground-service" not in args or SERVICE_STOPPING
+        disconnect(api_url, user_token, session_id, release=release)
+        if "--foreground-service" in args:
+            state_data["frpc_exit_code"] = exit_code
+            state_data["last_error"] = f"frpc exited with code {exit_code}"
+            state_data["ended_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            save_state(state_data, state_path)
+        else:
+            clear_state(state_path)
         if config_path.exists():
             config_path.unlink()
 
@@ -486,6 +696,8 @@ def run_tcp(args: list[str]) -> int:
         return run_tcp_once(args)
 
     stop_requested = False
+    backoffs = [2, 5, 10, 20, 30, 60]
+    backoff_index = 0
 
     def request_stop(_signum=None, _frame=None):
         nonlocal stop_requested
@@ -495,66 +707,104 @@ def run_tcp(args: list[str]) -> int:
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
     while not stop_requested:
+        started = time.monotonic()
         try:
             code = run_tcp_once(args)
             if stop_requested or SERVICE_STOPPING:
                 return code
-            print(f"Tunnel exited with code {code}. Reconnecting in 5 seconds...", flush=True)
-            time.sleep(5)
+            if time.monotonic() - started >= 120:
+                backoff_index = 0
+            delay = backoffs[min(backoff_index, len(backoffs) - 1)]
+            jitter = min(3, delay * 0.2) * (0.5 - (time.time() % 1))
+            wait_for = max(1, delay + jitter)
+            print(f"Tunnel exited with code {code}. Reconnecting in {wait_for:.1f} seconds...", flush=True)
+            backoff_index = min(backoff_index + 1, len(backoffs) - 1)
+            time.sleep(wait_for)
         except StopRequested:
             return 0
         except Exception as exc:
             if stop_requested:
                 return 0
-            print(f"Tunnel failed: {exc}. Reconnecting in 5 seconds...", flush=True)
-            time.sleep(5)
+            delay = backoffs[min(backoff_index, len(backoffs) - 1)]
+            print(f"Tunnel failed: {exc}. Reconnecting in {delay} seconds...", flush=True)
+            backoff_index = min(backoff_index + 1, len(backoffs) - 1)
+            time.sleep(delay)
     return 0
 
 
-def run_start(args: list[str]) -> int:
-    if len(args) != 2 or args[0] != "tcp":
+def run_service(args: list[str]) -> int:
+    endpoint = endpoint_from_args(args)
+    if endpoint is None:
         return usage()
-    try:
-        local_port = parse_port(args[1])
-    except ValueError as exc:
-        print(exc)
-        return 2
-    save_background_port(local_port)
+    protocol, local_port = endpoint
+    app_dir()
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = log_path_for(protocol, local_port)
+    with open(log_path, "ab", buffering=0) as log_file:
+        os.dup2(log_file.fileno(), 1)
+        os.dup2(log_file.fileno(), 2)
+        print(f"started_at={time.strftime('%Y-%m-%d %H:%M:%S')} endpoint={endpoint_key(protocol, local_port)}", flush=True)
+        return run_tcp([str(local_port), "--foreground-service"])
+
+
+def remove_background_endpoint(protocol: str, local_port: int) -> None:
+    config = load_config()
+    endpoints = [
+        endpoint
+        for endpoint in background_endpoints(config)
+        if not (endpoint["protocol"] == protocol and endpoint["port"] == local_port)
+    ]
+    config["BACKGROUND_ENDPOINTS"] = json.dumps(endpoints, separators=(",", ":"))
+    config.pop("BACKGROUND_PORT", None)
+    write_config(config)
+
+
+def run_start(args: list[str]) -> int:
+    endpoint = endpoint_from_args(args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    save_background_endpoint(protocol, local_port)
     if systemd_available():
-        SERVICE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        SERVICE_PATH.write_text(service_content())
+        service_path = service_path_for(protocol, local_port)
+        service_path.parent.mkdir(parents=True, exist_ok=True)
+        service_path.write_text(service_content(protocol, local_port))
         subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
-        result = subprocess.run(["systemctl", "--user", "enable", "--now", "nekotunnel.service"], check=False)
+        result = subprocess.run(["systemctl", "--user", "enable", "--now", service_name(protocol, local_port)], check=False)
         if result.returncode != 0:
-            print("Could not start systemd user service.")
+            print(f"Could not start systemd user service {service_name(protocol, local_port)}.")
             return result.returncode
-        print("NekoTunnel background service started.")
+        print(f"NekoTunnel background service {service_name(protocol, local_port)} started.")
         print("Use: nekotunnel status")
-        print("Use: nekotunnel logs")
+        print(f"Use: nekotunnel logs {protocol} {local_port}")
         if shutil.which("loginctl"):
             print(f"To keep running after logout, run: loginctl enable-linger {os.environ.get('USER', '$USER')}")
         return 0
 
     executable = Path.home() / ".local" / "bin" / "nekotunnel"
-    log_file = open(LOG_PATH, "ab")
+    log_path = log_path_for(protocol, local_port)
+    pid_path = pid_path_for(protocol, local_port)
+    app_dir()
+    log_file = open(log_path, "ab")
     process = subprocess.Popen(
-        [str(executable), "tcp", str(local_port), "--foreground-service"],
+        [str(executable), "run-service", protocol, str(local_port)],
         stdout=log_file,
         stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL,
         start_new_session=True,
     )
-    PID_PATH.write_text(str(process.pid))
-    print(f"NekoTunnel background process started with PID {process.pid}.")
+    pid_path.write_text(str(process.pid))
+    print(f"NekoTunnel background process {endpoint_key(protocol, local_port)} started with PID {process.pid}.")
     print("Use: nekotunnel status")
-    print("Use: nekotunnel logs")
+    print(f"Use: nekotunnel logs {protocol} {local_port}")
     return 0
 
 
-def stop_nohup() -> bool:
-    if not PID_PATH.exists():
+def stop_nohup(protocol: str, local_port: int) -> bool:
+    pid_path = pid_path_for(protocol, local_port)
+    if not pid_path.exists():
         return False
-    pid_text = PID_PATH.read_text().strip()
+    pid_text = pid_path.read_text().strip()
     if pid_text.isdigit():
         try:
             os.kill(int(pid_text), signal.SIGTERM)
@@ -566,40 +816,86 @@ def stop_nohup() -> bool:
                 os.kill(int(pid_text), signal.SIGKILL)
         except ProcessLookupError:
             pass
-    PID_PATH.unlink(missing_ok=True)
+    pid_path.unlink(missing_ok=True)
     return True
 
 
-def run_stop() -> int:
+def stop_endpoint(protocol: str, local_port: int, remove_config: bool = True) -> bool:
     stopped = False
     if systemd_available():
-        result = subprocess.run(["systemctl", "--user", "stop", "nekotunnel.service"], check=False)
+        result = subprocess.run(["systemctl", "--user", "stop", service_name(protocol, local_port)], check=False)
         stopped = result.returncode == 0
-    if stop_nohup():
+    if stop_nohup(protocol, local_port):
         stopped = True
-    disconnect_saved_state()
-    if stopped:
-        print("NekoTunnel background service stopped.")
+    disconnect_saved_state(state_path_for(protocol, local_port))
+    if remove_config:
+        remove_background_endpoint(protocol, local_port)
+    return stopped
+
+
+def run_stop(args: list[str]) -> int:
+    if args == ["all"] or not args:
+        endpoints = background_endpoints()
+        if not endpoints:
+            print("No background endpoints configured.")
+            return 0
+        any_stopped = False
+        for endpoint in endpoints:
+            protocol = str(endpoint["protocol"])
+            local_port = int(endpoint["port"])
+            if stop_endpoint(protocol, local_port):
+                any_stopped = True
+                print(f"Stopped {endpoint_key(protocol, local_port)}.")
+            else:
+                print(f"{endpoint_key(protocol, local_port)} was not running.")
+        return 0 if any_stopped or endpoints else 0
+
+    endpoint = endpoint_from_args(args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    if stop_endpoint(protocol, local_port):
+        print(f"NekoTunnel background endpoint {endpoint_key(protocol, local_port)} stopped.")
     else:
-        print("NekoTunnel background service was not running.")
+        print(f"NekoTunnel background endpoint {endpoint_key(protocol, local_port)} was not running.")
     return 0
 
 
-def run_restart() -> int:
-    config = load_config()
-    port = config.get("BACKGROUND_PORT")
-    if not port:
-        print("No saved background port. Use: nekotunnel start tcp <port>")
-        return 2
-    run_stop()
-    return run_start(["tcp", port])
+def run_restart(args: list[str]) -> int:
+    endpoint = endpoint_from_args(args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    stop_endpoint(protocol, local_port, remove_config=False)
+    return run_start([protocol, str(local_port)])
 
 
-def run_logs() -> int:
-    if systemd_available() and SERVICE_PATH.exists():
-        return subprocess.call(["journalctl", "--user", "-u", "nekotunnel.service", "-f"])
-    LOG_PATH.touch(exist_ok=True)
-    return subprocess.call(["tail", "-f", str(LOG_PATH)])
+def run_logs(args: list[str]) -> int:
+    if args == ["all"]:
+        endpoints = background_endpoints()
+        if not endpoints:
+            print("No background endpoints configured.")
+            return 0
+        for endpoint in endpoints:
+            protocol = str(endpoint["protocol"])
+            local_port = int(endpoint["port"])
+            path = log_path_for(protocol, local_port)
+            print(f"==> {endpoint_key(protocol, local_port)} ({path}) <==")
+            if path.exists():
+                print(path.read_text(errors="replace"))
+            else:
+                print("No log file yet.")
+        return 0
+
+    endpoint = endpoint_from_args(args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    if systemd_available() and service_path_for(protocol, local_port).exists():
+        return subprocess.call(["journalctl", "--user", "-u", service_name(protocol, local_port), "-f"])
+    log_path = log_path_for(protocol, local_port)
+    log_path.touch(exist_ok=True)
+    return subprocess.call(["tail", "-f", str(log_path)])
 
 
 def main() -> int:
@@ -620,22 +916,26 @@ def main() -> int:
         return run_tcp(args[1:])
     if command == "start":
         return run_start(args[1:])
+    if command == "run-service":
+        return run_service(args[1:])
+    if command == "install-service":
+        return run_start(args[1:])
+    if command == "install-system-service":
+        return run_install_system_service(args[1:])
+    if command == "enable-boot":
+        if len(args) != 1:
+            return usage()
+        return run_enable_boot()
     if command == "stop":
-        if len(args) != 1:
-            return usage()
-        return run_stop()
+        return run_stop(args[1:])
     if command == "restart":
-        if len(args) != 1:
-            return usage()
-        return run_restart()
+        return run_restart(args[1:])
     if command == "status":
         if len(args) != 1:
             return usage()
         return run_status()
     if command == "logs":
-        if len(args) != 1:
-            return usage()
-        return run_logs()
+        return run_logs(args[1:])
     if command == "logout":
         if len(args) != 1:
             return usage()

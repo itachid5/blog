@@ -8,7 +8,7 @@
   <h2>Create User Token</h2>
   <form method="post" action="/users" class="grid-form">
     <label>Name<input name="name" required placeholder="alice"></label>
-    <label>Max Active Sessions<input name="max_sessions" type="number" min="1" value="1" required></label>
+    <label>Max Active Sessions<input name="max_sessions" type="number" min="1" value="3" required></label>
     <button class="primary" type="submit">Create token</button>
   </form>
 </div>
@@ -111,14 +111,19 @@ nekotunnel stop</code></pre>
   <h2>User Tokens</h2>
   <div class="table-scroll">
     <table>
-      <thead><tr><th>Name</th><th>Token Prefix</th><th>Status</th><th>Max Sessions</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Name</th><th>Token Prefix</th><th>Status</th><th>Max Active Sessions</th><th>Actions</th></tr></thead>
       <tbody>
       {% for user in users %}
         <tr>
           <td>{{ user.name }}</td>
           <td><code>{{ user.token_prefix }}</code></td>
           <td><span class="badge">{{ user.status }}</span></td>
-          <td>{{ user.max_sessions }}</td>
+          <td>
+            <form method="post" action="/users/{{ user.id }}/max-active-sessions" class="inline-form">
+              <input name="max_sessions" type="number" min="1" value="{{ user.max_sessions }}" required>
+              <button type="submit">Save</button>
+            </form>
+          </td>
           <td class="actions">
             <form method="post" action="/users/{{ user.id }}/disable"><button type="submit">Disable</button></form>
             <form method="post" action="/users/{{ user.id }}/delete"><button class="danger" type="submit">Delete</button></form>

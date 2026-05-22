@@ -14,7 +14,7 @@ except ImportError:
     psycopg2 = None
     DictCursor = None
 
-from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayBillingSnapshot, RailwayCliLogin, RailwayProject, Slot, TunnelSession, UserToken
+from .models import AuditLog, ProvisionLog, RailwayAccount, RailwayBillingSnapshot, RailwayCliLogin, RailwayProject, Slot, TunnelEndpoint, TunnelSession, UserToken
 
 
 logger = logging.getLogger("nekotunnel-central.storage")
@@ -25,6 +25,7 @@ EXPECTED_TABLES = (
     "slots",
     "users",
     "sessions",
+    "tunnel_endpoints",
     "audit_logs",
     "provision_logs",
     "railway_cli_logins",
@@ -33,10 +34,19 @@ EXPECTED_TABLES = (
     "app_settings",
 )
 SEQUENCE_TABLES = {"railway_accounts", "railway_projects", "slots", "users", "audit_logs", "provision_logs", "railway_cli_logins", "railway_cli_session_backups", "railway_billing_snapshots"}
+ACTIVE_SESSION_STATUSES = ("active", "starting", "connected")
+
 INDEX_STATEMENTS = (
     "CREATE INDEX IF NOT EXISTS idx_users_token_hash ON users(token_hash)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_user_status ON sessions(user_id, status)",
     "CREATE INDEX IF NOT EXISTS idx_sessions_status_heartbeat ON sessions(status, last_heartbeat_at)",
+    "CREATE INDEX IF NOT EXISTS idx_sessions_user_endpoint ON sessions(user_id, protocol, local_port, status)",
+    "CREATE INDEX IF NOT EXISTS idx_sessions_slot_status ON sessions(slot_id, status, last_heartbeat_at)",
+    "CREATE INDEX IF NOT EXISTS idx_sessions_endpoint ON sessions(endpoint_id)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_tunnel_endpoints_endpoint_id ON tunnel_endpoints(endpoint_id)",
+    "CREATE INDEX IF NOT EXISTS idx_tunnel_endpoints_user_endpoint ON tunnel_endpoints(user_id, protocol, local_port, status)",
+    "CREATE INDEX IF NOT EXISTS idx_tunnel_endpoints_slot ON tunnel_endpoints(preferred_slot_id)",
+    "CREATE INDEX IF NOT EXISTS idx_tunnel_endpoints_status_grace ON tunnel_endpoints(status, grace_until)",
     "CREATE INDEX IF NOT EXISTS idx_slots_status_tcp ON slots(status, tcp_status)",
     "CREATE INDEX IF NOT EXISTS idx_slots_current_session ON slots(current_session_id)",
     "CREATE INDEX IF NOT EXISTS idx_slots_railway_project ON slots(railway_project_id)",
@@ -215,7 +225,7 @@ class SQLiteStore:
                     token_hash TEXT NOT NULL,
                     token_prefix TEXT NOT NULL,
                     status TEXT NOT NULL DEFAULT 'active',
-                    max_sessions INTEGER NOT NULL DEFAULT 1,
+                    max_sessions INTEGER NOT NULL DEFAULT 3,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
@@ -225,11 +235,39 @@ class SQLiteStore:
                     user_id INTEGER,
                     slot_id INTEGER,
                     status TEXT NOT NULL,
+                    protocol TEXT NOT NULL DEFAULT 'tcp',
+                    local_port INTEGER,
+                    endpoint_id TEXT,
+                    client_id TEXT,
+                    reconnect_count INTEGER NOT NULL DEFAULT 0,
+                    grace_until TEXT,
+                    last_disconnect_reason TEXT,
                     started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_heartbeat_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     ended_at TEXT,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
                     FOREIGN KEY (slot_id) REFERENCES slots(id) ON DELETE SET NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS tunnel_endpoints (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    endpoint_id TEXT NOT NULL UNIQUE,
+                    client_id TEXT NOT NULL DEFAULT '',
+                    protocol TEXT NOT NULL DEFAULT 'tcp',
+                    local_port INTEGER NOT NULL,
+                    preferred_slot_id INTEGER,
+                    last_session_id TEXT,
+                    status TEXT NOT NULL DEFAULT 'inactive',
+                    first_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_public_host TEXT,
+                    last_public_port TEXT,
+                    reconnect_count INTEGER NOT NULL DEFAULT 0,
+                    grace_until TEXT,
+                    last_disconnect_reason TEXT,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (preferred_slot_id) REFERENCES slots(id) ON DELETE SET NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -317,6 +355,7 @@ class SQLiteStore:
             self.ensure_railway_billing_snapshot_schema(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
+            self.ensure_tunnel_endpoint_schema(conn)
             self.ensure_session_columns(conn)
             self.ensure_provision_log_columns(conn)
             self.create_indexes(conn)
@@ -339,6 +378,15 @@ class SQLiteStore:
         if self.database_type == "postgres":
             return f"NULLIF({column}, '')::timestamptz {direction} NULLS LAST"
         return f"datetime({column}) {direction}"
+
+    def stale_cutoff(self, ttl_seconds: int) -> str:
+        return (datetime.utcnow() - timedelta(seconds=ttl_seconds)).strftime("%Y-%m-%d %H:%M:%S")
+
+    def active_status_placeholders(self) -> str:
+        return ", ".join("?" for _ in ACTIVE_SESSION_STATUSES)
+
+    def active_session_params(self, *prefix, ttl_seconds: int) -> tuple:
+        return (*prefix, *ACTIVE_SESSION_STATUSES, self.stale_cutoff(ttl_seconds))
 
     def table_columns(self, conn, table_name: str) -> set[str]:
         return {row[1] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
@@ -597,11 +645,65 @@ class SQLiteStore:
             if name not in columns:
                 conn.execute(f"ALTER TABLE slots ADD COLUMN {name} {definition}")
 
+    def ensure_tunnel_endpoint_schema(self, conn) -> None:
+        id_type = "SERIAL PRIMARY KEY" if self.database_type == "postgres" else "INTEGER PRIMARY KEY AUTOINCREMENT"
+        user_fk = "INTEGER REFERENCES users(id) ON DELETE CASCADE" if self.database_type == "postgres" else "INTEGER"
+        slot_fk = "INTEGER REFERENCES slots(id) ON DELETE SET NULL" if self.database_type == "postgres" else "INTEGER"
+        default_now = "(CURRENT_TIMESTAMP::text)" if self.database_type == "postgres" else "CURRENT_TIMESTAMP"
+        conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS tunnel_endpoints (
+                id {id_type},
+                user_id {user_fk},
+                endpoint_id TEXT NOT NULL UNIQUE,
+                client_id TEXT NOT NULL DEFAULT '',
+                protocol TEXT NOT NULL DEFAULT 'tcp',
+                local_port INTEGER NOT NULL,
+                preferred_slot_id {slot_fk},
+                last_session_id TEXT,
+                status TEXT NOT NULL DEFAULT 'inactive',
+                first_seen_at TEXT NOT NULL DEFAULT {default_now},
+                last_seen_at TEXT NOT NULL DEFAULT {default_now},
+                last_public_host TEXT,
+                last_public_port TEXT,
+                reconnect_count INTEGER NOT NULL DEFAULT 0,
+                grace_until TEXT,
+                last_disconnect_reason TEXT
+            )
+            """
+        )
+        columns = self.table_columns(conn, "tunnel_endpoints")
+        definitions = {
+            "client_id": "TEXT NOT NULL DEFAULT ''",
+            "protocol": "TEXT NOT NULL DEFAULT 'tcp'",
+            "local_port": "INTEGER NOT NULL DEFAULT 0",
+            "preferred_slot_id": "INTEGER",
+            "last_session_id": "TEXT",
+            "status": "TEXT NOT NULL DEFAULT 'inactive'",
+            "first_seen_at": f"TEXT NOT NULL DEFAULT {default_now}",
+            "last_seen_at": f"TEXT NOT NULL DEFAULT {default_now}",
+            "last_public_host": "TEXT",
+            "last_public_port": "TEXT",
+            "reconnect_count": "INTEGER NOT NULL DEFAULT 0",
+            "grace_until": "TEXT",
+            "last_disconnect_reason": "TEXT",
+        }
+        for name, definition in definitions.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE tunnel_endpoints ADD COLUMN {name} {definition}")
+
     def ensure_session_columns(self, conn: sqlite3.Connection) -> None:
         columns = self.table_columns(conn, "sessions")
         definitions = {
             "client_info": "TEXT NOT NULL DEFAULT ''",
             "proxy_name": "TEXT NOT NULL DEFAULT ''",
+            "protocol": "TEXT NOT NULL DEFAULT 'tcp'",
+            "local_port": "INTEGER",
+            "endpoint_id": "TEXT",
+            "client_id": "TEXT",
+            "reconnect_count": "INTEGER NOT NULL DEFAULT 0",
+            "grace_until": "TEXT",
+            "last_disconnect_reason": "TEXT",
         }
         for name, definition in definitions.items():
             if name not in columns:
@@ -660,7 +762,10 @@ class SQLiteStore:
                 "total_slots": conn.execute("SELECT COUNT(*) FROM slots").fetchone()[0],
                 "free_slots": conn.execute("SELECT COUNT(*) FROM slots WHERE status = 'free'").fetchone()[0],
                 "busy_slots": conn.execute("SELECT COUNT(*) FROM slots WHERE status = 'busy'").fetchone()[0],
-                "active_sessions": conn.execute("SELECT COUNT(*) FROM sessions WHERE status = 'active'").fetchone()[0],
+                "active_sessions": conn.execute(
+                    "SELECT COUNT(*) FROM sessions WHERE status IN ({})".format(self.active_status_placeholders()),
+                    ACTIVE_SESSION_STATUSES,
+                ).fetchone()[0],
                 "failed_slots": conn.execute("SELECT COUNT(*) FROM slots WHERE status IN ('failed', 'deploy_failed') OR tcp_status = 'failed'").fetchone()[0],
                 "project_created_slots": conn.execute("SELECT COUNT(*) FROM slots WHERE status = 'project_created'").fetchone()[0],
                 "deployed_slots": conn.execute("SELECT COUNT(*) FROM slots WHERE status = 'deployed'").fetchone()[0],
@@ -1336,10 +1441,18 @@ class SQLiteStore:
 
     def list_slots(self, status_filter: str | None = None, project_id: int | None = None) -> list[Slot]:
         query = """
-            SELECT slots.*, sessions.user_id AS current_user_id, users.name AS current_user_name
+            SELECT slots.*, sessions.user_id AS current_user_id, users.name AS current_user_name,
+                   sessions.protocol AS current_protocol, sessions.local_port AS current_local_port,
+                   endpoints.endpoint_id AS reserved_endpoint_id, endpoints.client_id AS reserved_client_id,
+                   endpoints.status AS reserved_status, endpoints.grace_until AS reserved_grace_until,
+                   endpoints.reconnect_count AS reserved_reconnect_count, endpoints.last_public_host AS last_public_host,
+                   endpoints.last_public_port AS last_public_port,
+                   endpoints.last_disconnect_reason AS reserved_last_disconnect_reason
             FROM slots
             LEFT JOIN sessions ON sessions.id = slots.current_session_id
             LEFT JOIN users ON users.id = sessions.user_id
+            LEFT JOIN tunnel_endpoints endpoints ON endpoints.preferred_slot_id = slots.id
+                AND endpoints.status IN ('active', 'reconnecting')
         """
         params: list[object] = []
         conditions: list[str] = []
@@ -1590,6 +1703,17 @@ class SQLiteStore:
             row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
         return UserToken(**dict(row)) if row else None
 
+    def update_user_max_sessions(self, user_id: int, max_sessions: int) -> bool:
+        with self.connect() as conn:
+            cursor = conn.execute(
+                "UPDATE users SET max_sessions = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (max(1, max_sessions), user_id),
+            )
+            conn.commit()
+        if cursor.rowcount:
+            self.add_log("admin", "user_token.update", f"Updated max active sessions for user {user_id} to {max(1, max_sessions)}")
+        return cursor.rowcount > 0
+
     def disable_user(self, user_id: int) -> bool:
         user = self.get_user(user_id)
         if not user:
@@ -1619,55 +1743,234 @@ class SQLiteStore:
             row = conn.execute("SELECT * FROM users WHERE token_hash = ?", (digest,)).fetchone()
         return UserToken(**dict(row)) if row else None
 
-    def allocate_session(self, user: UserToken, local_port: int, client_info: str = "") -> tuple[dict | None, str]:
+    def allocate_session(
+        self,
+        user: UserToken,
+        local_port: int,
+        client_info: str = "",
+        protocol: str = "tcp",
+        ttl_seconds: int = 300,
+        client_id: str = "",
+        endpoint_id: str = "",
+        stale_seconds: int | None = None,
+        grace_seconds: int = 300,
+    ) -> tuple[dict | None, str]:
         session_id = secrets.token_urlsafe(16)
         proxy_name = f"nekotunnel-{session_id[:8]}"
+        active_statuses = self.active_status_placeholders()
+        stale_ttl = stale_seconds or ttl_seconds
+        now = datetime.utcnow()
+        now_text = now.strftime("%Y-%m-%d %H:%M:%S")
+        cutoff = self.stale_cutoff(stale_ttl)
+        sticky = bool(client_id and endpoint_id)
         with self.connect() as conn:
-            conn.execute("BEGIN IMMEDIATE")
-            active_count = conn.execute(
-                "SELECT COUNT(*) FROM sessions WHERE user_id = ? AND status = 'active'",
-                (user.id,),
-            ).fetchone()[0]
-            if active_count >= user.max_sessions:
-                conn.rollback()
-                return None, "max_sessions_reached"
-            slot = conn.execute(
-                """
-                SELECT * FROM slots
-                WHERE status = 'free'
-                  AND tcp_status = 'ready'
-                  AND COALESCE(server_addr, '') != ''
-                  AND COALESCE(server_port, '') != ''
-                  AND COALESCE(frp_token_hash_or_encrypted, '') != ''
-                  AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE ?
-                ORDER BY id ASC
-                LIMIT 1
-                """,
-                ("%...%",),
-            ).fetchone()
-            if not slot:
-                conn.rollback()
-                return None, "no_free_slot"
-            conn.execute(
-                """
-                INSERT INTO sessions (id, user_id, slot_id, status, client_info, proxy_name)
-                VALUES (?, ?, ?, 'active', ?, ?)
-                """,
-                (session_id, user.id, slot["id"], client_info[:500], proxy_name),
-            )
-            conn.execute(
-                """
-                UPDATE slots
-                SET status = 'busy', current_session_id = ?, error = '', updated_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND status = 'free'
-                """,
-                (session_id, slot["id"]),
-            )
+            if self.database_type == "sqlite":
+                conn.execute("BEGIN IMMEDIATE")
+            reconnect_count = 0
+            if sticky:
+                endpoint = conn.execute("SELECT * FROM tunnel_endpoints WHERE endpoint_id = ?", (endpoint_id,)).fetchone()
+                if endpoint and endpoint["user_id"] != user.id:
+                    conn.rollback()
+                    return None, "port_already_active"
+                if endpoint is None:
+                    conn.execute(
+                        """
+                        INSERT INTO tunnel_endpoints (user_id, endpoint_id, client_id, protocol, local_port, status)
+                        VALUES (?, ?, ?, ?, ?, 'inactive')
+                        """,
+                        (user.id, endpoint_id, client_id[:200], protocol, local_port),
+                    )
+                    endpoint = conn.execute("SELECT * FROM tunnel_endpoints WHERE endpoint_id = ?", (endpoint_id,)).fetchone()
+                endpoint_is_counted = endpoint["status"] in ("active", "reconnecting") and (not endpoint["grace_until"] or endpoint["grace_until"] >= now_text)
+                active_count = conn.execute(
+                    """
+                    SELECT COUNT(*) FROM tunnel_endpoints
+                    WHERE user_id = ?
+                      AND status IN ('active', 'reconnecting')
+                      AND (grace_until IS NULL OR grace_until >= ?)
+                    """,
+                    (user.id, now_text),
+                ).fetchone()[0]
+                if active_count >= user.max_sessions and not endpoint_is_counted:
+                    conn.rollback()
+                    return None, "session_limit_reached"
+                duplicate = conn.execute(
+                    """
+                    SELECT 1 FROM tunnel_endpoints
+                    WHERE user_id = ?
+                      AND protocol = ?
+                      AND local_port = ?
+                      AND endpoint_id != ?
+                      AND status IN ('active', 'reconnecting')
+                      AND (grace_until IS NULL OR grace_until >= ?)
+                    LIMIT 1
+                    """,
+                    (user.id, protocol, local_port, endpoint_id, now_text),
+                ).fetchone()
+                if duplicate:
+                    conn.rollback()
+                    return None, "port_already_active"
+                conn.execute(
+                    """
+                    UPDATE sessions
+                    SET status = 'replaced', ended_at = CURRENT_TIMESTAMP, grace_until = NULL
+                    WHERE user_id = ? AND endpoint_id = ? AND status IN ('active', 'starting', 'connected', 'reconnecting', 'stale')
+                    """,
+                    (user.id, endpoint_id),
+                )
+                reconnect_count = int(endpoint["reconnect_count"] or 0) + (1 if endpoint["last_session_id"] else 0)
+                slot = None
+                if endpoint["preferred_slot_id"]:
+                    slot = conn.execute(
+                        f"""
+                        SELECT slots.* FROM slots
+                        LEFT JOIN sessions current_session ON current_session.id = slots.current_session_id
+                        WHERE slots.id = ?
+                          AND slots.tcp_status = 'ready'
+                          AND COALESCE(slots.server_addr, '') != ''
+                          AND COALESCE(slots.server_port, '') != ''
+                          AND COALESCE(slots.frp_token_hash_or_encrypted, '') != ''
+                          AND COALESCE(slots.frp_token_hash_or_encrypted, '') NOT LIKE ?
+                          AND (
+                            slots.status = 'free'
+                            OR current_session.endpoint_id = ?
+                            OR NOT EXISTS (
+                                SELECT 1 FROM sessions
+                                WHERE sessions.slot_id = slots.id
+                                  AND sessions.status IN ({active_statuses})
+                                  AND sessions.last_heartbeat_at >= ?
+                            )
+                          )
+                        LIMIT 1
+                        """,
+                        (endpoint["preferred_slot_id"], "%...%", endpoint_id, *ACTIVE_SESSION_STATUSES, cutoff),
+                    ).fetchone()
+                if not slot:
+                    slot = conn.execute(
+                        f"""
+                        SELECT * FROM slots
+                        WHERE status = 'free'
+                          AND tcp_status = 'ready'
+                          AND COALESCE(server_addr, '') != ''
+                          AND COALESCE(server_port, '') != ''
+                          AND COALESCE(frp_token_hash_or_encrypted, '') != ''
+                          AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE ?
+                          AND NOT EXISTS (
+                              SELECT 1 FROM sessions
+                              WHERE sessions.slot_id = slots.id
+                                AND sessions.status IN ({active_statuses})
+                                AND sessions.last_heartbeat_at >= ?
+                          )
+                        ORDER BY id ASC
+                        LIMIT 1
+                        """,
+                        ("%...%", *ACTIVE_SESSION_STATUSES, cutoff),
+                    ).fetchone()
+                if not slot:
+                    conn.rollback()
+                    return None, "no_available_slot"
+                conn.execute(
+                    """
+                    INSERT INTO sessions (id, user_id, slot_id, status, protocol, local_port, endpoint_id, client_id, reconnect_count, client_info, proxy_name)
+                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (session_id, user.id, slot["id"], protocol, local_port, endpoint_id, client_id[:200], reconnect_count, client_info[:500], proxy_name),
+                )
+                cursor = conn.execute(
+                    """
+                    UPDATE slots
+                    SET status = 'busy', current_session_id = ?, error = '', updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (session_id, slot["id"]),
+                )
+                if cursor.rowcount != 1:
+                    conn.rollback()
+                    return None, "no_available_slot"
+                conn.execute(
+                    """
+                    UPDATE tunnel_endpoints
+                    SET client_id = ?, protocol = ?, local_port = ?, preferred_slot_id = ?, last_session_id = ?,
+                        status = 'active', last_seen_at = CURRENT_TIMESTAMP, last_public_host = ?, last_public_port = ?,
+                        reconnect_count = ?, grace_until = NULL, last_disconnect_reason = NULL
+                    WHERE endpoint_id = ?
+                    """,
+                    (client_id[:200], protocol, local_port, slot["id"], session_id, slot["server_addr"], str(slot["server_port"]), reconnect_count, endpoint_id),
+                )
+            else:
+                active_count = conn.execute(
+                    f"""
+                    SELECT COUNT(*) FROM sessions
+                    WHERE user_id = ?
+                      AND status IN ({active_statuses})
+                      AND last_heartbeat_at >= ?
+                    """,
+                    self.active_session_params(user.id, ttl_seconds=ttl_seconds),
+                ).fetchone()[0]
+                if active_count >= user.max_sessions:
+                    conn.rollback()
+                    return None, "session_limit_reached"
+                duplicate = conn.execute(
+                    f"""
+                    SELECT 1 FROM sessions
+                    WHERE user_id = ?
+                      AND protocol = ?
+                      AND local_port = ?
+                      AND status IN ({active_statuses})
+                      AND last_heartbeat_at >= ?
+                    LIMIT 1
+                    """,
+                    self.active_session_params(user.id, protocol, local_port, ttl_seconds=ttl_seconds),
+                ).fetchone()
+                if duplicate:
+                    conn.rollback()
+                    return None, "port_already_active"
+                slot = conn.execute(
+                    f"""
+                    SELECT * FROM slots
+                    WHERE status = 'free'
+                      AND tcp_status = 'ready'
+                      AND COALESCE(server_addr, '') != ''
+                      AND COALESCE(server_port, '') != ''
+                      AND COALESCE(frp_token_hash_or_encrypted, '') != ''
+                      AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE ?
+                      AND NOT EXISTS (
+                          SELECT 1 FROM sessions
+                          WHERE sessions.slot_id = slots.id
+                            AND sessions.status IN ({active_statuses})
+                            AND sessions.last_heartbeat_at >= ?
+                      )
+                    ORDER BY id ASC
+                    LIMIT 1
+                    """,
+                    ("%...%", *ACTIVE_SESSION_STATUSES, self.stale_cutoff(ttl_seconds)),
+                ).fetchone()
+                if not slot:
+                    conn.rollback()
+                    return None, "no_available_slot"
+                conn.execute(
+                    """
+                    INSERT INTO sessions (id, user_id, slot_id, status, protocol, local_port, client_info, proxy_name)
+                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
+                    """,
+                    (session_id, user.id, slot["id"], protocol, local_port, client_info[:500], proxy_name),
+                )
+                cursor = conn.execute(
+                    """
+                    UPDATE slots
+                    SET status = 'busy', current_session_id = ?, error = '', updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? AND status = 'free'
+                    """,
+                    (session_id, slot["id"]),
+                )
+                if cursor.rowcount != 1:
+                    conn.rollback()
+                    return None, "no_available_slot"
             conn.commit()
         self.add_log(
             "user",
             "connect",
-            f"User {user.name} opened session {session_id} on slot {slot['id']} ({slot['project_name']}/{slot['service_name']}) for local port {local_port}",
+            f"User {user.name} opened {protocol} session {session_id} on slot {slot['id']} ({slot['project_name']}/{slot['service_name']}) for local port {local_port}",
         )
         return {
             "session_id": session_id,
@@ -1677,6 +1980,9 @@ class SQLiteStore:
             "frp_token": slot["frp_token_hash_or_encrypted"],
             "remote_port": int(slot["remote_port"] or 6000),
             "proxy_name": proxy_name,
+            "endpoint_id": endpoint_id if sticky else None,
+            "client_id": client_id if sticky else None,
+            "reconnect_count": reconnect_count,
         }, ""
 
     def get_session_for_user(self, session_id: str, user_id: int) -> TunnelSession | None:
@@ -1690,17 +1996,34 @@ class SQLiteStore:
     def update_session_heartbeat(self, session_id: str, user_id: int) -> bool:
         with self.connect() as conn:
             cursor = conn.execute(
-                """
+                f"""
                 UPDATE sessions
-                SET last_heartbeat_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND user_id = ? AND status = 'active'
+                SET last_heartbeat_at = CURRENT_TIMESTAMP, status = 'active', grace_until = NULL
+                WHERE id = ? AND user_id = ? AND status IN ({self.active_status_placeholders()})
                 """,
-                (session_id, user_id),
+                (session_id, user_id, *ACTIVE_SESSION_STATUSES),
             )
+            if cursor.rowcount > 0:
+                conn.execute(
+                    """
+                    UPDATE tunnel_endpoints
+                    SET status = 'active', last_seen_at = CURRENT_TIMESTAMP, grace_until = NULL
+                    WHERE last_session_id = ? AND user_id = ?
+                    """,
+                    (session_id, user_id),
+                )
             conn.commit()
         return cursor.rowcount > 0
 
-    def close_session(self, session_id: str, user_id: int | None = None, status: str = "closed", actor: str = "user") -> bool:
+    def close_session(
+        self,
+        session_id: str,
+        user_id: int | None = None,
+        status: str = "closed",
+        actor: str = "user",
+        release: bool = True,
+        grace_seconds: int = 300,
+    ) -> bool:
         with self.connect() as conn:
             if user_id is None:
                 row = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
@@ -1708,44 +2031,119 @@ class SQLiteStore:
                 row = conn.execute("SELECT * FROM sessions WHERE id = ? AND user_id = ?", (session_id, user_id)).fetchone()
             if not row:
                 return False
-            conn.execute(
-                """
-                UPDATE sessions
-                SET status = ?, ended_at = CURRENT_TIMESTAMP, last_heartbeat_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """,
-                (status, session_id),
-            )
-            if row["slot_id"] is not None:
+            sticky = bool(row["endpoint_id"])
+            if sticky and not release:
+                grace_until = (datetime.utcnow() + timedelta(seconds=grace_seconds)).strftime("%Y-%m-%d %H:%M:%S")
                 conn.execute(
                     """
-                    UPDATE slots
-                    SET status = 'free', current_session_id = NULL, error = '', updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ? AND current_session_id = ?
+                    UPDATE sessions
+                    SET status = ?, ended_at = CURRENT_TIMESTAMP, last_heartbeat_at = CURRENT_TIMESTAMP, grace_until = ?, last_disconnect_reason = ?
+                    WHERE id = ?
                     """,
-                    (row["slot_id"], session_id),
+                    (status, grace_until, f"{actor}:{status}", session_id),
                 )
+                conn.execute(
+                    """
+                    UPDATE tunnel_endpoints
+                    SET status = 'reconnecting', grace_until = ?, last_seen_at = CURRENT_TIMESTAMP, last_disconnect_reason = ?
+                    WHERE endpoint_id = ? AND user_id = ?
+                    """,
+                    (grace_until, f"{actor}:{status}", row["endpoint_id"], row["user_id"]),
+                )
+            else:
+                conn.execute(
+                    """
+                    UPDATE sessions
+                    SET status = ?, ended_at = CURRENT_TIMESTAMP, last_heartbeat_at = CURRENT_TIMESTAMP, grace_until = NULL, last_disconnect_reason = ?
+                    WHERE id = ?
+                    """,
+                    (status, f"{actor}:{status}", session_id),
+                )
+                if row["slot_id"] is not None:
+                    conn.execute(
+                        """
+                        UPDATE slots
+                        SET status = 'free', current_session_id = NULL, error = '', updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ? AND current_session_id = ?
+                        """,
+                        (row["slot_id"], session_id),
+                    )
+                if sticky:
+                    conn.execute(
+                        """
+                        UPDATE tunnel_endpoints
+                        SET status = 'inactive', grace_until = NULL, last_seen_at = CURRENT_TIMESTAMP, last_disconnect_reason = ?
+                        WHERE endpoint_id = ? AND user_id = ?
+                        """,
+                        (f"{actor}:{status}", row["endpoint_id"], row["user_id"]),
+                    )
             conn.commit()
-        action = "heartbeat.timeout" if status == "expired" else "disconnect"
+        action = "heartbeat.timeout" if status in ("expired", "stale") else "disconnect"
         self.add_log(actor, action, f"Released session {session_id} from slot {row['slot_id'] or '-'} with status {status}")
         return True
 
-    def expire_stale_sessions(self, ttl_seconds: int) -> list[str]:
+    def expire_stale_sessions(self, ttl_seconds: int, grace_seconds: int = 300) -> list[str]:
         cutoff = (datetime.utcnow() - timedelta(seconds=ttl_seconds)).strftime("%Y-%m-%d %H:%M:%S")
         with self.connect() as conn:
             rows = conn.execute(
                 """
-                SELECT id FROM sessions
-                WHERE status = 'active'
+                SELECT id, endpoint_id FROM sessions
+                WHERE status IN ({})
                   AND last_heartbeat_at < ?
-                """,
-                (cutoff,),
+                """.format(self.active_status_placeholders()),
+                (*ACTIVE_SESSION_STATUSES, cutoff),
             ).fetchall()
         expired: list[str] = []
         for row in rows:
-            if self.close_session(row["id"], None, "expired", "system"):
+            if row["endpoint_id"]:
+                ok = self.close_session(row["id"], None, "stale", "system", release=False, grace_seconds=grace_seconds)
+            else:
+                ok = self.close_session(row["id"], None, "expired", "system")
+            if ok:
                 expired.append(row["id"])
         return expired
+
+    def release_expired_endpoint_grace(self) -> list[str]:
+        now_text = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT endpoint_id, last_session_id, preferred_slot_id
+                FROM tunnel_endpoints
+                WHERE status = 'reconnecting' AND grace_until IS NOT NULL AND grace_until < ?
+                """,
+                (now_text,),
+            ).fetchall()
+            released: list[str] = []
+            for row in rows:
+                conn.execute(
+                    """
+                    UPDATE sessions
+                    SET status = 'expired', ended_at = COALESCE(ended_at, CURRENT_TIMESTAMP), grace_until = NULL
+                    WHERE id = ? AND status IN ('reconnecting', 'stale')
+                    """,
+                    (row["last_session_id"],),
+                )
+                if row["preferred_slot_id"] is not None:
+                    conn.execute(
+                        """
+                        UPDATE slots
+                        SET status = 'free', current_session_id = NULL, error = '', updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ? AND current_session_id = ?
+                        """,
+                        (row["preferred_slot_id"], row["last_session_id"]),
+                    )
+                conn.execute(
+                    """
+                    UPDATE tunnel_endpoints
+                    SET status = 'inactive', grace_until = NULL
+                    WHERE endpoint_id = ?
+                    """,
+                    (row["endpoint_id"],),
+                )
+                released.append(row["endpoint_id"])
+            conn.commit()
+        return released
 
     def force_release_slot(self, slot_id: int) -> bool:
         slot = self.get_slot(slot_id)
@@ -1771,7 +2169,8 @@ class SQLiteStore:
             rows = conn.execute(
                 f"""
                 SELECT sessions.*, users.name AS user_name,
-                       slots.project_name || '/' || slots.service_name AS slot_label
+                       slots.project_name || '/' || slots.service_name AS slot_label,
+                       slots.server_addr AS last_public_host, slots.server_port AS last_public_port
                 FROM sessions
                 LEFT JOIN users ON users.id = sessions.user_id
                 LEFT JOIN slots ON slots.id = sessions.slot_id
@@ -1805,6 +2204,7 @@ class PostgresStore(SQLiteStore):
             self.ensure_railway_billing_snapshot_schema(conn)
             self.ensure_railway_project_columns(conn)
             self.ensure_slot_columns(conn)
+            self.ensure_tunnel_endpoint_schema(conn)
             self.ensure_session_columns(conn)
             self.ensure_provision_log_columns(conn)
             self.create_indexes(conn)
@@ -1909,7 +2309,34 @@ class PostgresStore(SQLiteStore):
                 last_heartbeat_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
                 ended_at TEXT,
                 client_info TEXT NOT NULL DEFAULT '',
-                proxy_name TEXT NOT NULL DEFAULT ''
+                proxy_name TEXT NOT NULL DEFAULT '',
+                protocol TEXT NOT NULL DEFAULT 'tcp',
+                local_port INTEGER,
+                endpoint_id TEXT,
+                client_id TEXT,
+                reconnect_count INTEGER NOT NULL DEFAULT 0,
+                grace_until TEXT,
+                last_disconnect_reason TEXT
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS tunnel_endpoints (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                endpoint_id TEXT NOT NULL UNIQUE,
+                client_id TEXT NOT NULL DEFAULT '',
+                protocol TEXT NOT NULL DEFAULT 'tcp',
+                local_port INTEGER NOT NULL,
+                preferred_slot_id INTEGER REFERENCES slots(id) ON DELETE SET NULL,
+                last_session_id TEXT,
+                status TEXT NOT NULL DEFAULT 'inactive',
+                first_seen_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                last_seen_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::text),
+                last_public_host TEXT,
+                last_public_port TEXT,
+                reconnect_count INTEGER NOT NULL DEFAULT 0,
+                grace_until TEXT,
+                last_disconnect_reason TEXT
             )
             """,
             """
@@ -2019,65 +2446,19 @@ class PostgresStore(SQLiteStore):
         info["sqlite_path"] = ""
         return info
 
-    def allocate_session(self, user: UserToken, local_port: int, client_info: str = "") -> tuple[dict | None, str]:
-        session_id = secrets.token_urlsafe(16)
-        proxy_name = f"nekotunnel-{session_id[:8]}"
-        with self.connect() as conn:
-            active_count = conn.execute(
-                "SELECT COUNT(*) FROM sessions WHERE user_id = ? AND status = 'active'",
-                (user.id,),
-            ).fetchone()[0]
-            if active_count >= user.max_sessions:
-                conn.rollback()
-                return None, "max_sessions_reached"
-            slot = conn.execute(
-                """
-                SELECT * FROM slots
-                WHERE status = 'free'
-                  AND tcp_status = 'ready'
-                  AND COALESCE(server_addr, '') != ''
-                  AND COALESCE(server_port, '') != ''
-                  AND COALESCE(frp_token_hash_or_encrypted, '') != ''
-                  AND COALESCE(frp_token_hash_or_encrypted, '') NOT LIKE ?
-                ORDER BY id ASC
-                LIMIT 1
-                FOR UPDATE SKIP LOCKED
-                """,
-                ("%...%",),
-            ).fetchone()
-            if not slot:
-                conn.rollback()
-                return None, "no_free_slot"
-            conn.execute(
-                """
-                INSERT INTO sessions (id, user_id, slot_id, status, client_info, proxy_name)
-                VALUES (?, ?, ?, 'active', ?, ?)
-                """,
-                (session_id, user.id, slot["id"], client_info[:500], proxy_name),
-            )
-            conn.execute(
-                """
-                UPDATE slots
-                SET status = 'busy', current_session_id = ?, error = '', updated_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND status = 'free'
-                """,
-                (session_id, slot["id"]),
-            )
-            conn.commit()
-        self.add_log(
-            "user",
-            "connect",
-            f"User {user.name} opened session {session_id} on slot {slot['id']} ({slot['project_name']}/{slot['service_name']}) for local port {local_port}",
-        )
-        return {
-            "session_id": session_id,
-            "slot_id": slot["id"],
-            "server_addr": slot["server_addr"],
-            "server_port": int(slot["server_port"]),
-            "frp_token": slot["frp_token_hash_or_encrypted"],
-            "remote_port": int(slot["remote_port"] or 6000),
-            "proxy_name": proxy_name,
-        }, ""
+    def allocate_session(
+        self,
+        user: UserToken,
+        local_port: int,
+        client_info: str = "",
+        protocol: str = "tcp",
+        ttl_seconds: int = 300,
+        client_id: str = "",
+        endpoint_id: str = "",
+        stale_seconds: int | None = None,
+        grace_seconds: int = 300,
+    ) -> tuple[dict | None, str]:
+        return super().allocate_session(user, local_port, client_info, protocol, ttl_seconds, client_id, endpoint_id, stale_seconds, grace_seconds)
 
 
 def create_store():
@@ -2104,3 +2485,4 @@ def account_label(accounts: list[RailwayAccount], account_id: int | None) -> str
 
 
 store = create_store()
+

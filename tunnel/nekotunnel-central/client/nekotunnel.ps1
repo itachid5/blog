@@ -4,9 +4,10 @@ $FrpcVersion = "0.57.0"
 $AppDir = Join-Path $env:USERPROFILE ".nekotunnel"
 $ConfigPath = Join-Path $AppDir "config.json"
 $StatePath = Join-Path $AppDir "state.json"
+$LogDir = Join-Path $AppDir "logs"
 $LogPath = Join-Path $AppDir "nekotunnel.log"
+$MachineIdPath = Join-Path $AppDir "machine_id"
 $InstalledScriptPath = Join-Path $AppDir "nekotunnel.ps1"
-$TaskName = "NekoTunnel"
 $Headers = @{ "bypass-tunnel-reminder" = "true" }
 
 function Show-Usage {
@@ -16,10 +17,15 @@ function Show-Usage {
     Write-Host "  nekotunnel tcp <local_port>"
     Write-Host "  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL>"
     Write-Host "  nekotunnel start tcp <local_port>"
-    Write-Host "  nekotunnel stop"
-    Write-Host "  nekotunnel restart"
+    Write-Host "  nekotunnel start tcp <local_port> --persist"
+    Write-Host "  nekotunnel install-service tcp <local_port>"
+    Write-Host "  nekotunnel install-system-service tcp <local_port>"
+    Write-Host "  nekotunnel stop tcp <local_port>"
+    Write-Host "  nekotunnel stop all"
+    Write-Host "  nekotunnel restart tcp <local_port>"
     Write-Host "  nekotunnel status"
-    Write-Host "  nekotunnel logs"
+    Write-Host "  nekotunnel logs tcp <local_port>"
+    Write-Host "  nekotunnel logs all"
     Write-Host "  nekotunnel logout"
     exit 2
 }
@@ -27,6 +33,9 @@ function Show-Usage {
 function Ensure-AppDir {
     if (-not (Test-Path $AppDir)) {
         New-Item -ItemType Directory -Path $AppDir | Out-Null
+    }
+    if (-not (Test-Path $LogDir)) {
+        New-Item -ItemType Directory -Path $LogDir | Out-Null
     }
 }
 
@@ -41,44 +50,121 @@ function Load-Config {
     return Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json
 }
 
+function Get-MachineId {
+    Ensure-AppDir
+    if (Test-Path $MachineIdPath) {
+        $Existing = (Get-Content -Raw -Path $MachineIdPath).Trim()
+        if (-not [string]::IsNullOrEmpty($Existing)) { return $Existing }
+    }
+    $MachineId = [guid]::NewGuid().ToString()
+    Set-Content -Path $MachineIdPath -Value $MachineId -Encoding ASCII
+    return $MachineId
+}
+
+function Stable-EndpointId([string]$ApiUrl, [string]$Token, [string]$ClientId, [string]$Protocol, [int]$Port) {
+    $Material = ($ApiUrl.TrimEnd('/') + "|" + $ClientId + "|" + $Protocol + "|" + $Port)
+    $Bytes = [Text.Encoding]::UTF8.GetBytes($Material)
+    $Hash = [Security.Cryptography.SHA256]::Create().ComputeHash($Bytes)
+    return -join ($Hash | ForEach-Object { $_.ToString("x2") })
+}
+
+function Endpoint-Key([string]$Protocol, [int]$Port) {
+    return "$Protocol-$Port"
+}
+
+function State-Path([string]$Protocol, [int]$Port) {
+    return (Join-Path $AppDir ("state-" + (Endpoint-Key $Protocol $Port) + ".json"))
+}
+
+function Log-Path([string]$Protocol, [int]$Port) {
+    return (Join-Path $LogDir ((Endpoint-Key $Protocol $Port) + ".log"))
+}
+
+function Task-Name([string]$Protocol, [int]$Port) {
+    return "NekoTunnel-$(Endpoint-Key $Protocol $Port)"
+}
+
+function Parse-Endpoint([string[]]$EndpointArgs) {
+    $FilteredArgs = @($EndpointArgs | Where-Object { $_ -ne "--persist" })
+    if ($FilteredArgs.Count -ne 2 -or $FilteredArgs[0] -ne "tcp") { return $null }
+    return [pscustomobject]@{ protocol = "tcp"; port = Parse-Port $FilteredArgs[1] }
+}
+
+function Get-BackgroundEndpoints($Config = $null) {
+    if ($null -eq $Config) { $Config = Load-Config }
+    $Endpoints = @()
+    if ($null -ne $Config -and $Config.background_endpoints) {
+        foreach ($Endpoint in @($Config.background_endpoints)) {
+            if ($Endpoint.protocol -eq "tcp") {
+                $Endpoints += [pscustomobject]@{ protocol = "tcp"; port = Parse-Port ([string]$Endpoint.port) }
+            }
+        }
+    }
+    if ($null -ne $Config -and $Config.background_port) {
+        $Port = Parse-Port ([string]$Config.background_port)
+        if (-not @($Endpoints | Where-Object { $_.protocol -eq "tcp" -and $_.port -eq $Port }).Count) {
+            $Endpoints += [pscustomobject]@{ protocol = "tcp"; port = $Port }
+        }
+    }
+    return @($Endpoints)
+}
+
+function Write-ConfigObject($Config) {
+    Ensure-AppDir
+    $Config | ConvertTo-Json -Depth 5 | Set-Content -Path $ConfigPath -Encoding UTF8
+}
+
 function Save-Config([string]$ApiUrl, [string]$Token) {
     Ensure-AppDir
     $Existing = Load-Config
-    $BackgroundPort = $null
-    if ($null -ne $Existing -and $Existing.background_port) { $BackgroundPort = $Existing.background_port }
+    $Endpoints = Get-BackgroundEndpoints $Existing
     $Config = [ordered]@{ api_url = $ApiUrl.TrimEnd('/'); user_token = $Token }
-    if ($BackgroundPort) { $Config.background_port = $BackgroundPort }
-    [pscustomobject]$Config | ConvertTo-Json | Set-Content -Path $ConfigPath -Encoding UTF8
+    if ($null -ne $Existing -and $Existing.machine_id) { $Config.machine_id = [string]$Existing.machine_id }
+    if ($Endpoints.Count -gt 0) { $Config.background_endpoints = @($Endpoints) }
+    Write-ConfigObject ([pscustomobject]$Config)
 }
 
-function Save-BackgroundPort([int]$Port) {
-    Ensure-AppDir
+function Save-BackgroundEndpoint([string]$Protocol, [int]$Port) {
     $Config = Load-Config
     if ($null -eq $Config) { $Config = [pscustomobject]@{} }
-    $Config | Add-Member -NotePropertyName background_port -NotePropertyValue $Port -Force
-    $Config | ConvertTo-Json | Set-Content -Path $ConfigPath -Encoding UTF8
+    $Endpoints = Get-BackgroundEndpoints $Config
+    if (-not @($Endpoints | Where-Object { $_.protocol -eq $Protocol -and $_.port -eq $Port }).Count) {
+        $Endpoints += [pscustomobject]@{ protocol = $Protocol; port = $Port }
+    }
+    $Config | Add-Member -NotePropertyName background_endpoints -NotePropertyValue @($Endpoints) -Force
+    if ($Config.PSObject.Properties.Name -contains "background_port") { $Config.PSObject.Properties.Remove("background_port") }
+    Write-ConfigObject $Config
+}
+
+function Remove-BackgroundEndpoint([string]$Protocol, [int]$Port) {
+    $Config = Load-Config
+    if ($null -eq $Config) { return }
+    $Endpoints = @(Get-BackgroundEndpoints $Config | Where-Object { -not ($_.protocol -eq $Protocol -and $_.port -eq $Port) })
+    $Config | Add-Member -NotePropertyName background_endpoints -NotePropertyValue @($Endpoints) -Force
+    if ($Config.PSObject.Properties.Name -contains "background_port") { $Config.PSObject.Properties.Remove("background_port") }
+    Write-ConfigObject $Config
 }
 
 function Clear-Config {
     if (Test-Path $ConfigPath) { Remove-Item $ConfigPath -Force }
 }
 
-function Save-State($State) {
+function Save-State($State, [string]$Path = $StatePath) {
     Ensure-AppDir
-    $State | ConvertTo-Json | Set-Content -Path $StatePath -Encoding UTF8
+    $State | ConvertTo-Json | Set-Content -Path $Path -Encoding UTF8
 }
 
-function Load-State {
-    if (-not (Test-Path $StatePath)) { return $null }
+function Load-State([string]$Path = $StatePath) {
+    if (-not (Test-Path $Path)) { return $null }
     try {
-        return Get-Content -Raw -Path $StatePath | ConvertFrom-Json
+        return Get-Content -Raw -Path $Path | ConvertFrom-Json
     } catch {
         return [pscustomobject]@{ error = "state file is not valid JSON" }
     }
 }
 
-function Clear-State {
-    if (Test-Path $StatePath) { Remove-Item $StatePath -Force }
+function Clear-State([string]$Path = $StatePath) {
+    if (Test-Path $Path) { Remove-Item $Path -Force }
 }
 
 function Parse-Port([string]$Value) {
@@ -158,8 +244,8 @@ loginFailExit = false
 
 [transport]
 protocol = "tcp"
-heartbeatInterval = 10
-heartbeatTimeout = 90
+heartbeatInterval = 20
+heartbeatTimeout = 120
 tcpMux = true
 tcpMuxKeepaliveInterval = 30
 tls.enable = true
@@ -182,55 +268,79 @@ function Connection-Command([int]$LocalPort, [string]$ServerAddr, $ServerPort) {
     return "Connect to ${ServerAddr}:$ServerPort"
 }
 
-function Get-TaskState {
-    $Task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+function Get-TaskState([string]$Name) {
+    $Task = Get-ScheduledTask -TaskName $Name -ErrorAction SilentlyContinue
     if ($null -eq $Task) { return "not configured" }
     return $Task.State.ToString()
 }
 
 function Show-Status {
     $Config = Load-Config
+    $Endpoints = Get-BackgroundEndpoints $Config
     $FrpcPath = Join-Path (Join-Path $AppDir "frpc-$FrpcVersion") "frpc.exe"
     if ($null -eq $Config) {
         Write-Host "API URL: not configured"
         Write-Host "Token: not configured"
-        Write-Host "Background port: not configured"
     } else {
         Write-Host "API URL: $($Config.api_url)"
         Write-Host "Token: $(Mask-Token $Config.user_token)"
-        Write-Host "Background port: $(if ($Config.background_port) { $Config.background_port } else { 'not configured' })"
     }
     Write-Host "frpc v${FrpcVersion}: $(if (Test-Path $FrpcPath) { 'installed' } else { 'not installed' })"
-    Write-Host "Scheduled task NekoTunnel: $(Get-TaskState)"
+    Write-Host "Background endpoints:"
+    if ($Endpoints.Count -eq 0) { Write-Host "  none configured" }
+    foreach ($Endpoint in $Endpoints) {
+        $Protocol = [string]$Endpoint.protocol
+        $Port = [int]$Endpoint.port
+        $Key = Endpoint-Key $Protocol $Port
+        $TaskName = Task-Name $Protocol $Port
+        $Task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+        $TaskExists = if ($null -ne $Task) { "yes" } else { "no" }
+        $TaskRunning = if ($null -ne $Task -and $Task.State.ToString() -eq "Running") { "yes" } else { "no" }
+        Write-Host "  ${Key}: task=$TaskName exists=$TaskExists running=$TaskRunning"
+        $State = Load-State (State-Path $Protocol $Port)
+        if ($null -ne $State -and -not $State.error) {
+            Write-Host "    session_id: $($State.session_id)"
+            Write-Host "    remote: $($State.server_addr):$($State.server_port)"
+            Write-Host "    endpoint_id: $(([string]$State.endpoint_id).Substring(0, [Math]::Min(12, ([string]$State.endpoint_id).Length)))"
+            Write-Host "    reconnect_count: $($State.reconnect_count)"
+            Write-Host "    started_at: $($State.started_at)"
+            if ($State.last_error) { Write-Host "    last_error: $($State.last_error)" }
+        } elseif ($null -ne $State -and $State.error) {
+            Write-Host "    last_error: $($State.error)"
+        }
+    }
     $State = Load-State
-    if ($null -eq $State) {
-        Write-Host "Active session state: none"
-    } elseif ($State.error) {
-        Write-Host "State: $($State.error)"
-    } else {
-        Write-Host "Active session state:"
-        Write-Host "  session_id: $($State.session_id)"
-        Write-Host "  local_port: $($State.local_port)"
-        Write-Host "  remote: $($State.server_addr):$($State.server_port)"
-        Write-Host "  started_at: $($State.started_at)"
+    if ($null -ne $State) {
+        Write-Host "Foreground session state:"
+        if ($State.error) {
+            Write-Host "  $($State.error)"
+        } else {
+            Write-Host "  session_id: $($State.session_id)"
+            Write-Host "  local_port: $($State.local_port)"
+            Write-Host "  remote: $($State.server_addr):$($State.server_port)"
+        }
     }
 }
 
-function Disconnect-State {
-    $State = Load-State
-    if ($null -eq $State -or $State.error) { Clear-State; return }
+function Disconnect-State([string]$Path = $StatePath) {
+    $State = Load-State $Path
+    if ($null -eq $State -or $State.error) { Clear-State $Path; return }
     $Config = Load-Config
     if ($null -ne $Config -and $Config.api_url -and $Config.user_token -and $State.session_id) {
-        try { Invoke-NekoPost $Config.api_url "/api/disconnect" @{ token = $Config.user_token; session_id = $State.session_id } | Out-Null } catch { Write-Host "Disconnect failed: $($_.Exception.Message)" }
+        try { Invoke-NekoPost $Config.api_url "/api/disconnect" @{ token = $Config.user_token; session_id = $State.session_id; release = $true } | Out-Null } catch { Write-Host "Disconnect failed: $($_.Exception.Message)" }
     }
-    Clear-State
+    Clear-State $Path
 }
 
 function Run-Tcp-Once([string[]]$TcpArgs) {
     try {
         $Creds = Resolve-Credentials $TcpArgs
         $FrpcPath = Ensure-Frpc $Creds.api_url
-        $Allocation = Invoke-NekoPost $Creds.api_url "/api/connect" @{ token = $Creds.token; local_port = $Creds.local_port; client_info = "nekotunnel-windows/$FrpcVersion" }
+        $Protocol = "tcp"
+        $ClientId = Get-MachineId
+        $EndpointId = Stable-EndpointId $Creds.api_url $Creds.token $ClientId $Protocol $Creds.local_port
+        $StateFile = if ($TcpArgs -contains "--foreground-service") { State-Path $Protocol $Creds.local_port } else { $StatePath }
+        $Allocation = Invoke-NekoPost $Creds.api_url "/api/connect" @{ token = $Creds.token; protocol = $Protocol; local_port = $Creds.local_port; client_info = "nekotunnel-windows/$FrpcVersion"; client_id = $ClientId; endpoint_id = $EndpointId }
     } catch {
         Write-Error $_.Exception.Message
         return 1
@@ -242,17 +352,23 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
     }
 
     $FrpcConfig = Write-FrpcConfig $Allocation $Creds.local_port
-    Save-State ([pscustomobject]@{
+    $StateData = [pscustomobject]@{
         session_id = $Allocation.session_id
+        protocol = $Protocol
         local_port = $Creds.local_port
         server_addr = $Allocation.server_addr
         server_port = $Allocation.server_port
         remote_port = $Allocation.remote_port
         proxy_name = $Allocation.proxy_name
+        client_id = $Allocation.client_id
+        endpoint_id = $Allocation.endpoint_id
+        reconnect_count = $Allocation.reconnect_count
         started_at = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-    })
+    }
+    Save-State $StateData $StateFile
 
     Write-Host "Connected session: $($Allocation.session_id)"
+    Write-Host "public_address=$($Allocation.server_addr):$($Allocation.server_port) reconnect_count=$($Allocation.reconnect_count)"
     Write-Host (Connection-Command $Creds.local_port $Allocation.server_addr $Allocation.server_port)
     Write-Host "Using frpc config: $FrpcConfig"
     Write-Host "Press Ctrl+C to disconnect."
@@ -263,16 +379,23 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
         if ($Process.HasExited) {
             Write-Host "frpc exited immediately with code $($Process.ExitCode)."
         }
+        $HeartbeatMisses = 0
         while (-not $Process.HasExited) {
-            $Interval = 15
+            $Interval = 20
             if ($Allocation.heartbeat_interval) { $Interval = [int]$Allocation.heartbeat_interval }
             Start-Sleep -Seconds $Interval
             try {
                 $Heartbeat = Invoke-NekoPost $Creds.api_url "/api/heartbeat" @{ token = $Creds.token; session_id = $Allocation.session_id }
-                if (-not $Heartbeat.ok) { break }
+                if ($Heartbeat.ok) {
+                    if ($HeartbeatMisses -gt 0) { Write-Host "API heartbeat recovered" }
+                    $HeartbeatMisses = 0
+                } else {
+                    $HeartbeatMisses += 1
+                    Write-Host "API heartbeat degraded $HeartbeatMisses"
+                }
             } catch {
-                Write-Host "Heartbeat failed: $($_.Exception.Message)"
-                break
+                $HeartbeatMisses += 1
+                Write-Host "API heartbeat failure ${HeartbeatMisses}: $($_.Exception.Message)"
             }
         }
     } finally {
@@ -280,8 +403,17 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
             Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
             $Process.WaitForExit()
         }
-        try { Invoke-NekoPost $Creds.api_url "/api/disconnect" @{ token = $Creds.token; session_id = $Allocation.session_id } | Out-Null } catch { Write-Host "Disconnect failed: $($_.Exception.Message)" }
-        Clear-State
+        $ExitCode = if ($Process) { $Process.ExitCode } else { 1 }
+        $Release = -not ($TcpArgs -contains "--foreground-service")
+        try { Invoke-NekoPost $Creds.api_url "/api/disconnect" @{ token = $Creds.token; session_id = $Allocation.session_id; release = $Release } | Out-Null } catch { Write-Host "Disconnect failed: $($_.Exception.Message)" }
+        if ($TcpArgs -contains "--foreground-service") {
+            $StateData | Add-Member -NotePropertyName frpc_exit_code -NotePropertyValue $ExitCode -Force
+            $StateData | Add-Member -NotePropertyName last_error -NotePropertyValue "frpc exited with code $ExitCode" -Force
+            $StateData | Add-Member -NotePropertyName ended_at -NotePropertyValue (Get-Date).ToString("yyyy-MM-dd HH:mm:ss") -Force
+            Save-State $StateData $StateFile
+        } else {
+            Clear-State $StateFile
+        }
         Remove-Item -Path $FrpcConfig -Force -ErrorAction SilentlyContinue
     }
     return 0
@@ -293,61 +425,130 @@ function Run-Tcp([string[]]$TcpArgs) {
         if ($Code -ne 0) { exit $Code }
         return
     }
+    $Backoffs = @(2, 5, 10, 20, 30, 60)
+    $BackoffIndex = 0
     while ($true) {
+        $Started = Get-Date
         $Code = Run-Tcp-Once $TcpArgs
-        Write-Host "Tunnel exited with code $Code. Reconnecting in 5 seconds..."
-        Start-Sleep -Seconds 5
+        if (((Get-Date) - $Started).TotalSeconds -ge 120) { $BackoffIndex = 0 }
+        $Delay = $Backoffs[[Math]::Min($BackoffIndex, $Backoffs.Count - 1)]
+        $Jitter = Get-Random -Minimum 0 -Maximum ([Math]::Max(1, [int]($Delay / 5 + 1)))
+        $WaitFor = [Math]::Min(60, $Delay + $Jitter)
+        Write-Host "Tunnel exited with code $Code. Reconnecting in $WaitFor seconds..."
+        $BackoffIndex = [Math]::Min($BackoffIndex + 1, $Backoffs.Count - 1)
+        Start-Sleep -Seconds $WaitFor
+    }
+}
+
+function Run-Service([string[]]$ServiceArgs) {
+    $Endpoint = Parse-Endpoint $ServiceArgs
+    if ($null -eq $Endpoint) { Show-Usage }
+    Ensure-AppDir
+    $LogFile = Log-Path $Endpoint.protocol $Endpoint.port
+    try { Start-Transcript -Path $LogFile -Append | Out-Null } catch {}
+    try {
+        Write-Host "started_at=$((Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) endpoint=$(Endpoint-Key $Endpoint.protocol $Endpoint.port)"
+        Run-Tcp @([string]$Endpoint.port, "--foreground-service")
+    } finally {
+        try { Stop-Transcript | Out-Null } catch {}
+    }
+}
+
+function Install-Self {
+    Ensure-AppDir
+    $SourcePath = [System.IO.Path]::GetFullPath($PSCommandPath)
+    $DestPath = [System.IO.Path]::GetFullPath($InstalledScriptPath)
+    if (-not [StringComparer]::OrdinalIgnoreCase.Equals($SourcePath, $DestPath)) {
+        Copy-Item -Path $SourcePath -Destination $DestPath -Force
     }
 }
 
 function Start-Background([string[]]$StartArgs) {
-    if ($StartArgs.Count -ne 2 -or $StartArgs[0] -ne "tcp") { Show-Usage }
-    $Port = Parse-Port $StartArgs[1]
+    $Endpoint = Parse-Endpoint $StartArgs
+    if ($null -eq $Endpoint) { Show-Usage }
+    $Protocol = [string]$Endpoint.protocol
+    $Port = [int]$Endpoint.port
     Ensure-AppDir
-    Save-BackgroundPort $Port
-    $SourcePath = [System.IO.Path]::GetFullPath($PSCommandPath)
-    $DestPath = [System.IO.Path]::GetFullPath($InstalledScriptPath)
-    if ([StringComparer]::OrdinalIgnoreCase.Equals($SourcePath, $DestPath)) {
-        Write-Host "NekoTunnel client already installed."
-    } else {
-        Copy-Item -Path $SourcePath -Destination $DestPath -Force
-    }
-    $CommandText = "& '$InstalledScriptPath' tcp $Port --foreground-service *> '$LogPath'"
-    $Encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($CommandText))
-    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $Encoded"
+    Save-BackgroundEndpoint $Protocol $Port
+    Install-Self
+    $TaskName = Task-Name $Protocol $Port
+    $LogFile = Log-Path $Protocol $Port
+    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$InstalledScriptPath`" run-service $Protocol $Port"
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
-    # Windows ScheduledTask RunLevel supports only Limited or Highest.
     $Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
-    Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Force | Out-Null
+    $Settings = New-ScheduledTaskSettingsSet -Hidden -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -MultipleInstances IgnoreNew
+    Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force | Out-Null
     Start-ScheduledTask -TaskName $TaskName
-    Write-Host "NekoTunnel background task started."
+    Write-Host "NekoTunnel background task $TaskName started."
 }
 
-function Stop-Background {
+function Install-System-Service([string[]]$ServiceArgs) {
+    Start-Background $ServiceArgs
+    Write-Host "AtLogOn task installed. It will start after user login. For before-login service mode, run as Administrator and install service mode."
+}
+
+function Stop-Endpoint([string]$Protocol, [int]$Port, [bool]$RemoveConfig = $true) {
+    $TaskName = Task-Name $Protocol $Port
     $Task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    $Stopped = $false
     if ($null -ne $Task) {
         Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-        Write-Host "NekoTunnel background task stopped."
+        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+        $Stopped = $true
+    }
+    Disconnect-State (State-Path $Protocol $Port)
+    if ($RemoveConfig) { Remove-BackgroundEndpoint $Protocol $Port }
+    return $Stopped
+}
+
+function Stop-Background([string[]]$StopArgs) {
+    if ($StopArgs.Count -eq 0 -or ($StopArgs.Count -eq 1 -and $StopArgs[0] -eq "all")) {
+        $Endpoints = Get-BackgroundEndpoints
+        if ($Endpoints.Count -eq 0) { Write-Host "No background endpoints configured."; return }
+        foreach ($Endpoint in $Endpoints) {
+            $Protocol = [string]$Endpoint.protocol
+            $Port = [int]$Endpoint.port
+            if (Stop-Endpoint $Protocol $Port) {
+                Write-Host "Stopped $(Endpoint-Key $Protocol $Port)."
+            } else {
+                Write-Host "$(Endpoint-Key $Protocol $Port) was not configured."
+            }
+        }
+        return
+    }
+    $Endpoint = Parse-Endpoint $StopArgs
+    if ($null -eq $Endpoint) { Show-Usage }
+    if (Stop-Endpoint $Endpoint.protocol $Endpoint.port) {
+        Write-Host "NekoTunnel background endpoint $(Endpoint-Key $Endpoint.protocol $Endpoint.port) stopped."
     } else {
-        Write-Host "NekoTunnel background task was not configured."
+        Write-Host "NekoTunnel background endpoint $(Endpoint-Key $Endpoint.protocol $Endpoint.port) was not configured."
     }
-    Disconnect-State
 }
 
-function Restart-Background {
-    $Config = Load-Config
-    if ($null -eq $Config -or -not $Config.background_port) {
-        Write-Host "No saved background port. Use: nekotunnel start tcp <port>"
-        exit 2
-    }
-    Stop-Background
-    Start-Background @("tcp", [string]$Config.background_port)
+function Restart-Background([string[]]$RestartArgs) {
+    $Endpoint = Parse-Endpoint $RestartArgs
+    if ($null -eq $Endpoint) { Show-Usage }
+    Stop-Endpoint $Endpoint.protocol $Endpoint.port $false | Out-Null
+    Start-Background @($Endpoint.protocol, [string]$Endpoint.port)
 }
 
-function Show-Logs {
+function Show-Logs([string[]]$LogArgs) {
     Ensure-AppDir
-    if (-not (Test-Path $LogPath)) { New-Item -ItemType File -Path $LogPath | Out-Null }
-    Get-Content $LogPath -Tail 100 -Wait
+    if ($LogArgs.Count -eq 1 -and $LogArgs[0] -eq "all") {
+        $Endpoints = Get-BackgroundEndpoints
+        if ($Endpoints.Count -eq 0) { Write-Host "No background endpoints configured."; return }
+        foreach ($Endpoint in $Endpoints) {
+            $Path = Log-Path $Endpoint.protocol $Endpoint.port
+            Write-Host "==> $(Endpoint-Key $Endpoint.protocol $Endpoint.port) ($Path) <=="
+            if (Test-Path $Path) { Get-Content $Path -Tail 100 } else { Write-Host "No log file yet." }
+        }
+        return
+    }
+    $Endpoint = Parse-Endpoint $LogArgs
+    if ($null -eq $Endpoint) { Show-Usage }
+    $Path = Log-Path $Endpoint.protocol $Endpoint.port
+    if (-not (Test-Path $Path)) { New-Item -ItemType File -Path $Path | Out-Null }
+    Get-Content $Path -Tail 100 -Wait
 }
 
 if ($args.Count -lt 1) { Show-Usage }
@@ -366,23 +567,17 @@ switch ($Command) {
         Write-Host "Saved NekoTunnel config for $($Rest[2].TrimEnd('/')) with token $(Mask-Token $Rest[0])"
     }
     "tcp" { Run-Tcp $Rest }
+    "run-service" { Run-Service $Rest }
     "start" { Start-Background $Rest }
-    "stop" {
-        if ($Rest.Count -ne 0) { Show-Usage }
-        Stop-Background
-    }
-    "restart" {
-        if ($Rest.Count -ne 0) { Show-Usage }
-        Restart-Background
-    }
+    "install-service" { Start-Background $Rest }
+    "install-system-service" { Install-System-Service $Rest }
+    "stop" { Stop-Background $Rest }
+    "restart" { Restart-Background $Rest }
     "status" {
         if ($Rest.Count -ne 0) { Show-Usage }
         Show-Status
     }
-    "logs" {
-        if ($Rest.Count -ne 0) { Show-Usage }
-        Show-Logs
-    }
+    "logs" { Show-Logs $Rest }
     "logout" {
         if ($Rest.Count -ne 0) { Show-Usage }
         Clear-Config

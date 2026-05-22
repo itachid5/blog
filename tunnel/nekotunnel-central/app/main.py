@@ -67,7 +67,8 @@ logger = logging.getLogger("nekotunnel-central")
 async def cleanup_expired_sessions() -> None:
     while True:
         await asyncio.sleep(settings.tunnel_cleanup_interval_seconds)
-        store.expire_stale_sessions(settings.tunnel_session_ttl_seconds)
+        store.expire_stale_sessions(settings.session_stale_seconds, settings.session_reconnect_grace_seconds)
+        store.release_expired_endpoint_grace()
 
 
 @app.on_event("startup")
@@ -1730,12 +1731,22 @@ def users(request: Request):
 
 
 @app.post("/users")
-def create_user(request: Request, name: Annotated[str, Form()], max_sessions: Annotated[int, Form()] = 1):
+def create_user(request: Request, name: Annotated[str, Form()], max_sessions: Annotated[int, Form()] = 3):
     auth_redirect = require_admin(request)
     if auth_redirect:
         return auth_redirect
     _, token = store.create_user_token(name.strip(), max(1, max_sessions))
     flash(request, "success", f"User token created. Copy it now; it will not be shown again: {token}")
+    return RedirectResponse("/users", status_code=303)
+
+
+@app.post("/users/{user_id}/max-active-sessions")
+def update_user_max_active_sessions(request: Request, user_id: int, max_sessions: Annotated[int, Form()]):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    ok = store.update_user_max_sessions(user_id, max(1, max_sessions))
+    flash(request, "success" if ok else "danger", "Max active sessions updated." if ok else "User not found.")
     return RedirectResponse("/users", status_code=303)
 
 
@@ -2003,15 +2014,34 @@ async def api_connect(request: Request):
     if local_port < 1 or local_port > 65535:
         return JSONResponse({"ok": False, "error": "invalid_local_port"}, status_code=400)
 
+    protocol = str(payload.get("protocol") or "tcp").lower()
+    if protocol != "tcp":
+        return JSONResponse({"ok": False, "error": "invalid_protocol"}, status_code=400)
+
+    client_id = str(payload.get("client_id") or "").strip()
+    endpoint_id = str(payload.get("endpoint_id") or "").strip()
     try:
-        allocation, error = store.allocate_session(user, local_port, str(payload.get("client_info") or ""))
+        allocation, error = store.allocate_session(
+            user,
+            local_port,
+            str(payload.get("client_info") or ""),
+            protocol,
+            settings.tunnel_session_ttl_seconds,
+            client_id=client_id,
+            endpoint_id=endpoint_id,
+            stale_seconds=settings.session_stale_seconds,
+            grace_seconds=settings.session_reconnect_grace_seconds,
+        )
     except Exception:
         logger.exception("/api/connect failed while allocating session")
         return JSONResponse({"ok": False, "error": "server_error"}, status_code=500)
     if error:
-        public_error = "no_available_slot" if error == "no_free_slot" else error
-        status_code = 409 if error in {"no_free_slot", "max_sessions_reached"} else 400
-        return JSONResponse({"ok": False, "error": public_error}, status_code=status_code)
+        if error == "session_limit_reached":
+            return JSONResponse({"ok": False, "error": error, "max_active_sessions": user.max_sessions}, status_code=409)
+        if error == "port_already_active":
+            return JSONResponse({"ok": False, "error": error, "local_port": local_port}, status_code=409)
+        status_code = 409 if error == "no_available_slot" else 400
+        return JSONResponse({"ok": False, "error": error}, status_code=status_code)
 
     return {
         "ok": True,
@@ -2022,7 +2052,12 @@ async def api_connect(request: Request):
         "frp_token": allocation["frp_token"],
         "remote_port": allocation["remote_port"],
         "proxy_name": allocation["proxy_name"],
-        "heartbeat_interval": 15,
+        "heartbeat_interval": settings.heartbeat_interval_seconds,
+        "session_stale_seconds": settings.session_stale_seconds,
+        "reconnect_grace_seconds": settings.session_reconnect_grace_seconds,
+        "endpoint_id": allocation.get("endpoint_id"),
+        "client_id": allocation.get("client_id"),
+        "reconnect_count": allocation.get("reconnect_count", 0),
     }
 
 
@@ -2059,6 +2094,7 @@ async def api_disconnect(request: Request):
     session_id = str(payload.get("session_id") or "")
     if not session_id:
         return JSONResponse({"ok": False, "error": "missing_session_id"}, status_code=400)
-    if not store.close_session(session_id, user.id, "closed", "user"):
+    release = bool(payload.get("release", False))
+    if not store.close_session(session_id, user.id, "closed", "user", release=release, grace_seconds=settings.session_reconnect_grace_seconds):
         return JSONResponse({"ok": False, "error": "session_not_found"}, status_code=404)
-    return {"ok": True}
+    return {"ok": True, "release": release}

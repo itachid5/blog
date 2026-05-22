@@ -28,7 +28,7 @@
   <div class="table-scroll">
     <table class="responsive-table slots-table">
       <thead>
-        <tr><th>ID</th><th>Account</th><th>Project</th><th>Service</th><th>Status</th><th>Deploy Status</th><th>TCP Status</th><th>TCP Host</th><th>TCP Port</th><th>User</th><th>Current Session</th><th>Error</th><th>Actions</th></tr>
+        <tr><th>ID</th><th>Account</th><th>Project</th><th>Service</th><th>Status</th><th>Deploy Status</th><th>TCP Status</th><th>TCP Host</th><th>TCP Port</th><th>User</th><th>Endpoint</th><th>Reserved Endpoint</th><th>Sticky Public</th><th>Reservation</th><th>Last Disconnect</th><th>Current Session</th><th>Error</th><th>Actions</th></tr>
       </thead>
       <tbody>
       {% for slot in slots %}
@@ -43,6 +43,11 @@
           <td data-label="TCP Host"><code>{{ slot.server_addr or '-' }}</code></td>
           <td data-label="TCP Port"><code>{{ slot.server_port or '-' }}</code></td>
           <td data-label="User">{{ slot.current_user_name or '-' }}</td>
+          <td data-label="Endpoint">{% if slot.current_local_port %}{{ slot.current_protocol or 'tcp' }} {{ slot.current_local_port }}{% else %}-{% endif %}</td>
+          <td data-label="Reserved Endpoint">{% if slot.reserved_endpoint_id %}<code>{{ slot.reserved_endpoint_id[:12] }}</code><div class="muted small">client {{ slot.reserved_client_id[:12] if slot.reserved_client_id else '-' }}</div>{% else %}-{% endif %}</td>
+          <td data-label="Sticky Public">{% if slot.last_public_host and slot.last_public_port %}<code>{{ slot.last_public_host }}:{{ slot.last_public_port }}</code>{% else %}-{% endif %}</td>
+          <td data-label="Reservation">{% if slot.reserved_status %}<span class="badge status-{{ slot.reserved_status }}">{{ slot.reserved_status }}</span><div class="muted small">sticky reservation yes</div><div class="muted small">reconnects {{ slot.reserved_reconnect_count or 0 }}</div>{% if slot.reserved_grace_until %}<div class="muted small">grace {{ slot.reserved_grace_until }}</div>{% endif %}{% else %}<span class="muted small">sticky reservation no</span>{% endif %}</td>
+          <td data-label="Last Disconnect">{{ slot.reserved_last_disconnect_reason or '-' }}</td>
           <td data-label="Current Session">{% if slot.current_session_id %}<code>{{ slot.current_session_id }}</code>{% else %}-{% endif %}</td>
           <td data-label="Error">
             {% if slot.status in ['deployed', 'tcp_pending'] %}
@@ -67,7 +72,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="13" class="empty">No slots yet.</td></tr>
+        <tr><td colspan="18" class="empty">No slots yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>

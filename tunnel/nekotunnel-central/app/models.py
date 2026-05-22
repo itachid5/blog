@@ -84,6 +84,16 @@ class Slot:
     current_session_id: str | None = None
     current_user_id: int | None = None
     current_user_name: str | None = None
+    current_protocol: str | None = None
+    current_local_port: int | None = None
+    reserved_endpoint_id: str | None = None
+    reserved_client_id: str | None = None
+    reserved_status: str | None = None
+    reserved_grace_until: str | None = None
+    reserved_reconnect_count: int | None = None
+    last_public_host: str | None = None
+    last_public_port: str | None = None
+    reserved_last_disconnect_reason: str | None = None
 
     @property
     def account_id(self) -> int | None:
@@ -111,6 +121,40 @@ class UserToken:
     created_at: str
     updated_at: str
 
+    @property
+    def max_active_sessions(self) -> int:
+        return self.max_sessions
+
+
+@dataclass
+class TunnelEndpoint:
+    id: int
+    user_id: int | None
+    endpoint_id: str
+    client_id: str
+    protocol: str
+    local_port: int
+    preferred_slot_id: int | None
+    last_session_id: str | None
+    status: str
+    first_seen_at: str
+    last_seen_at: str
+    last_public_host: str | None = None
+    last_public_port: str | None = None
+    reconnect_count: int = 0
+    grace_until: str | None = None
+    last_disconnect_reason: str | None = None
+    user_name: str | None = None
+    slot_label: str | None = None
+
+    @property
+    def endpoint_short(self) -> str:
+        return self.endpoint_id[:12] if self.endpoint_id else "-"
+
+    @property
+    def client_short(self) -> str:
+        return self.client_id[:12] if self.client_id else "-"
+
 
 @dataclass
 class TunnelSession:
@@ -123,6 +167,15 @@ class TunnelSession:
     ended_at: str | None
     client_info: str | None = None
     proxy_name: str | None = None
+    protocol: str = "tcp"
+    local_port: int | None = None
+    endpoint_id: str | None = None
+    client_id: str | None = None
+    reconnect_count: int = 0
+    grace_until: str | None = None
+    last_disconnect_reason: str | None = None
+    last_public_host: str | None = None
+    last_public_port: str | None = None
     user_name: str | None = None
     slot_label: str | None = None
 
@@ -137,6 +190,14 @@ class TunnelSession:
     @property
     def last_heartbeat(self) -> str:
         return self.last_heartbeat_at
+
+    @property
+    def endpoint_short(self) -> str:
+        return self.endpoint_id[:12] if self.endpoint_id else "-"
+
+    @property
+    def client_short(self) -> str:
+        return self.client_id[:12] if self.client_id else "-"
 
 
 @dataclass
