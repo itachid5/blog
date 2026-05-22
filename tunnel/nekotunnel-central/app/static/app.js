@@ -44,15 +44,46 @@ function toggleTheme() {
   setThemeIcon(nextTheme);
 }
 
+function copyWithTextareaFallback(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '-1000px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
 function copyLiteralText(text) {
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text);
+    return navigator.clipboard.writeText(text).catch(() => copyWithTextareaFallback(text));
   }
+  copyWithTextareaFallback(text);
+  return Promise.resolve();
 }
 
 function copyTextFromElement(elementId) {
   const element = document.getElementById(elementId);
-  if (element) copyLiteralText(element.textContent.trim());
+  if (element) return copyLiteralText(element.innerText.trim());
+  return Promise.resolve();
+}
+
+function bindCopyButtons() {
+  document.querySelectorAll('[data-copy-target]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = document.getElementById(button.dataset.copyTarget);
+      if (!target) return;
+      const originalText = button.textContent;
+      copyLiteralText(target.innerText.trim()).then(() => {
+        button.textContent = 'Copied';
+        window.setTimeout(() => {
+          button.textContent = originalText;
+        }, 1500);
+      });
+    });
+  });
 }
 
 window.toggleSidebar = toggleSidebar;
@@ -80,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isMobileViewport()) closeMobileSidebar();
     });
   });
+
+  bindCopyButtons();
 });
 
 window.addEventListener('resize', () => {

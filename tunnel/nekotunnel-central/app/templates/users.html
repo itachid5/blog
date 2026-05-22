@@ -15,48 +15,96 @@
 <div class="panel">
   <h2>User Install Commands</h2>
   <p class="muted">Use this dashboard URL automatically detected from the current request. Replace <code>USER_TOKEN</code> with the full token shown immediately after creation.</p>
-  <div class="actions command-actions">
-    <button type="button" onclick="copyTextFromElement('linux-install-command')">Copy Linux install</button>
-    <button type="button" onclick="copyTextFromElement('windows-install-command')">Copy Windows install</button>
-    <button type="button" onclick="copyLiteralText('{{ public_base_url }}')">Copy API URL</button>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>API URL</span>
+      <button type="button" class="copy-btn" data-copy-target="api-url-command">Copy</button>
+    </div>
+    <pre id="api-url-command" class="command-box"><code>{{ public_base_url }}</code></pre>
   </div>
 
   <h3>Install</h3>
-  <h4>Linux SSH</h4>
-  <pre id="linux-install-command" class="command-box">curl -fsSL -H "bypass-tunnel-reminder: true" {{ public_base_url }}/install.sh | bash
-nekotunnel token USER_TOKEN --api {{ public_base_url }}</pre>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Linux SSH</span>
+      <button type="button" class="copy-btn" data-copy-target="linux-install-command">Copy</button>
+    </div>
+    <pre id="linux-install-command" class="command-box"><code>curl -fsSL -H "bypass-tunnel-reminder: true" {{ public_base_url }}/install.sh | bash
+nekotunnel token USER_TOKEN --api {{ public_base_url }}</code></pre>
+  </div>
 
-  <h4>Windows RDP</h4>
-  <pre id="windows-install-command" class="command-box">iwr -UseBasicParsing -Headers @{"bypass-tunnel-reminder"="true"} {{ public_base_url }}/install.ps1 | iex
-nekotunnel token USER_TOKEN --api {{ public_base_url }}</pre>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Windows RDP</span>
+      <button type="button" class="copy-btn" data-copy-target="windows-install-command">Copy</button>
+    </div>
+    <pre id="windows-install-command" class="command-box"><code>iwr -UseBasicParsing -Headers @{"bypass-tunnel-reminder"="true"} {{ public_base_url }}/install.ps1 | iex
+nekotunnel token USER_TOKEN --api {{ public_base_url }}</code></pre>
+  </div>
 
   <h3>Temporary foreground mode</h3>
-  <h4>Linux</h4>
-  <pre>nekotunnel tcp 22</pre>
-  <p>Connect:</p>
-  <pre>ssh username@SERVER_ADDR -p SERVER_PORT</pre>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Linux foreground</span>
+      <button type="button" class="copy-btn" data-copy-target="linux-foreground-command">Copy</button>
+    </div>
+    <pre id="linux-foreground-command" class="command-box"><code>nekotunnel tcp 22</code></pre>
+  </div>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Linux connect</span>
+      <button type="button" class="copy-btn" data-copy-target="linux-connect-command">Copy</button>
+    </div>
+    <pre id="linux-connect-command" class="command-box"><code>ssh username@SERVER_ADDR -p SERVER_PORT</code></pre>
+  </div>
 
-  <h4>Windows</h4>
-  <pre>nekotunnel tcp 3389</pre>
-  <p>Connect:</p>
-  <pre>mstsc /v:SERVER_ADDR:SERVER_PORT</pre>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Windows foreground</span>
+      <button type="button" class="copy-btn" data-copy-target="windows-foreground-command">Copy</button>
+    </div>
+    <pre id="windows-foreground-command" class="command-box"><code>nekotunnel tcp 3389</code></pre>
+  </div>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Windows connect</span>
+      <button type="button" class="copy-btn" data-copy-target="windows-connect-command">Copy</button>
+    </div>
+    <pre id="windows-connect-command" class="command-box"><code>mstsc /v:SERVER_ADDR:SERVER_PORT</code></pre>
+  </div>
   <p class="muted small">On Windows, Remote Desktop must be enabled and allowed in Firewall. If RDP is not enabled, nekotunnel can connect but RDP will not respond.</p>
 
   <h3>Background mode</h3>
-  <h4>Linux</h4>
-  <pre>nekotunnel start tcp 22
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Linux background</span>
+      <button type="button" class="copy-btn" data-copy-target="linux-background-command">Copy</button>
+    </div>
+    <pre id="linux-background-command" class="command-box"><code>nekotunnel start tcp 22
 nekotunnel status
 nekotunnel logs
-nekotunnel stop</pre>
+nekotunnel stop</code></pre>
+  </div>
 
-  <h4>Windows</h4>
-  <pre>nekotunnel start tcp 3389
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Windows background</span>
+      <button type="button" class="copy-btn" data-copy-target="windows-background-command">Copy</button>
+    </div>
+    <pre id="windows-background-command" class="command-box"><code>nekotunnel start tcp 3389
 nekotunnel status
 nekotunnel logs
-nekotunnel stop</pre>
+nekotunnel stop</code></pre>
+  </div>
 
   <h3>Backward-compatible Linux one-shot</h3>
-  <pre class="command-box">curl -fsSL -H "bypass-tunnel-reminder: true" {{ public_base_url }}/install.sh | bash -s -- tcp 22 USER_TOKEN {{ public_base_url }}</pre>
+  <div class="command-card">
+    <div class="command-card-header">
+      <span>Linux one-shot</span>
+      <button type="button" class="copy-btn" data-copy-target="linux-one-shot-command">Copy</button>
+    </div>
+    <pre id="linux-one-shot-command" class="command-box"><code>curl -fsSL -H "bypass-tunnel-reminder: true" {{ public_base_url }}/install.sh | bash -s -- tcp 22 USER_TOKEN {{ public_base_url }}</code></pre>
+  </div>
   <p class="muted small">The client downloads frpc v0.57.0 automatically from this NekoTunnel Central server if it is missing.</p>
 </div>
 <div class="panel">

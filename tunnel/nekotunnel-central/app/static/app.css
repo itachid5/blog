@@ -89,6 +89,23 @@ code {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+.command-card { display: grid; gap: .5rem; margin: .85rem 0 1rem; }
+.command-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-primary);
+  font-size: .9rem;
+  font-weight: 500;
+}
+.command-card .command-box { margin: 0; }
+.command-box code { padding: 0; background: transparent; }
+.copy-btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
 
 .sidebar {
   position: fixed;
@@ -461,6 +478,8 @@ tr:last-child td { border-bottom: 0; }
     word-break: break-word;
   }
   .device-code-card { display: grid; gap: .5rem; }
+  .command-card-header { align-items: stretch; }
+  .copy-btn { min-width: 92px; }
 }
 
 
