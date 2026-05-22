@@ -49,10 +49,11 @@
 }
 
 * { box-sizing: border-box; }
-html { min-height: 100%; background: var(--main-bg); }
+html { min-height: 100%; max-width: 100%; overflow-x: hidden; background: var(--main-bg); }
 body {
   margin: 0;
   min-height: 100vh;
+  max-width: 100%;
   overflow-x: hidden;
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--accent-2) 18%, transparent), transparent 28rem),
@@ -310,6 +311,10 @@ tr:last-child td { border-bottom: 0; }
 .actions { display: flex; flex-wrap: wrap; gap: .45rem; align-items: flex-start; }
 .actions form { margin: 0; }
 .actions button, .actions .button-link { min-height: 38px; padding: .48rem .66rem; font-size: 12px; }
+.mobile-only { display: none; }
+.account-label, .browserless-box, .browserless-output, .device-code-card { max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+.browserless-box code, .browserless-output { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.device-code-card { margin-top: .75rem; padding: .8rem; border: 1px solid color-mix(in srgb, var(--accent-2) 42%, var(--border-color)); border-radius: 14px; background: color-mix(in srgb, var(--accent-2) 12%, var(--bg-color)); }
 .empty { color: var(--text-secondary); text-align: center; padding: 1.5rem; }
 
 .badge {
@@ -385,7 +390,60 @@ tr:last-child td { border-bottom: 0; }
   .actions { flex-direction: column; flex-wrap: nowrap; min-width: 150px; }
   .actions form, .actions button, .actions .button-link { width: 100%; }
   input, select, textarea, button, .primary, .button-link { min-height: 44px; }
+
+  .accounts-table { min-width: 0; }
+  .accounts-table thead { display: none; }
+  .accounts-table, .accounts-table tbody, .accounts-table tr, .accounts-table td { display: block; width: 100%; }
+  .accounts-table tr {
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    background: var(--bg-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+  .accounts-table tr:last-child { margin-bottom: 0; }
+  .accounts-table td {
+    border: 0;
+    padding: 8px 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .accounts-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .accounts-table .empty::before { content: none; }
+  .accounts-table code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+  .accounts-table .badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .accounts-table .account-mini-panel { margin: .2rem 0 0; padding: .75rem; }
+  .accounts-table .mobile-only { display: block; }
+  .account-meta { margin-top: .45rem; color: var(--text-secondary); font-size: .78rem; }
+  .account-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    min-width: 0;
+  }
+  .account-actions form, .account-actions button, .account-actions a { width: 100%; }
+  .account-actions button, .account-actions a { min-height: 44px; }
+  .browserless-box { margin: .45rem 0 0; padding: .75rem; overflow-x: auto; }
+  .browserless-output {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .device-code-card { display: grid; gap: .5rem; }
 }
+
 
 @media (max-width: 420px) {
   .sidebar { width: min(86vw, 260px); }

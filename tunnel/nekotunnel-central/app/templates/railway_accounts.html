@@ -32,7 +32,7 @@
 <div class="panel">
   <h2>Accounts</h2>
   <div class="table-scroll">
-    <table>
+    <table class="accounts-table">
       <thead><tr><th>ID</th><th>Label</th><th>Type</th><th>Workspace</th><th>Token/session</th><th>API accepted</th><th>Status</th><th>CLI backup</th><th>Billing</th><th>Browserless login</th><th>Actions</th></tr></thead>
       <tbody>
       {% for account in accounts %}
@@ -40,14 +40,14 @@
         {% set billing = billing_snapshots.get(account.id) %}
         {% set manual_billing = manual_billing_summaries.get(account.id, {}) %}
         <tr>
-          <td>{{ account.id }}</td>
-          <td>{{ account.label }}</td>
-          <td><code>{{ account.auth_type }}</code></td>
-          <td>{{ account.workspace or '-' }}</td>
-          <td>{% if account.auth_type == 'cli_session' %}<code>CLI session</code>{% else %}<code>{{ account.token_prefix }}</code>{% endif %}</td>
-          <td>{% if account.auth_type == 'token' %}{{ 'yes' if account.status == 'valid' else 'no' }}{% else %}-{% endif %}</td>
-          <td><span class="badge">{{ account.status }}</span></td>
-          <td>
+          <td data-label="ID">{{ account.id }}</td>
+          <td data-label="Label" class="account-label">{{ account.label }}<div class="mobile-only account-meta">Added at: {{ account.created_at or '-' }}<br>Updated at: {{ account.updated_at or '-' }}</div></td>
+          <td data-label="Type"><code>{{ account.auth_type }}</code></td>
+          <td data-label="Workspace">{{ account.workspace or '-' }}</td>
+          <td data-label="Token/session">{% if account.auth_type == 'cli_session' %}<code>CLI session</code>{% else %}<code>{{ account.token_prefix }}</code>{% endif %}</td>
+          <td data-label="API accepted">{% if account.auth_type == 'token' %}{{ 'yes' if account.status == 'valid' else 'no' }}{% else %}-{% endif %}</td>
+          <td data-label="Status"><span class="badge">{{ account.status }}</span></td>
+          <td data-label="CLI backup">
             {% if account.auth_type == 'cli_session' %}
               <div><span>Local session:</span> <strong>{{ local_session_states.get(account.id, 'unknown') }}</strong></div>
               <div><span>DB encrypted backup:</span> <strong>{{ 'present' if account.cli_backup_present else 'missing' }}</strong></div>
@@ -57,8 +57,8 @@
               -
             {% endif %}
           </td>
-          <td>
-            <div class="panel">
+          <td data-label="Manual billing">
+            <div class="panel account-mini-panel">
               <div><span>Manual tracker:</span> <strong>{{ 'enabled' if account.manual_billing_enabled else 'disabled' }}</strong></div>
               <div><span>Plan:</span> <strong>{{ account.manual_plan_name or '-' }}</strong></div>
               <div><span>Status:</span> <strong>{{ account.manual_subscription_status or '-' }}</strong></div>
@@ -85,28 +85,30 @@
               {% endif %}
             {% endif %}
           </td>
-          <td>
+          <td data-label="Browserless Login">
             {% if account.auth_type == 'cli_session' %}
               {% if attempt %}
                 <div><span class="badge">{{ attempt.status }}</span></div>
                 {% if attempt.login_url %}
-                  <div class="panel">
+                  <div class="panel browserless-box">
                     <div><strong>Railway Login URL:</strong></div>
-                    <div><a href="{{ attempt.login_url }}" target="_blank" rel="noreferrer">Open login URL</a></div>
+                    <div><a href="{{ attempt.login_url }}" target="_blank" rel="noreferrer">Open Login URL</a></div>
                     <div><code>{{ attempt.login_url }}</code></div>
                     <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.login_url }}')">Copy URL</button>
                     {% if attempt.pairing_code %}
-                      <div><strong>Device Code:</strong></div>
-                      <div><code>{{ attempt.pairing_code }}</code></div>
-                      <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.pairing_code }}')">Copy Code</button>
+                      <div class="device-code-card">
+                        <div><strong>Device Code:</strong></div>
+                        <div><code>{{ attempt.pairing_code }}</code></div>
+                        <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.pairing_code }}')">Copy Code</button>
+                      </div>
                     {% else %}
                       <div class="alert alert-warning">Login URL found, but device code was not parsed yet. Wait a few seconds and refresh status.</div>
                     {% endif %}
                   </div>
                 {% endif %}
-                {% if attempt.error %}<div class="muted">{{ attempt.error }}</div>{% endif %}
-                {% if attempt.stdout %}<div class="muted">Debug output</div><pre>{{ attempt.stdout[-1000:] }}</pre>{% endif %}
-                {% if attempt.stderr %}<div class="muted">Debug error output</div><pre>{{ attempt.stderr[-1000:] }}</pre>{% endif %}
+                {% if attempt.error %}<div class="muted browserless-output">{{ attempt.error }}</div>{% endif %}
+                {% if attempt.stdout %}<div class="muted">Debug output</div><pre class="browserless-output">{{ attempt.stdout[-1000:] }}</pre>{% endif %}
+                {% if attempt.stderr %}<div class="muted">Debug error output</div><pre class="browserless-output">{{ attempt.stderr[-1000:] }}</pre>{% endif %}
               {% else %}
                 <span class="muted">No login attempt yet.</span>
               {% endif %}
@@ -114,7 +116,7 @@
               -
             {% endif %}
           </td>
-          <td class="actions">
+          <td data-label="Actions" class="actions account-actions">
             <form method="get" action="/railway-accounts/{{ account.id }}/billing/edit"><button type="submit">Edit Manual Billing</button></form>
             {% if account.auth_type == 'cli_session' %}
               <form method="post" action="/railway-accounts/{{ account.id }}/backup-cli-session"><button type="submit">Backup CLI Session</button></form>
