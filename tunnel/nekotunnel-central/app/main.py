@@ -875,47 +875,83 @@ def delete_railway_account(request: Request, account_id: int):
 
 DOCKERFILE_CONTENT = """FROM alpine:latest
 
-RUN apk add --no-cache sslh wget tar ca-certificates
+RUN apk add --no-cache python3 wget tar ca-certificates
 
 ENV FRP_VERSION=0.57.0
 
-RUN wget https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_VERSION}_linux_amd64.tar.gz && \\
-    tar xzf frp_${FRP_VERSION}_linux_amd64.tar.gz && \\
-    mv frp_${FRP_VERSION}_linux_amd64 /frp && \\
+RUN wget https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_VERSION}_linux_amd64.tar.gz && \
+    tar xzf frp_${FRP_VERSION}_linux_amd64.tar.gz && \
+    mv frp_${FRP_VERSION}_linux_amd64 /frp && \
     rm frp_${FRP_VERSION}_linux_amd64.tar.gz
 
 COPY frps.toml /frp/frps.toml
+COPY tcp_mux.py /tcp_mux.py
 COPY start.sh /start.sh
 
-RUN chmod +x /start.sh
+RUN chmod +x /start.sh /tcp_mux.py
 
-CMD [\"/start.sh\"]
+CMD ["/start.sh"]
 """
 
 START_SH_CONTENT = """#!/bin/sh
 set -eu
 
 FRPS_PID=""
-SSLH_PID=""
+MUX_PID=""
 STOPPING=0
 
 log() {
     echo "[nekotunnel] $*"
 }
 
+port_open() {
+    python3 - "$1" "$2" <<'PYPORT'
+import socket
+import sys
+host = sys.argv[1]
+port = int(sys.argv[2])
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.settimeout(0.5)
+try:
+    sock.connect((host, port))
+except OSError:
+    raise SystemExit(1)
+finally:
+    sock.close()
+PYPORT
+}
+
+wait_for_port() {
+    host="$1"
+    port="$2"
+    name="$3"
+    attempts="${4:-60}"
+    i=0
+    while [ "$i" -lt "$attempts" ]; do
+        if port_open "$host" "$port"; then
+            log "$name is listening on $host:$port"
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    log "$name did not become ready on $host:$port"
+    return 1
+}
+
 stop_all() {
     STOPPING=1
     log "Stopping services..."
 
-    if [ -n "$SSLH_PID" ]; then
-        kill -TERM "$SSLH_PID" 2>/dev/null || true
+    if [ -n "$MUX_PID" ]; then
+        kill -TERM "$MUX_PID" 2>/dev/null || true
     fi
 
     if [ -n "$FRPS_PID" ]; then
         kill -TERM "$FRPS_PID" 2>/dev/null || true
     fi
 
-    wait "$SSLH_PID" 2>/dev/null || true
+    wait "$MUX_PID" 2>/dev/null || true
     wait "$FRPS_PID" 2>/dev/null || true
 
     log "Stopped."
@@ -937,27 +973,16 @@ run_frps() {
     done
 }
 
-run_sslh() {
+run_mux() {
     while [ "$STOPPING" -eq 0 ]; do
-        if sslh -h 2>&1 | grep -q -- '--tls'; then
-            TLS_OPT="--tls"
-        else
-            TLS_OPT="--ssl"
-        fi
-
-        log "Starting sslh on port ${PORT:-8080}..."
-
-        sslh -f -u root \
-          -p "0.0.0.0:${PORT:-8080}" \
-          "$TLS_OPT" "127.0.0.1:7000" \
-          --anyprot "127.0.0.1:6000" \
-          --timeout 2 &
-        SSLH_PID=$!
-
-        wait "$SSLH_PID" || true
+        wait_for_port 127.0.0.1 7000 "frps control" 60 || true
+        log "Starting tcp mux on port ${PORT:-8080}..."
+        python3 /tcp_mux.py           --port "${PORT:-8080}"           --control-host 127.0.0.1           --control-port 7000           --data-host 127.0.0.1           --data-port 6000 &
+        MUX_PID=$!
+        wait "$MUX_PID" || true
 
         if [ "$STOPPING" -eq 0 ]; then
-            log "sslh exited unexpectedly. Restarting in 2 seconds..."
+            log "tcp mux exited unexpectedly. Restarting in 2 seconds..."
             sleep 2
         fi
     done
@@ -966,10 +991,10 @@ run_sslh() {
 run_frps &
 FRPS_SUPERVISOR_PID=$!
 
-run_sslh &
-SSLH_SUPERVISOR_PID=$!
+run_mux &
+MUX_SUPERVISOR_PID=$!
 
-wait "$FRPS_SUPERVISOR_PID" "$SSLH_SUPERVISOR_PID"
+wait "$FRPS_SUPERVISOR_PID" "$MUX_SUPERVISOR_PID"
 
 """
 
@@ -1194,7 +1219,7 @@ def can_redeploy_slot(slot) -> bool:
 def write_server_files(slot, account, token: str, service_name: str, workdir: Path | None = None):
     started = time.monotonic()
     workdir = workdir or slot_workdir(slot)
-    command = "write Dockerfile frps.toml start.sh"
+    command = "write Dockerfile frps.toml tcp_mux.py start.sh"
     try:
         workdir.mkdir(parents=True, exist_ok=True)
         frp_token = slot.frp_token_hash_or_encrypted or f"frp_{secrets.token_urlsafe(32)}"
@@ -1202,6 +1227,7 @@ def write_server_files(slot, account, token: str, service_name: str, workdir: Pa
             store.set_slot_frp_token(slot.id, frp_token)
         (workdir / "Dockerfile").write_text(DOCKERFILE_CONTENT)
         (workdir / "frps.toml").write_text(frps_toml(frp_token))
+        (workdir / "tcp_mux.py").write_text((Path(__file__).with_name("tcp_mux.py")).read_text())
         start_sh = workdir / "start.sh"
         start_sh.write_text(START_SH_CONTENT)
         start_sh.chmod(0o755)
