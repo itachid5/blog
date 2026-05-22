@@ -10,12 +10,10 @@
   <div><span>Cleanup interval seconds</span><strong>{{ settings.cleanup_interval_seconds }}</strong></div>
   <div><span>Render environment status</span><strong>{{ 'running on Render' if settings.render else 'local or unknown' }}</strong></div>
   <div><span>Database type</span><strong>{{ database_info.type }}</strong></div>
-  <div><span>Database connected</span><strong>{{ 'yes' if database_info.connected else 'no' }}</strong></div>
-  <div><span>Database tables</span><strong>{{ database_info.table_count }}/{{ database_info.expected_table_count }}</strong></div>
   <div><span>Migration status</span><strong>{{ database_info.migration_status }}</strong></div>
   <div><span>DATABASE_URL present</span><strong>{{ 'yes' if database_info.database_url_present else 'no' }}</strong></div>
-  <div><span>DATABASE_URL masked</span><strong>{{ database_info.masked_database_url or '-' }}</strong></div>
-  {% if database_info.sqlite_path %}<div><span>SQLite path</span><strong>{{ database_info.sqlite_path }}</strong></div>{% endif %}
+  <div><span>Public dashboard URL</span><strong>{{ public_base_url }}</strong></div>
+  <div><span>PUBLIC_BASE_URL override</span><strong>{{ 'yes' if public_base_url_override else 'no' }}</strong></div>
 </div>
 <div class="panel settings-grid">
   <div><span>Total Railway projects</span><strong>{{ slot_counts.total_projects }}</strong></div>

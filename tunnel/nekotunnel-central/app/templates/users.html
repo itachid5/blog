@@ -14,16 +14,21 @@
 </div>
 <div class="panel">
   <h2>User Install Commands</h2>
-  <p class="muted">Replace <code>PUBLIC_URL</code> with this dashboard's public URL and <code>USER_TOKEN</code> with the full token shown immediately after creation.</p>
+  <p class="muted">Use this dashboard URL automatically detected from the current request. Replace <code>USER_TOKEN</code> with the full token shown immediately after creation.</p>
+  <div class="actions command-actions">
+    <button type="button" onclick="copyTextFromElement('linux-install-command')">Copy Linux install</button>
+    <button type="button" onclick="copyTextFromElement('windows-install-command')">Copy Windows install</button>
+    <button type="button" onclick="copyLiteralText('{{ public_base_url }}')">Copy API URL</button>
+  </div>
 
   <h3>Install</h3>
   <h4>Linux SSH</h4>
-  <pre>curl -fsSL -H "bypass-tunnel-reminder: true" https://PUBLIC_URL/install.sh | bash
-nekotunnel token USER_TOKEN --api https://PUBLIC_URL</pre>
+  <pre id="linux-install-command" class="command-box">curl -fsSL -H "bypass-tunnel-reminder: true" {{ public_base_url }}/install.sh | bash
+nekotunnel token USER_TOKEN --api {{ public_base_url }}</pre>
 
   <h4>Windows RDP</h4>
-  <pre>iwr -UseBasicParsing -Headers @{"bypass-tunnel-reminder"="true"} https://PUBLIC_URL/install.ps1 | iex
-nekotunnel token USER_TOKEN --api https://PUBLIC_URL</pre>
+  <pre id="windows-install-command" class="command-box">iwr -UseBasicParsing -Headers @{"bypass-tunnel-reminder"="true"} {{ public_base_url }}/install.ps1 | iex
+nekotunnel token USER_TOKEN --api {{ public_base_url }}</pre>
 
   <h3>Temporary foreground mode</h3>
   <h4>Linux</h4>
@@ -51,7 +56,7 @@ nekotunnel logs
 nekotunnel stop</pre>
 
   <h3>Backward-compatible Linux one-shot</h3>
-  <pre>curl -fsSL -H "bypass-tunnel-reminder: true" https://PUBLIC_URL/install.sh | bash -s -- tcp 22 USER_TOKEN https://PUBLIC_URL</pre>
+  <pre class="command-box">curl -fsSL -H "bypass-tunnel-reminder: true" {{ public_base_url }}/install.sh | bash -s -- tcp 22 USER_TOKEN {{ public_base_url }}</pre>
   <p class="muted small">The client downloads frpc v0.57.0 automatically from this NekoTunnel Central server if it is missing.</p>
 </div>
 <div class="panel">

@@ -5,7 +5,6 @@ import secrets
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 
 try:
     import psycopg2
@@ -54,19 +53,6 @@ def database_url() -> str:
 def database_type() -> str:
     value = database_url().lower()
     return "postgres" if value.startswith(("postgres://", "postgresql://")) else "sqlite"
-
-
-def mask_database_url(value: str | None) -> str:
-    if not value:
-        return ""
-    parsed = urlsplit(value)
-    if not parsed.scheme or not parsed.netloc:
-        return "configured"
-    host = parsed.hostname or ""
-    port = f":{parsed.port}" if parsed.port else ""
-    username = parsed.username or "user"
-    netloc = f"{username}:***@{host}{port}" if host else "***"
-    return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
 
 
 class PostgresCursor:
@@ -136,7 +122,6 @@ class SQLiteStore:
     def __init__(self, db_path: Path = DB_PATH) -> None:
         self.db_path = db_path
         self.database_url_present = bool(database_url())
-        self.masked_database_url = mask_database_url(database_url())
         self.migration_status = "not initialized"
         self.connection_ok = False
         self.table_count = 0
@@ -362,7 +347,6 @@ class SQLiteStore:
             "expected_table_count": len(EXPECTED_TABLES),
             "migration_status": self.migration_status,
             "database_url_present": self.database_url_present,
-            "masked_database_url": self.masked_database_url,
             "sqlite_path": str(self.db_path),
         }
 
@@ -1789,7 +1773,6 @@ class PostgresStore(SQLiteStore):
     def __init__(self, dsn: str) -> None:
         super().__init__(DB_PATH)
         self.dsn = dsn
-        self.masked_database_url = mask_database_url(dsn)
         self.database_url_present = True
 
     def connect(self) -> PostgresConnection:

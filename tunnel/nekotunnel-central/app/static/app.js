@@ -44,8 +44,21 @@ function toggleTheme() {
   setThemeIcon(nextTheme);
 }
 
+function copyLiteralText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text);
+  }
+}
+
+function copyTextFromElement(elementId) {
+  const element = document.getElementById(elementId);
+  if (element) copyLiteralText(element.textContent.trim());
+}
+
 window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;
+window.copyLiteralText = copyLiteralText;
+window.copyTextFromElement = copyTextFromElement;
 
 document.addEventListener('DOMContentLoaded', () => {
   const theme = localStorage.getItem('nekotunnel-theme') || 'dark';

@@ -7,6 +7,7 @@ import time
 import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
+from urllib.parse import urlsplit
 from pathlib import Path
 from typing import Annotated
 
@@ -81,15 +82,69 @@ def flash(request: Request, category: str, message: str) -> None:
     request.session.setdefault("flashes", []).append({"category": category, "message": message})
 
 
+def normalize_public_base_url(value: str | None) -> str:
+    clean = (value or "").strip().rstrip("/")
+    if not clean:
+        return ""
+    parsed = urlsplit(clean if "://" in clean else f"https://{clean}")
+    host = parsed.netloc or parsed.path.split("/", 1)[0]
+    scheme = parsed.scheme or "https"
+    if not host:
+        return ""
+    return f"{scheme}://{host}".rstrip("/")
+
+
+def forwarded_header_value(forwarded: str, key: str) -> str:
+    first_value = (forwarded or "").split(",", 1)[0]
+    for part in first_value.split(";"):
+        if "=" not in part:
+            continue
+        name, value = part.split("=", 1)
+        if name.strip().lower() == key:
+            return value.strip().strip('"')
+    return ""
+
+
+def public_base_url_for_request(request: Request) -> str:
+    configured = normalize_public_base_url(settings.public_base_url)
+    if configured:
+        return configured
+
+    forwarded = request.headers.get("forwarded", "")
+    forwarded_proto = forwarded_header_value(forwarded, "proto")
+    forwarded_host = forwarded_header_value(forwarded, "host")
+    proto = (
+        request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip()
+        or forwarded_proto
+        or request.url.scheme
+        or "https"
+    )
+    host = (
+        request.headers.get("x-forwarded-host", "").split(",", 1)[0].strip()
+        or forwarded_host
+        or request.headers.get("host", "").strip()
+    )
+    if host:
+        return normalize_public_base_url(f"{proto}://{host}")
+    return normalize_public_base_url(str(request.base_url))
+
+
 def render(request: Request, template: str, context: dict | None = None):
     auth_redirect = require_admin(request)
     if auth_redirect:
         return auth_redirect
     flashes = request.session.pop("flashes", [])
+    public_base_url = public_base_url_for_request(request)
     return templates.TemplateResponse(
         request,
         template,
-        {"flashes": flashes, "current_path": request.url.path, **(context or {})},
+        {
+            "flashes": flashes,
+            "current_path": request.url.path,
+            "public_base_url": public_base_url,
+            "public_base_url_override": bool((settings.public_base_url or "").strip()),
+            **(context or {}),
+        },
     )
 
 
@@ -1868,7 +1923,7 @@ FRPC_ARCHIVES = {
 
 @app.get("/install.sh")
 def install_script(request: Request):
-    api_url = str(request.base_url).rstrip("/")
+    api_url = public_base_url_for_request(request)
     return Response(INSTALL_SCRIPT.replace("__API_URL__", api_url), media_type="text/x-shellscript")
 
 
@@ -1879,7 +1934,7 @@ def client_script():
 
 @app.get("/install.ps1")
 def windows_install_script(request: Request):
-    api_url = str(request.base_url).rstrip("/")
+    api_url = public_base_url_for_request(request)
     return Response(WINDOWS_INSTALL_SCRIPT.replace("__API_URL__", api_url), media_type="text/plain")
 
 

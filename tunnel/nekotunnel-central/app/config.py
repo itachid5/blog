@@ -19,6 +19,7 @@ class Settings:
     tunnel_session_ttl_seconds: int = int(os.getenv("TUNNEL_SESSION_TTL_SECONDS", os.getenv("SESSION_TTL_SECONDS", "90")))
     tunnel_cleanup_interval_seconds: int = int(os.getenv("TUNNEL_CLEANUP_INTERVAL_SECONDS", "30"))
     database_url: str | None = os.getenv("DATABASE_URL")
+    public_base_url: str | None = os.getenv("PUBLIC_BASE_URL")
     railway_cli_path: str | None = os.getenv("RAILWAY_CLI_PATH")
     railway_home_dir: str = os.getenv("RAILWAY_HOME_DIR", "/tmp/railway")
     render: bool = bool(os.getenv("RENDER"))
