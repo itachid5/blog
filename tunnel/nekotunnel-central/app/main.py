@@ -19,6 +19,8 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .auth import is_logged_in, login_admin, logout_admin, require_admin
 from .config import settings
+
+DEFAULT_API_URL = "https://ap.tunnel.theorbit.tech"
 from .railway_cli import (
     BILLING_UNAVAILABLE_ERROR,
     app_secret_strong_enough,
@@ -143,6 +145,7 @@ def render(request: Request, template: str, context: dict | None = None):
             "flashes": flashes,
             "current_path": request.url.path,
             "public_base_url": public_base_url,
+            "default_api_url": DEFAULT_API_URL,
             "public_base_url_override": bool((settings.public_base_url or "").strip()),
             **(context or {}),
         },
@@ -1914,7 +1917,12 @@ if [ "$#" -gt 0 ]; then
   exec "$target" "$@"
 fi
 
-echo "You can now use: nekotunnel token USER_TOKEN --api $api_url"
+echo "You can now use:"
+echo "nekotunnel token USER_TOKEN"
+echo "nekotunnel tcp 22"
+echo ""
+echo "For custom deployments:"
+echo "nekotunnel token USER_TOKEN --api https://your-domain.example"
 '''
 
 WINDOWS_INSTALL_SCRIPT = r'''$ErrorActionPreference = "Stop"
@@ -1947,7 +1955,12 @@ if ($CurrentEntries -notcontains $InstallDir) {
 }
 
 Write-Host "Installed nekotunnel to $InstallDir"
-Write-Host "You can now use: nekotunnel token USER_TOKEN --api $ApiUrl"
+Write-Host "You can now use:"
+Write-Host "nekotunnel token USER_TOKEN"
+Write-Host "nekotunnel tcp 22"
+Write-Host ""
+Write-Host "For custom deployments:"
+Write-Host "nekotunnel token USER_TOKEN --api https://your-domain.example"
 '''
 
 FRPC_VERSION = "0.57.0"
@@ -2021,6 +2034,26 @@ def api_user(payload: dict):
     return user
 
 
+def normalize_tcp_mux(value: object, local_port: int) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "on"}:
+            return True
+        if lowered in {"false", "0", "no", "off"}:
+            return False
+    raise ValueError("invalid_tcp_mux")
+
+
+def connection_profile(local_port: int, tcp_mux: bool, override: bool) -> str:
+    return "generic-tcpmux-off" if override and not tcp_mux else "generic"
+
+
 @app.post("/api/connect")
 async def api_connect(request: Request):
     try:
@@ -2047,6 +2080,12 @@ async def api_connect(request: Request):
     client_id = str(payload.get("client_id") or "").strip()
     endpoint_id = str(payload.get("endpoint_id") or "").strip()
     try:
+        tcp_mux = normalize_tcp_mux(payload.get("tcp_mux"), local_port)
+    except ValueError:
+        return JSONResponse({"ok": False, "error": "invalid_tcp_mux"}, status_code=400)
+    profile = connection_profile(local_port, tcp_mux, "tcp_mux" in payload)
+    route_mode = "mux"
+    try:
         allocation, error = store.allocate_session(
             user,
             local_port,
@@ -2057,6 +2096,9 @@ async def api_connect(request: Request):
             endpoint_id=endpoint_id,
             stale_seconds=settings.session_stale_seconds,
             grace_seconds=settings.session_reconnect_grace_seconds,
+            tcp_mux=tcp_mux,
+            route_mode=route_mode,
+            connection_profile=profile,
         )
     except Exception:
         logger.exception("/api/connect failed while allocating session")
@@ -2084,6 +2126,10 @@ async def api_connect(request: Request):
         "endpoint_id": allocation.get("endpoint_id"),
         "client_id": allocation.get("client_id"),
         "reconnect_count": allocation.get("reconnect_count", 0),
+        "tcp_mux": allocation.get("tcp_mux", tcp_mux),
+        "route_mode": allocation.get("route_mode", route_mode),
+        "connection_profile": allocation.get("connection_profile", profile),
+        "dual_port_available": False,
     }
 
 

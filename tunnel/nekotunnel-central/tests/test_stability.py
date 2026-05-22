@@ -43,29 +43,33 @@ def test_endpoint_id_does_not_include_token():
 def test_frpc_config_uses_verified_v057_transport_keys(tmp_path):
     client = load_linux_client_namespace()
     config_path = tmp_path / "frpc.toml"
+    allocation = {
+        "server_addr": "example.com",
+        "server_port": 7000,
+        "frp_token": "secret",
+        "proxy_name": "proxy-1",
+        "remote_port": 6000,
+    }
 
-    client["write_frpc_config"](
-        config_path,
-        {
-            "server_addr": "example.com",
-            "server_port": 7000,
-            "frp_token": "secret",
-            "proxy_name": "proxy-1",
-            "remote_port": 6000,
-        },
-        3389,
-    )
+    client["write_frpc_config"](config_path, allocation, 3389)
 
     config = config_path.read_text()
     assert "loginFailExit = false" in config
     assert "[transport]" in config
     assert 'protocol = "tcp"' in config
     assert "tls.enable = true" in config
-    assert "tcpMux = true" in config
+    assert 'tls.serverName = "nekotunnel-control"' in config
+    assert "tcpMux = false" in config
     assert "tcpMuxKeepaliveInterval = 30" in config
     assert "heartbeatInterval = 20" in config
     assert "heartbeatTimeout = 120" in config
     assert "dialServerKeepalive = 30" in config
+
+    client["write_frpc_config"](config_path, allocation, 22)
+    assert "tcpMux = true" in config_path.read_text()
+
+    client["write_frpc_config"](config_path, {**allocation, "tcp_mux": True}, 3389)
+    assert "tcpMux = true" in config_path.read_text()
 
 
 def test_heartbeat_failures_do_not_stop_service_loop(monkeypatch, capsys):
@@ -99,7 +103,7 @@ def test_stale_cleanup_does_not_free_slot_before_threshold(tmp_path):
         3389,
         protocol="tcp",
         client_id="machine-a",
-        endpoint_id="endpoint-rdp",
+        endpoint_id="endpoint-tcp-3389",
         stale_seconds=600,
         grace_seconds=300,
     )
@@ -117,11 +121,22 @@ def test_clients_have_detached_service_entrypoints():
     windows = Path("client/nekotunnel.ps1").read_text()
 
     assert "ExecStart={executable} run-service {protocol} {local_port}" in linux
-    assert '[str(executable), "run-service", protocol, str(local_port)]' in linux
+    assert '[str(executable), "run-service", protocol, str(local_port), "--tcp-mux", str(tcp_mux).lower()]' in linux
     assert 'LOG_DIR / f"{endpoint_key(protocol, local_port)}.log"' in linux
+    assert 'LOG_DIR / f"{endpoint_key(protocol, local_port)}.frpc.{stream}.log"' in linux
     assert "def run_service(args: list[str])" in linux
+    assert "last_100_frpc_" in linux
+    assert "--frpc|--report" in linux
+    assert "logs <all|tcp <local_port>>" in linux
     assert "run-service" in windows
     assert 'New-ScheduledTaskAction -Execute "powershell.exe"' in windows
     assert "-WindowStyle Hidden" in windows
+    assert 'nekotunnel-control' in linux
+    assert 'tls.serverName = "nekotunnel-control"' in windows
+    assert "-RedirectStandardOutput $FrpcOut -RedirectStandardError $FrpcErr" in windows
+    assert "frpc_exit_at=" in windows
+    assert "last_100_frpc_out" in windows
+    assert "--frpc|--report" in windows
+    assert "logs <all|tcp <local_port>>" in windows
     assert "New-ScheduledTaskSettingsSet -Hidden" in windows
     assert "Unregister-ScheduledTask" in windows

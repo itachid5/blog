@@ -174,6 +174,12 @@ class TunnelSession:
     reconnect_count: int = 0
     grace_until: str | None = None
     last_disconnect_reason: str | None = None
+    tcp_mux: int | bool | None = None
+    route_mode: str | None = None
+    connection_profile: str | None = None
+    control_disconnect_count: int = 0
+    last_control_disconnect_reason: str | None = None
+    public_address_changed: int | bool | None = None
     last_public_host: str | None = None
     last_public_port: str | None = None
     user_name: str | None = None

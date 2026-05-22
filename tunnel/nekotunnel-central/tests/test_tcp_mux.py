@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from app.tcp_mux import Target, handle_client
+from app.tcp_mux import CONTROL_MARKER, Target, handle_client
 
 
 async def read_exact_prefix(reader: asyncio.StreamReader, prefix: bytes) -> bytes:
@@ -28,6 +28,31 @@ async def start_target(label: bytes):
     server = await asyncio.start_server(handler, "127.0.0.1", 0)
     port = server.sockets[0].getsockname()[1]
     return server, port, seen
+
+
+def tls_client_hello(sni: str | None = None, alpn: list[str] | None = None) -> bytes:
+    extensions = b""
+    if sni is not None:
+        name = sni.encode("ascii")
+        server_name = b"\x00" + len(name).to_bytes(2, "big") + name
+        server_name_list = len(server_name).to_bytes(2, "big") + server_name
+        extensions += (0).to_bytes(2, "big") + len(server_name_list).to_bytes(2, "big") + server_name_list
+    if alpn is not None:
+        protocols = b"".join(len(proto.encode("ascii")).to_bytes(1, "big") + proto.encode("ascii") for proto in alpn)
+        protocol_list = len(protocols).to_bytes(2, "big") + protocols
+        extensions += (16).to_bytes(2, "big") + len(protocol_list).to_bytes(2, "big") + protocol_list
+    body = (
+        b"\x03\x03"
+        + (b"\x00" * 32)
+        + b"\x00"
+        + (2).to_bytes(2, "big")
+        + b"\x13\x01"
+        + b"\x01\x00"
+        + len(extensions).to_bytes(2, "big")
+        + extensions
+    )
+    handshake = b"\x01" + len(body).to_bytes(3, "big") + body
+    return b"\x16\x03\x03" + len(handshake).to_bytes(2, "big") + handshake
 
 
 @dataclass
@@ -90,10 +115,36 @@ def unused_port() -> int:
 
 
 @pytest.mark.asyncio
-async def test_tls_like_first_bytes_route_to_control_port():
+async def test_tls_without_control_marker_routes_to_data_port():
     mux = await start_mux()
     try:
-        payload = b"\x16\x03\x03hello"
+        payload = tls_client_hello(sni="example.com")
+        response = await send_to_mux(mux.port, payload)
+        assert response == b"data:" + payload
+        assert mux.data_seen == [payload]
+        assert mux.control_seen == []
+    finally:
+        await close_mux(mux)
+
+
+@pytest.mark.asyncio
+async def test_tls_sni_control_marker_routes_to_control_port():
+    mux = await start_mux()
+    try:
+        payload = tls_client_hello(sni=CONTROL_MARKER)
+        response = await send_to_mux(mux.port, payload)
+        assert response == b"control:" + payload
+        assert mux.control_seen == [payload]
+        assert mux.data_seen == []
+    finally:
+        await close_mux(mux)
+
+
+@pytest.mark.asyncio
+async def test_tls_alpn_control_marker_routes_to_control_port():
+    mux = await start_mux()
+    try:
+        payload = tls_client_hello(alpn=[CONTROL_MARKER])
         response = await send_to_mux(mux.port, payload)
         assert response == b"control:" + payload
         assert mux.control_seen == [payload]
@@ -106,7 +157,7 @@ async def test_tls_like_first_bytes_route_to_control_port():
 async def test_non_tls_first_bytes_route_to_data_port():
     mux = await start_mux()
     try:
-        payload = b"RDP-data"
+        payload = b"TCP-data"
         response = await send_to_mux(mux.port, payload)
         assert response == b"data:" + payload
         assert mux.data_seen == [payload]
@@ -121,7 +172,7 @@ async def test_data_target_refused_does_not_stop_listener():
     try:
         response = await send_to_mux(mux.port, b"not-tls")
         assert response == b""
-        payload = b"\x16\x03\x01control"
+        payload = tls_client_hello(alpn=[CONTROL_MARKER])
         assert await send_to_mux(mux.port, payload) == b"control:" + payload
         assert mux.control_seen == [payload]
     finally:
@@ -132,11 +183,12 @@ async def test_data_target_refused_does_not_stop_listener():
 async def test_multiple_sequential_connections_do_not_restart_listener():
     mux = await start_mux()
     try:
+        control_payload = tls_client_hello(sni=CONTROL_MARKER)
         assert await send_to_mux(mux.port, b"first") == b"data:first"
         assert await send_to_mux(mux.port, b"second") == b"data:second"
-        assert await send_to_mux(mux.port, b"\x16\x03\x03third") == b"control:\x16\x03\x03third"
+        assert await send_to_mux(mux.port, control_payload) == b"control:" + control_payload
         assert mux.data_seen == [b"first", b"second"]
-        assert mux.control_seen == [b"\x16\x03\x03third"]
+        assert mux.control_seen == [control_payload]
     finally:
         await close_mux(mux)
 

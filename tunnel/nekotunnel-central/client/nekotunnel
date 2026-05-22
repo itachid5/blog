@@ -19,6 +19,7 @@ import uuid
 from pathlib import Path
 
 FRPC_VERSION = "0.57.0"
+DEFAULT_API_URL = "https://ap.tunnel.theorbit.tech"
 APP_DIR = Path.home() / ".nekotunnel"
 CONFIG_PATH = APP_DIR / "config"
 STATE_PATH = APP_DIR / "state"
@@ -37,10 +38,11 @@ class StopRequested(Exception):
 
 def usage() -> int:
     print("Usage:")
-    print("  nekotunnel token <USER_TOKEN> --api <API_URL>")
-    print("  nekotunnel login <USER_TOKEN> --api <API_URL>")
-    print("  nekotunnel tcp <local_port>")
-    print("  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL>")
+    print("  nekotunnel token <USER_TOKEN> [--api <API_URL>]")
+    print("  nekotunnel login <USER_TOKEN> [--api <API_URL>]")
+    print("  nekotunnel api [<API_URL>]")
+    print("  nekotunnel tcp <local_port> [--tcp-mux true|false]")
+    print("  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL> [--tcp-mux true|false]")
     print("  nekotunnel start tcp <local_port>")
     print("  nekotunnel start tcp <local_port> --persist")
     print("  nekotunnel install-service tcp <local_port>")
@@ -50,7 +52,7 @@ def usage() -> int:
     print("  nekotunnel stop all")
     print("  nekotunnel restart tcp <local_port>")
     print("  nekotunnel status")
-    print("  nekotunnel logs tcp <local_port>")
+    print("  nekotunnel logs tcp <local_port> [--frpc|--report]")
     print("  nekotunnel logs all")
     print("  nekotunnel logout")
     return 2
@@ -128,11 +130,67 @@ def endpoint_key(protocol: str, local_port: int) -> str:
     return f"{protocol}-{local_port}"
 
 
+def strip_options(args: list[str], option_names: set[str]) -> list[str]:
+    result: list[str] = []
+    i = 0
+    while i < len(args):
+        if args[i] in option_names:
+            i += 2
+        else:
+            result.append(args[i])
+            i += 1
+    return result
+
+
 def endpoint_from_args(args: list[str]) -> tuple[str, int] | None:
-    endpoint_args = [arg for arg in args if arg != "--persist"]
+    endpoint_args = strip_options([arg for arg in args if arg != "--persist"], {"--tcp-mux"})
+    if len(endpoint_args) == 1 and endpoint_args[0] == "rdp":
+        raise ValueError(rdp_unsupported_message())
     if len(endpoint_args) != 2 or endpoint_args[0] != "tcp":
         return None
     return "tcp", parse_port(endpoint_args[1])
+
+
+def parse_tcp_mux_option(args: list[str], local_port: int) -> bool:
+    value: str | None = None
+    i = 0
+    while i < len(args):
+        if args[i] == "--tcp-mux":
+            if i + 1 >= len(args):
+                raise ValueError("--tcp-mux requires true or false")
+            value = args[i + 1].lower()
+            i += 2
+        else:
+            i += 1
+    if value is None:
+        return True
+    if value in {"true", "1", "yes", "on"}:
+        return True
+    if value in {"false", "0", "no", "off"}:
+        return False
+    raise ValueError("--tcp-mux must be true or false")
+
+
+def tcp_mux_arg(value: bool) -> str:
+    return "true" if value else "false"
+
+
+def persisted_tcp_mux(protocol: str, local_port: int) -> bool | None:
+    for endpoint in background_endpoints():
+        if endpoint["protocol"] == protocol and endpoint["port"] == local_port and "tcp_mux" in endpoint:
+            return bool(endpoint["tcp_mux"])
+    return None
+
+
+def service_local_port(args: list[str]) -> int:
+    service_args = strip_options([arg for arg in args if arg != "--foreground-service"], {"--tcp-mux"})
+    if len(service_args) != 1:
+        raise ValueError("Invalid tcp service usage.")
+    return parse_port(service_args[0])
+
+
+def frpc_log_path_for(protocol: str, local_port: int, stream: str) -> Path:
+    return LOG_DIR / f"{endpoint_key(protocol, local_port)}.frpc.{stream}.log"
 
 
 def state_path_for(protocol: str, local_port: int) -> Path:
@@ -155,7 +213,7 @@ def service_path_for(protocol: str, local_port: int) -> Path:
     return SYSTEMD_USER_DIR / service_name(protocol, local_port)
 
 
-def background_endpoints(config: dict[str, str] | None = None) -> list[dict[str, int | str]]:
+def background_endpoints(config: dict[str, str] | None = None) -> list[dict[str, int | str | bool]]:
     config = config or load_config()
     endpoints: list[dict[str, int | str]] = []
     raw = config.get("BACKGROUND_ENDPOINTS", "")
@@ -165,7 +223,10 @@ def background_endpoints(config: dict[str, str] | None = None) -> list[dict[str,
             if isinstance(decoded, list):
                 for endpoint in decoded:
                     if isinstance(endpoint, dict) and endpoint.get("protocol") == "tcp":
-                        endpoints.append({"protocol": "tcp", "port": parse_port(str(endpoint.get("port")))})
+                        item = {"protocol": "tcp", "port": parse_port(str(endpoint.get("port")))}
+                        if "tcp_mux" in endpoint:
+                            item["tcp_mux"] = bool(endpoint.get("tcp_mux"))
+                        endpoints.append(item)
         except (json.JSONDecodeError, ValueError):
             pass
     legacy_port = config.get("BACKGROUND_PORT")
@@ -179,11 +240,17 @@ def background_endpoints(config: dict[str, str] | None = None) -> list[dict[str,
     return endpoints
 
 
-def save_background_endpoint(protocol: str, local_port: int) -> None:
+def save_background_endpoint(protocol: str, local_port: int, tcp_mux: bool | None = None) -> None:
     config = load_config()
     endpoints = background_endpoints(config)
-    if not any(endpoint["protocol"] == protocol and endpoint["port"] == local_port for endpoint in endpoints):
-        endpoints.append({"protocol": protocol, "port": local_port})
+    existing = next((endpoint for endpoint in endpoints if endpoint["protocol"] == protocol and endpoint["port"] == local_port), None)
+    if existing is None:
+        item = {"protocol": protocol, "port": local_port}
+        if tcp_mux is not None:
+            item["tcp_mux"] = tcp_mux
+        endpoints.append(item)
+    elif tcp_mux is not None:
+        existing["tcp_mux"] = tcp_mux
     config["BACKGROUND_ENDPOINTS"] = json.dumps(endpoints, separators=(",", ":"))
     config.pop("BACKGROUND_PORT", None)
     write_config(config)
@@ -237,9 +304,7 @@ def clear_state(path: Path = STATE_PATH) -> None:
 def command_for_port(local_port: int, server_addr: str, server_port: int | str) -> str:
     if local_port == 22:
         return f"SSH command: ssh username@{server_addr} -p {server_port}"
-    if local_port == 3389:
-        return f"RDP command: mstsc /v:{server_addr}:{server_port}"
-    return f"Connect to {server_addr}:{server_port}"
+    return f"TCP connect command: connect to {server_addr}:{server_port}"
 
 
 def frpc_archive_name() -> str:
@@ -324,6 +389,7 @@ def post_json(api_url: str, path: str, payload: dict) -> tuple[int, dict | None,
 
 
 def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> None:
+    tcp_mux = bool(allocation.get("tcp_mux", False if local_port == 3389 else True))
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(
         "\n".join(
@@ -340,7 +406,8 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
                 "[transport]",
                 "protocol = \"tcp\"",
                 "tls.enable = true",
-                "tcpMux = true",
+                "tls.serverName = \"nekotunnel-control\"",
+                f"tcpMux = {str(tcp_mux).lower()}",
                 "tcpMuxKeepaliveInterval = 30",
                 "heartbeatInterval = 20",
                 "heartbeatTimeout = 120",
@@ -359,21 +426,42 @@ def write_frpc_config(config_path: Path, allocation: dict, local_port: int) -> N
     config_path.chmod(0o600)
 
 
-def heartbeat_loop(api_url: str, token: str, session_id: str, interval: int, stop_event: threading.Event) -> None:
+def heartbeat_loop(
+    api_url: str,
+    token: str,
+    session_id: str,
+    interval: int,
+    stop_event: threading.Event,
+    state_path: Path | None = None,
+) -> None:
     misses = 0
     while not stop_event.wait(interval):
         try:
             status, data, body = post_json(api_url, "/api/heartbeat", {"token": token, "session_id": session_id})
         except Exception as exc:
             misses += 1
-            print(f"API heartbeat failure {misses}: {exc}", flush=True)
+            message = f"API heartbeat failure {misses}: {exc}"
+            print(message, flush=True)
+            if state_path:
+                state = load_state(state_path) or {}
+                state["last_heartbeat_error"] = message
+                save_state(state, state_path)
             continue
         if not data or not data.get("ok"):
             misses += 1
-            print(f"API heartbeat degraded {misses} with HTTP {status}: {body}", flush=True)
+            message = f"API heartbeat degraded {misses} with HTTP {status}: {body}"
+            print(message, flush=True)
+            if state_path:
+                state = load_state(state_path) or {}
+                state["last_heartbeat_error"] = message
+                save_state(state, state_path)
             continue
         if misses:
             print("API heartbeat recovered", flush=True)
+            if state_path:
+                state = load_state(state_path) or {}
+                state.pop("last_heartbeat_error", None)
+                save_state(state, state_path)
         misses = 0
 
 
@@ -404,9 +492,28 @@ def disconnect_saved_state(path: Path = STATE_PATH) -> bool:
 
 
 def parse_login(args: list[str]) -> tuple[str, str] | None:
-    if len(args) != 3 or args[1] != "--api":
-        return None
-    return args[2].rstrip("/"), args[0]
+    if len(args) == 1:
+        return DEFAULT_API_URL, args[0]
+    if len(args) == 3 and args[1] == "--api":
+        return args[2].rstrip("/"), args[0]
+    return None
+
+
+def run_api(args: list[str]) -> int:
+    config = load_config()
+    if not args:
+        print(f"API URL: {config.get('API_URL', DEFAULT_API_URL).rstrip('/')}")
+        return 0
+    if len(args) == 1:
+        config["API_URL"] = args[0].rstrip("/")
+        write_config(config)
+        print(f"API URL: {config['API_URL']}")
+        return 0
+    return usage()
+
+
+def rdp_unsupported_message() -> str:
+    return "RDP is not officially supported. Use generic TCP:\nnekotunnel tcp 3389\nor\nnekotunnel start tcp 3389"
 
 
 def parse_port(value: str) -> int:
@@ -419,18 +526,19 @@ def parse_port(value: str) -> int:
     return local_port
 
 
-def resolve_credentials(args: list[str]) -> tuple[int, str, str]:
-    service_args = [arg for arg in args if arg != "--foreground-service"]
+def resolve_credentials(args: list[str]) -> tuple[int, str, str, bool]:
+    service_args = strip_options([arg for arg in args if arg != "--foreground-service"], {"--tcp-mux"})
     if len(service_args) == 1:
         local_port = parse_port(service_args[0])
         config = load_config()
-        api_url = config.get("API_URL", "").rstrip("/")
+        api_url = config.get("API_URL", DEFAULT_API_URL).rstrip("/")
         token = config.get("USER_TOKEN", "")
-        if not api_url or not token:
-            raise RuntimeError("No token/API configured. Run: nekotunnel token USER_TOKEN --api API_URL")
-        return local_port, token, api_url
+        if not token:
+            raise RuntimeError("No token configured. Run: nekotunnel token USER_TOKEN")
+        return local_port, token, api_url, parse_tcp_mux_option(args, local_port)
     if len(service_args) == 3:
-        return parse_port(service_args[0]), service_args[1], service_args[2].rstrip("/")
+        local_port = parse_port(service_args[0])
+        return local_port, service_args[1], service_args[2].rstrip("/"), parse_tcp_mux_option(args, local_port)
     raise ValueError("Invalid tcp usage.")
 
 
@@ -519,7 +627,8 @@ def run_install_system_service(args: list[str]) -> int:
     if hasattr(os, "geteuid") and os.geteuid() != 0:
         print(f"Run as root: sudo nekotunnel install-system-service {protocol} {local_port} --user {run_user}")
         return 1
-    save_background_endpoint(protocol, local_port)
+    tcp_mux = parse_tcp_mux_option(args, local_port)
+    save_background_endpoint(protocol, local_port, tcp_mux)
     service_path = Path("/etc/systemd/system") / service_name(protocol, local_port)
     service_path.write_text(system_service_content(protocol, local_port, run_user))
     subprocess.run(["systemctl", "daemon-reload"], check=False)
@@ -533,11 +642,11 @@ def run_install_system_service(args: list[str]) -> int:
 
 def run_status() -> int:
     config = load_config()
-    api_url = config.get("API_URL")
+    api_url = config.get("API_URL", DEFAULT_API_URL).rstrip("/")
     user_token = config.get("USER_TOKEN")
     endpoints = background_endpoints(config)
     frpc_path = APP_DIR / f"frpc-{FRPC_VERSION}" / "frpc"
-    print(f"API URL: {api_url or 'not configured'}")
+    print(f"API URL: {api_url}")
     print(f"Token: {mask_token(user_token or '')}")
     print(f"Machine ID: {machine_id()[:12]}")
     print(f"frpc v{FRPC_VERSION}: {'installed' if frpc_path.exists() else 'not installed'}")
@@ -586,7 +695,7 @@ def run_status() -> int:
 
 def run_tcp_once(args: list[str]) -> int:
     try:
-        local_port, user_token, api_url = resolve_credentials(args)
+        local_port, user_token, api_url, tcp_mux = resolve_credentials(args)
     except (RuntimeError, ValueError) as exc:
         print(exc)
         return 2
@@ -611,6 +720,7 @@ def run_tcp_once(args: list[str]) -> int:
             "client_info": f"nekotunnel/{FRPC_VERSION}",
             "client_id": client_id,
             "endpoint_id": endpoint_id,
+            "tcp_mux": tcp_mux,
         },
     )
     if not data:
@@ -623,6 +733,11 @@ def run_tcp_once(args: list[str]) -> int:
     session_id = data["session_id"]
     config_path = APP_DIR / f"frpc-{session_id}.toml"
     write_frpc_config(config_path, data, local_port)
+    previous_state = load_state(state_path) or {}
+    public_address = f"{data['server_addr']}:{data['server_port']}"
+    previous_public_address = None
+    if previous_state.get("server_addr") and previous_state.get("server_port"):
+        previous_public_address = f"{previous_state['server_addr']}:{previous_state['server_port']}"
     state_data = {
         "session_id": session_id,
         "slot_id": data.get("slot_id"),
@@ -635,6 +750,13 @@ def run_tcp_once(args: list[str]) -> int:
         "client_id": data.get("client_id") or client_id,
         "endpoint_id": data.get("endpoint_id") or endpoint_id,
         "reconnect_count": data.get("reconnect_count", 0),
+        "tcp_mux": data.get("tcp_mux", tcp_mux),
+        "route_mode": data.get("route_mode", "mux"),
+        "connection_profile": data.get("connection_profile", "generic"),
+        "same_endpoint_reused": previous_state.get("endpoint_id") == (data.get("endpoint_id") or endpoint_id) if previous_state else False,
+        "same_slot_reused": previous_state.get("slot_id") == data.get("slot_id") if previous_state else False,
+        "public_address_changed": bool(previous_public_address and previous_public_address != public_address),
+        "public_address_reused": previous_public_address == public_address if previous_public_address else False,
         "started_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     save_state(state_data, state_path)
@@ -642,17 +764,26 @@ def run_tcp_once(args: list[str]) -> int:
     print(f"Connected session: {session_id}", flush=True)
     print(f"public_address={data['server_addr']}:{data['server_port']} reconnect_count={state_data['reconnect_count']}", flush=True)
     print(command_for_port(local_port, data["server_addr"], data["server_port"]), flush=True)
-    print("Press Ctrl+C to disconnect.", flush=True)
+    if "--foreground-service" in args:
+        print(f"NekoTunnel service mode running. Use `nekotunnel stop {protocol} {local_port}` to stop.", flush=True)
+    else:
+        print("Press Ctrl+C to disconnect.", flush=True)
 
     stop_event = threading.Event()
     heartbeat = threading.Thread(
         target=heartbeat_loop,
-        args=(api_url, user_token, session_id, int(data.get("heartbeat_interval", 15)), stop_event),
+        args=(api_url, user_token, session_id, int(data.get("heartbeat_interval", 15)), stop_event, state_path),
         daemon=True,
     )
     heartbeat.start()
 
-    process = subprocess.Popen([str(frpc_path), "-c", str(config_path)])
+    stdout_file = None
+    stderr_file = None
+    if "--foreground-service" in args:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        stdout_file = open(frpc_log_path_for(protocol, local_port, "out"), "ab", buffering=0)
+        stderr_file = open(frpc_log_path_for(protocol, local_port, "err"), "ab", buffering=0)
+    process = subprocess.Popen([str(frpc_path), "-c", str(config_path)], stdout=stdout_file, stderr=stderr_file)
 
     def stop(_signum=None, _frame=None):
         global SERVICE_STOPPING
@@ -685,6 +816,20 @@ def run_tcp_once(args: list[str]) -> int:
             save_state(state_data, state_path)
         else:
             clear_state(state_path)
+        if "--foreground-service" in args:
+            state_data["last_reconnect_delay_seconds"] = state_data.get("last_reconnect_delay_seconds")
+            save_state(state_data, state_path)
+            for stream in ("out", "err"):
+                path = frpc_log_path_for(protocol, local_port, stream)
+                if path.exists():
+                    lines = path.read_text(errors="replace").splitlines()[-100:]
+                    print(f"last_100_frpc_{stream}:", flush=True)
+                    for line in lines:
+                        print(line, flush=True)
+        if stdout_file:
+            stdout_file.close()
+        if stderr_file:
+            stderr_file.close()
         if config_path.exists():
             config_path.unlink()
 
@@ -717,6 +862,11 @@ def run_tcp(args: list[str]) -> int:
             delay = backoffs[min(backoff_index, len(backoffs) - 1)]
             jitter = min(3, delay * 0.2) * (0.5 - (time.time() % 1))
             wait_for = max(1, delay + jitter)
+            state_path = state_path_for("tcp", service_local_port(args))
+            state = load_state(state_path) or {}
+            state["last_reconnect_delay_seconds"] = round(wait_for, 1)
+            state["last_error"] = f"frpc exited with code {code}"
+            save_state(state, state_path)
             print(f"Tunnel exited with code {code}. Reconnecting in {wait_for:.1f} seconds...", flush=True)
             backoff_index = min(backoff_index + 1, len(backoffs) - 1)
             time.sleep(wait_for)
@@ -740,11 +890,15 @@ def run_service(args: list[str]) -> int:
     app_dir()
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_path = log_path_for(protocol, local_port)
+    mux = parse_tcp_mux_option(args, local_port) if "--tcp-mux" in args else persisted_tcp_mux(protocol, local_port)
+    if mux is None:
+        mux = False if local_port == 3389 else True
+    run_args = [str(local_port), "--foreground-service", "--tcp-mux", tcp_mux_arg(mux)]
     with open(log_path, "ab", buffering=0) as log_file:
         os.dup2(log_file.fileno(), 1)
         os.dup2(log_file.fileno(), 2)
-        print(f"started_at={time.strftime('%Y-%m-%d %H:%M:%S')} endpoint={endpoint_key(protocol, local_port)}", flush=True)
-        return run_tcp([str(local_port), "--foreground-service"])
+        print(f"started_at={time.strftime('%Y-%m-%d %H:%M:%S')} endpoint={endpoint_key(protocol, local_port)} tcpMux={tcp_mux_arg(mux)}", flush=True)
+        return run_tcp(run_args)
 
 
 def remove_background_endpoint(protocol: str, local_port: int) -> None:
@@ -764,7 +918,8 @@ def run_start(args: list[str]) -> int:
     if endpoint is None:
         return usage()
     protocol, local_port = endpoint
-    save_background_endpoint(protocol, local_port)
+    tcp_mux = parse_tcp_mux_option(args, local_port)
+    save_background_endpoint(protocol, local_port, tcp_mux)
     if systemd_available():
         service_path = service_path_for(protocol, local_port)
         service_path.parent.mkdir(parents=True, exist_ok=True)
@@ -787,7 +942,7 @@ def run_start(args: list[str]) -> int:
     app_dir()
     log_file = open(log_path, "ab")
     process = subprocess.Popen(
-        [str(executable), "run-service", protocol, str(local_port)],
+        [str(executable), "run-service", protocol, str(local_port), "--tcp-mux", str(tcp_mux).lower()],
         stdout=log_file,
         stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL,
@@ -870,7 +1025,47 @@ def run_restart(args: list[str]) -> int:
     return run_start([protocol, str(local_port)])
 
 
+def show_log_report(protocol: str, local_port: int) -> int:
+    state = load_state(state_path_for(protocol, local_port)) or {}
+    print(f"endpoint={endpoint_key(protocol, local_port)}")
+    print(f"last_public_address={state.get('server_addr', '-') }:{state.get('server_port', '-')}")
+    print(f"endpoint_id_short={str(state.get('endpoint_id', '-'))[:12]}")
+    print(f"same_slot_reused={state.get('same_slot_reused', 'unknown')}")
+    print(f"same_endpoint_reused={state.get('same_endpoint_reused', 'unknown')}")
+    print(f"public_address_changed={state.get('public_address_changed', 'unknown')}")
+    print(f"public_address_reused={state.get('public_address_reused', 'unknown')}")
+    print(f"reconnect_count={state.get('reconnect_count', 0)}")
+    print(f"last_frpc_exit_code={state.get('frpc_exit_code', '-')}")
+    print(f"last_frpc_stderr_reason={last_log_line(frpc_log_path_for(protocol, local_port, 'err'))}")
+    print(f"last_api_heartbeat_error={state.get('last_heartbeat_error', '-')}")
+    print(f"current_mode={'background' if state_path_for(protocol, local_port).exists() else 'foreground'}")
+    print(f"current_tcp_profile={state.get('connection_profile', '-')}")
+    print(f"tcpMux={state.get('tcp_mux', '-')}")
+    print(f"route_mode={state.get('route_mode', 'mux')}")
+    return 0
+
+
+def last_log_line(path: Path) -> str:
+    if not path.exists():
+        return "-"
+    lines = [line for line in path.read_text(errors="replace").splitlines() if line.strip()]
+    return lines[-1] if lines else "-"
+
+
+def print_recent(path: Path, label: str, tail: int = 100) -> None:
+    print(f"==> {label} ({path}) <==")
+    if path.exists():
+        print("\n".join(path.read_text(errors="replace").splitlines()[-tail:]))
+    else:
+        print("No log file yet.")
+
+
 def run_logs(args: list[str]) -> int:
+    if not args:
+        print("Usage: nekotunnel logs <all|tcp <local_port>> [--frpc|--report]")
+        print("Try: nekotunnel logs all")
+        print("Try: nekotunnel logs tcp 3389")
+        return 2
     if args == ["all"]:
         endpoints = background_endpoints()
         if not endpoints:
@@ -914,6 +1109,11 @@ def main() -> int:
         return 0
     if command == "tcp":
         return run_tcp(args[1:])
+    if command == "rdp":
+        print(rdp_unsupported_message())
+        return 2
+    if command == "api":
+        return run_api(args[1:])
     if command == "start":
         return run_start(args[1:])
     if command == "run-service":

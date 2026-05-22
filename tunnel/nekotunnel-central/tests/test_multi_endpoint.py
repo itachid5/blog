@@ -121,6 +121,85 @@ def test_api_connect_maps_session_limit_reached(tmp_path, monkeypatch):
     assert second.json() == {"ok": False, "error": "session_limit_reached", "max_active_sessions": 1}
 
 
+
+def test_api_connect_returns_profile_metadata_and_mux_fallback(tmp_path, monkeypatch):
+    store = make_store(tmp_path)
+    _user, token = store.create_user_token("alice", 3)
+    make_ready_slot(store, "slot-tcp-3389", 7001)
+    monkeypatch.setattr(main, "store", store)
+    client = TestClient(main.app)
+
+    response = client.post("/api/connect", json={"token": token, "protocol": "tcp", "local_port": 3389})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert body["tcp_mux"] is True
+    assert body["route_mode"] == "mux"
+    assert body["connection_profile"] == "generic"
+    assert body["dual_port_available"] is False
+
+
+def test_api_connect_accepts_tcp_mux_override(tmp_path, monkeypatch):
+    store = make_store(tmp_path)
+    _user, token = store.create_user_token("alice", 3)
+    make_ready_slot(store, "slot-tcp-3389", 7001)
+    monkeypatch.setattr(main, "store", store)
+    client = TestClient(main.app)
+
+    response = client.post(
+        "/api/connect",
+        json={"token": token, "protocol": "tcp", "local_port": 3389, "tcp_mux": True},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tcp_mux"] is True
+    assert body["connection_profile"] == "generic"
+    assert body["route_mode"] == "mux"
+
+
+def test_api_connect_rejects_invalid_tcp_mux(tmp_path, monkeypatch):
+    store = make_store(tmp_path)
+    _user, token = store.create_user_token("alice", 3)
+    make_ready_slot(store, "slot-1", 7001)
+    monkeypatch.setattr(main, "store", store)
+    client = TestClient(main.app)
+
+    response = client.post(
+        "/api/connect",
+        json={"token": token, "protocol": "tcp", "local_port": 22, "tcp_mux": "sometimes"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"ok": False, "error": "invalid_tcp_mux"}
+
+
+def test_clients_default_api_url_and_rdp_guidance():
+    linux = Path("client/nekotunnel").read_text()
+    windows = Path("client/nekotunnel.ps1").read_text()
+
+    assert 'DEFAULT_API_URL = "https://ap.tunnel.theorbit.tech"' in linux
+    assert '$DefaultApiUrl = "https://ap.tunnel.theorbit.tech"' in windows
+    assert 'return DEFAULT_API_URL, args[0]' in linux
+    assert '$ApiUrl = $DefaultApiUrl' in windows
+    assert 'nekotunnel api [<API_URL>]' in linux
+    assert 'nekotunnel api [<API_URL>]' in windows
+    assert 'RDP is not officially supported. Use generic TCP' in linux
+    assert 'RDP is not officially supported. Use generic TCP' in windows
+    assert 'Run-Tcp (@("3389") + $Rest)' not in windows
+
+
+def test_clients_keep_tcp_3389_generic_support():
+    linux = Path("client/nekotunnel").read_text()
+    windows = Path("client/nekotunnel.ps1").read_text()
+
+    assert 'print("  nekotunnel tcp <local_port> [--tcp-mux true|false]")' in linux
+    assert 'Write-Host "  nekotunnel tcp <local_port> [--tcp-mux true|false]"' in windows
+    assert 'TCP connect command' in linux
+    assert 'TCP connect command' in windows
+    assert 'NekoTunnel-$(Endpoint-Key $Protocol $Port)' in windows
+
 def test_clients_use_endpoint_specific_background_names():
     linux = Path("client/nekotunnel").read_text()
     windows = Path("client/nekotunnel.ps1").read_text()

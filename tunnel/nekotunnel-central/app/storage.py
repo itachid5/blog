@@ -242,6 +242,12 @@ class SQLiteStore:
                     reconnect_count INTEGER NOT NULL DEFAULT 0,
                     grace_until TEXT,
                     last_disconnect_reason TEXT,
+                    tcp_mux INTEGER,
+                    route_mode TEXT,
+                    connection_profile TEXT,
+                    control_disconnect_count INTEGER NOT NULL DEFAULT 0,
+                    last_control_disconnect_reason TEXT,
+                    public_address_changed INTEGER,
                     started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_heartbeat_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     ended_at TEXT,
@@ -687,6 +693,12 @@ class SQLiteStore:
             "reconnect_count": "INTEGER NOT NULL DEFAULT 0",
             "grace_until": "TEXT",
             "last_disconnect_reason": "TEXT",
+            "tcp_mux": "INTEGER",
+            "route_mode": "TEXT",
+            "connection_profile": "TEXT",
+            "control_disconnect_count": "INTEGER NOT NULL DEFAULT 0",
+            "last_control_disconnect_reason": "TEXT",
+            "public_address_changed": "INTEGER",
         }
         for name, definition in definitions.items():
             if name not in columns:
@@ -1754,6 +1766,9 @@ class SQLiteStore:
         endpoint_id: str = "",
         stale_seconds: int | None = None,
         grace_seconds: int = 300,
+        tcp_mux: bool | None = None,
+        route_mode: str = "mux",
+        connection_profile: str = "generic",
     ) -> tuple[dict | None, str]:
         session_id = secrets.token_urlsafe(16)
         proxy_name = f"nekotunnel-{session_id[:8]}"
@@ -1871,10 +1886,10 @@ class SQLiteStore:
                     return None, "no_available_slot"
                 conn.execute(
                     """
-                    INSERT INTO sessions (id, user_id, slot_id, status, protocol, local_port, endpoint_id, client_id, reconnect_count, client_info, proxy_name)
-                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO sessions (id, user_id, slot_id, status, protocol, local_port, endpoint_id, client_id, reconnect_count, client_info, proxy_name, tcp_mux, route_mode, connection_profile, public_address_changed)
+                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (session_id, user.id, slot["id"], protocol, local_port, endpoint_id, client_id[:200], reconnect_count, client_info[:500], proxy_name),
+                    (session_id, user.id, slot["id"], protocol, local_port, endpoint_id, client_id[:200], reconnect_count, client_info[:500], proxy_name, int(bool(tcp_mux)) if tcp_mux is not None else None, route_mode, connection_profile, 0 if reconnect_count == 0 else None),
                 )
                 cursor = conn.execute(
                     """
@@ -1950,10 +1965,10 @@ class SQLiteStore:
                     return None, "no_available_slot"
                 conn.execute(
                     """
-                    INSERT INTO sessions (id, user_id, slot_id, status, protocol, local_port, client_info, proxy_name)
-                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
+                    INSERT INTO sessions (id, user_id, slot_id, status, protocol, local_port, client_info, proxy_name, tcp_mux, route_mode, connection_profile, public_address_changed)
+                    VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, 0)
                     """,
-                    (session_id, user.id, slot["id"], protocol, local_port, client_info[:500], proxy_name),
+                    (session_id, user.id, slot["id"], protocol, local_port, client_info[:500], proxy_name, int(bool(tcp_mux)) if tcp_mux is not None else None, route_mode, connection_profile),
                 )
                 cursor = conn.execute(
                     """
@@ -1983,6 +1998,9 @@ class SQLiteStore:
             "endpoint_id": endpoint_id if sticky else None,
             "client_id": client_id if sticky else None,
             "reconnect_count": reconnect_count,
+            "tcp_mux": tcp_mux,
+            "route_mode": route_mode,
+            "connection_profile": connection_profile,
         }, ""
 
     def get_session_for_user(self, session_id: str, user_id: int) -> TunnelSession | None:
@@ -2457,8 +2475,24 @@ class PostgresStore(SQLiteStore):
         endpoint_id: str = "",
         stale_seconds: int | None = None,
         grace_seconds: int = 300,
+        tcp_mux: bool | None = None,
+        route_mode: str = "mux",
+        connection_profile: str = "generic",
     ) -> tuple[dict | None, str]:
-        return super().allocate_session(user, local_port, client_info, protocol, ttl_seconds, client_id, endpoint_id, stale_seconds, grace_seconds)
+        return super().allocate_session(
+            user,
+            local_port,
+            client_info,
+            protocol,
+            ttl_seconds,
+            client_id,
+            endpoint_id,
+            stale_seconds,
+            grace_seconds,
+            tcp_mux,
+            route_mode,
+            connection_profile,
+        )
 
 
 def create_store():

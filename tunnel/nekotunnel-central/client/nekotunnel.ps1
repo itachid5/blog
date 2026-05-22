@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $FrpcVersion = "0.57.0"
+$DefaultApiUrl = "https://ap.tunnel.theorbit.tech"
 $AppDir = Join-Path $env:USERPROFILE ".nekotunnel"
 $ConfigPath = Join-Path $AppDir "config.json"
 $StatePath = Join-Path $AppDir "state.json"
@@ -12,10 +13,11 @@ $Headers = @{ "bypass-tunnel-reminder" = "true" }
 
 function Show-Usage {
     Write-Host "Usage:"
-    Write-Host "  nekotunnel token <USER_TOKEN> --api <API_URL>"
-    Write-Host "  nekotunnel login <USER_TOKEN> --api <API_URL>"
-    Write-Host "  nekotunnel tcp <local_port>"
-    Write-Host "  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL>"
+    Write-Host "  nekotunnel token <USER_TOKEN> [--api <API_URL>]"
+    Write-Host "  nekotunnel login <USER_TOKEN> [--api <API_URL>]"
+    Write-Host "  nekotunnel api [<API_URL>]"
+    Write-Host "  nekotunnel tcp <local_port> [--tcp-mux true|false]"
+    Write-Host "  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL> [--tcp-mux true|false]"
     Write-Host "  nekotunnel start tcp <local_port>"
     Write-Host "  nekotunnel start tcp <local_port> --persist"
     Write-Host "  nekotunnel install-service tcp <local_port>"
@@ -24,7 +26,7 @@ function Show-Usage {
     Write-Host "  nekotunnel stop all"
     Write-Host "  nekotunnel restart tcp <local_port>"
     Write-Host "  nekotunnel status"
-    Write-Host "  nekotunnel logs tcp <local_port>"
+    Write-Host "  nekotunnel logs tcp <local_port> [--frpc|--report]"
     Write-Host "  nekotunnel logs all"
     Write-Host "  nekotunnel logout"
     exit 2
@@ -80,14 +82,65 @@ function Log-Path([string]$Protocol, [int]$Port) {
     return (Join-Path $LogDir ((Endpoint-Key $Protocol $Port) + ".log"))
 }
 
+function Frpc-Log-Path([string]$Protocol, [int]$Port, [string]$Stream) {
+    return (Join-Path $LogDir ((Endpoint-Key $Protocol $Port) + ".frpc." + $Stream + ".log"))
+}
+
 function Task-Name([string]$Protocol, [int]$Port) {
     return "NekoTunnel-$(Endpoint-Key $Protocol $Port)"
 }
 
+function Strip-ValuedOption([string[]]$ArgsList, [string]$OptionName) {
+    $Result = @()
+    $Index = 0
+    while ($Index -lt $ArgsList.Count) {
+        if ($ArgsList[$Index] -eq $OptionName) {
+            $Index += 2
+        } else {
+            $Result += $ArgsList[$Index]
+            $Index += 1
+        }
+    }
+    return @($Result)
+}
+
 function Parse-Endpoint([string[]]$EndpointArgs) {
-    $FilteredArgs = @($EndpointArgs | Where-Object { $_ -ne "--persist" })
+    $FilteredArgs = @(Strip-ValuedOption (@($EndpointArgs | Where-Object { $_ -ne "--persist" })) "--tcp-mux")
+    if ($FilteredArgs.Count -eq 1 -and $FilteredArgs[0] -eq "rdp") { throw (Rdp-UnsupportedMessage) }
     if ($FilteredArgs.Count -ne 2 -or $FilteredArgs[0] -ne "tcp") { return $null }
     return [pscustomobject]@{ protocol = "tcp"; port = Parse-Port $FilteredArgs[1] }
+}
+
+function TcpMux-Text([bool]$TcpMux) {
+    if ($TcpMux) { return "true" }
+    return "false"
+}
+
+function Parse-TcpMuxOption([string[]]$ArgsList, [int]$LocalPort) {
+    $Value = $null
+    $Index = 0
+    while ($Index -lt $ArgsList.Count) {
+        if ($ArgsList[$Index] -eq "--tcp-mux") {
+            if ($Index + 1 -ge $ArgsList.Count) { throw "--tcp-mux requires true or false" }
+            $Value = ([string]$ArgsList[$Index + 1]).ToLowerInvariant()
+            $Index += 2
+        } else {
+            $Index += 1
+        }
+    }
+    if ($null -eq $Value) { return $true }
+    if (@("true", "1", "yes", "on") -contains $Value) { return $true }
+    if (@("false", "0", "no", "off") -contains $Value) { return $false }
+    throw "--tcp-mux must be true or false"
+}
+
+function Persisted-TcpMux([string]$Protocol, [int]$Port) {
+    foreach ($Endpoint in @(Get-BackgroundEndpoints)) {
+        if ($Endpoint.protocol -eq $Protocol -and [int]$Endpoint.port -eq $Port -and ($Endpoint.PSObject.Properties.Name -contains "tcp_mux")) {
+            return [bool]$Endpoint.tcp_mux
+        }
+    }
+    return $null
 }
 
 function Get-BackgroundEndpoints($Config = $null) {
@@ -96,7 +149,9 @@ function Get-BackgroundEndpoints($Config = $null) {
     if ($null -ne $Config -and $Config.background_endpoints) {
         foreach ($Endpoint in @($Config.background_endpoints)) {
             if ($Endpoint.protocol -eq "tcp") {
-                $Endpoints += [pscustomobject]@{ protocol = "tcp"; port = Parse-Port ([string]$Endpoint.port) }
+                $Item = [ordered]@{ protocol = "tcp"; port = Parse-Port ([string]$Endpoint.port) }
+                if ($Endpoint.PSObject.Properties.Name -contains "tcp_mux") { $Item.tcp_mux = [bool]$Endpoint.tcp_mux }
+                $Endpoints += [pscustomobject]$Item
             }
         }
     }
@@ -114,6 +169,10 @@ function Write-ConfigObject($Config) {
     $Config | ConvertTo-Json -Depth 5 | Set-Content -Path $ConfigPath -Encoding UTF8
 }
 
+function Rdp-UnsupportedMessage {
+    return "RDP is not officially supported. Use generic TCP:`nnekotunnel tcp 3389`nor`nnekotunnel start tcp 3389"
+}
+
 function Save-Config([string]$ApiUrl, [string]$Token) {
     Ensure-AppDir
     $Existing = Load-Config
@@ -124,14 +183,28 @@ function Save-Config([string]$ApiUrl, [string]$Token) {
     Write-ConfigObject ([pscustomobject]$Config)
 }
 
-function Save-BackgroundEndpoint([string]$Protocol, [int]$Port) {
+function Save-BackgroundEndpoint([string]$Protocol, [int]$Port, [Nullable[bool]]$TcpMux = $null) {
     $Config = Load-Config
     if ($null -eq $Config) { $Config = [pscustomobject]@{} }
-    $Endpoints = Get-BackgroundEndpoints $Config
-    if (-not @($Endpoints | Where-Object { $_.protocol -eq $Protocol -and $_.port -eq $Port }).Count) {
-        $Endpoints += [pscustomobject]@{ protocol = $Protocol; port = $Port }
+    $Endpoints = @(Get-BackgroundEndpoints $Config)
+    $Updated = @()
+    $Found = $false
+    foreach ($Endpoint in $Endpoints) {
+        if ($Endpoint.protocol -eq $Protocol -and [int]$Endpoint.port -eq $Port) {
+            $Found = $true
+            $Item = [ordered]@{ protocol = $Protocol; port = $Port }
+            if ($null -ne $TcpMux) { $Item.tcp_mux = [bool]$TcpMux } elseif ($Endpoint.PSObject.Properties.Name -contains "tcp_mux") { $Item.tcp_mux = [bool]$Endpoint.tcp_mux }
+            $Updated += [pscustomobject]$Item
+        } else {
+            $Updated += $Endpoint
+        }
     }
-    $Config | Add-Member -NotePropertyName background_endpoints -NotePropertyValue @($Endpoints) -Force
+    if (-not $Found) {
+        $Item = [ordered]@{ protocol = $Protocol; port = $Port }
+        if ($null -ne $TcpMux) { $Item.tcp_mux = [bool]$TcpMux }
+        $Updated += [pscustomobject]$Item
+    }
+    $Config | Add-Member -NotePropertyName background_endpoints -NotePropertyValue @($Updated) -Force
     if ($Config.PSObject.Properties.Name -contains "background_port") { $Config.PSObject.Properties.Remove("background_port") }
     Write-ConfigObject $Config
 }
@@ -176,16 +249,19 @@ function Parse-Port([string]$Value) {
 }
 
 function Resolve-Credentials([string[]]$TcpArgs) {
-    $CleanArgs = @($TcpArgs | Where-Object { $_ -ne "--foreground-service" })
+    $CleanArgs = @(Strip-ValuedOption (@($TcpArgs | Where-Object { $_ -ne "--foreground-service" })) "--tcp-mux")
     if ($CleanArgs.Count -eq 1) {
         $Config = Load-Config
-        if ($null -eq $Config -or [string]::IsNullOrEmpty($Config.api_url) -or [string]::IsNullOrEmpty($Config.user_token)) {
-            throw "No token/API configured. Run: nekotunnel token USER_TOKEN --api API_URL"
+        if ($null -eq $Config -or [string]::IsNullOrEmpty($Config.user_token)) {
+            throw "No token configured. Run: nekotunnel token USER_TOKEN"
         }
-        return [pscustomobject]@{ local_port = Parse-Port $CleanArgs[0]; token = $Config.user_token; api_url = $Config.api_url.TrimEnd('/') }
+        $Port = Parse-Port $CleanArgs[0]
+        $ApiUrl = if ([string]::IsNullOrEmpty($Config.api_url)) { $DefaultApiUrl } else { $Config.api_url.TrimEnd('/') }
+        return [pscustomobject]@{ local_port = $Port; token = $Config.user_token; api_url = $ApiUrl; tcp_mux = (Parse-TcpMuxOption $TcpArgs $Port) }
     }
     if ($CleanArgs.Count -eq 3) {
-        return [pscustomobject]@{ local_port = Parse-Port $CleanArgs[0]; token = $CleanArgs[1]; api_url = $CleanArgs[2].TrimEnd('/') }
+        $Port = Parse-Port $CleanArgs[0]
+        return [pscustomobject]@{ local_port = $Port; token = $CleanArgs[1]; api_url = $CleanArgs[2].TrimEnd('/'); tcp_mux = (Parse-TcpMuxOption $TcpArgs $Port) }
     }
     throw "Invalid tcp usage."
 }
@@ -233,6 +309,8 @@ function Ensure-Frpc([string]$ApiUrl) {
 
 function Write-FrpcConfig($Allocation, [int]$LocalPort) {
     $ConfigPath = Join-Path $env:TEMP ("neko_config_" + $Allocation.session_id + ".toml")
+    $TcpMux = if ($Allocation.PSObject.Properties.Name -contains "tcp_mux") { [bool]$Allocation.tcp_mux } else { $LocalPort -ne 3389 }
+    $TcpMuxValue = TcpMux-Text $TcpMux
     $ConfigText = @"
 serverAddr = "$($Allocation.server_addr)"
 serverPort = $($Allocation.server_port)
@@ -246,10 +324,10 @@ loginFailExit = false
 protocol = "tcp"
 heartbeatInterval = 20
 heartbeatTimeout = 120
-tcpMux = true
+tcpMux = $TcpMuxValue
 tcpMuxKeepaliveInterval = 30
 tls.enable = true
-tls.disableCustomTLSFirstByte = true
+tls.serverName = "nekotunnel-control"
 
 [[proxies]]
 name = "$($Allocation.proxy_name)"
@@ -263,9 +341,8 @@ remotePort = $($Allocation.remote_port)
 }
 
 function Connection-Command([int]$LocalPort, [string]$ServerAddr, $ServerPort) {
-    if ($LocalPort -eq 3389) { return "RDP command: mstsc /v:${ServerAddr}:$ServerPort" }
     if ($LocalPort -eq 22) { return "SSH command: ssh username@$ServerAddr -p $ServerPort" }
-    return "Connect to ${ServerAddr}:$ServerPort"
+    return "TCP connect command: connect to ${ServerAddr}:$ServerPort"
 }
 
 function Get-TaskState([string]$Name) {
@@ -279,10 +356,11 @@ function Show-Status {
     $Endpoints = Get-BackgroundEndpoints $Config
     $FrpcPath = Join-Path (Join-Path $AppDir "frpc-$FrpcVersion") "frpc.exe"
     if ($null -eq $Config) {
-        Write-Host "API URL: not configured"
+        Write-Host "API URL: $DefaultApiUrl"
         Write-Host "Token: not configured"
     } else {
-        Write-Host "API URL: $($Config.api_url)"
+        $ApiUrl = if ([string]::IsNullOrEmpty($Config.api_url)) { $DefaultApiUrl } else { $Config.api_url }
+        Write-Host "API URL: $ApiUrl"
         Write-Host "Token: $(Mask-Token $Config.user_token)"
     }
     Write-Host "frpc v${FrpcVersion}: $(if (Test-Path $FrpcPath) { 'installed' } else { 'not installed' })"
@@ -339,8 +417,9 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
         $Protocol = "tcp"
         $ClientId = Get-MachineId
         $EndpointId = Stable-EndpointId $Creds.api_url $Creds.token $ClientId $Protocol $Creds.local_port
-        $StateFile = if ($TcpArgs -contains "--foreground-service") { State-Path $Protocol $Creds.local_port } else { $StatePath }
-        $Allocation = Invoke-NekoPost $Creds.api_url "/api/connect" @{ token = $Creds.token; protocol = $Protocol; local_port = $Creds.local_port; client_info = "nekotunnel-windows/$FrpcVersion"; client_id = $ClientId; endpoint_id = $EndpointId }
+        $ServiceMode = $TcpArgs -contains "--foreground-service"
+        $StateFile = if ($ServiceMode) { State-Path $Protocol $Creds.local_port } else { $StatePath }
+        $Allocation = Invoke-NekoPost $Creds.api_url "/api/connect" @{ token = $Creds.token; protocol = $Protocol; local_port = $Creds.local_port; client_info = "nekotunnel-windows/$FrpcVersion"; client_id = $ClientId; endpoint_id = $EndpointId; tcp_mux = $Creds.tcp_mux }
     } catch {
         Write-Error $_.Exception.Message
         return 1
@@ -352,8 +431,13 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
     }
 
     $FrpcConfig = Write-FrpcConfig $Allocation $Creds.local_port
+    $PreviousState = Load-State $StateFile
+    $PreviousPublic = $null
+    if ($null -ne $PreviousState -and $PreviousState.server_addr -and $PreviousState.server_port) { $PreviousPublic = "$($PreviousState.server_addr):$($PreviousState.server_port)" }
+    $CurrentPublic = "$($Allocation.server_addr):$($Allocation.server_port)"
     $StateData = [pscustomobject]@{
         session_id = $Allocation.session_id
+        slot_id = $Allocation.slot_id
         protocol = $Protocol
         local_port = $Creds.local_port
         server_addr = $Allocation.server_addr
@@ -363,6 +447,13 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
         client_id = $Allocation.client_id
         endpoint_id = $Allocation.endpoint_id
         reconnect_count = $Allocation.reconnect_count
+        tcp_mux = if ($Allocation.PSObject.Properties.Name -contains "tcp_mux") { [bool]$Allocation.tcp_mux } else { [bool]$Creds.tcp_mux }
+        route_mode = if ($Allocation.route_mode) { $Allocation.route_mode } else { "mux" }
+        connection_profile = if ($Allocation.connection_profile) { $Allocation.connection_profile } else { "generic" }
+        same_endpoint_reused = if ($null -ne $PreviousState -and $PreviousState.endpoint_id) { $PreviousState.endpoint_id -eq $Allocation.endpoint_id } else { $false }
+        same_slot_reused = if ($null -ne $PreviousState -and $PreviousState.slot_id) { $PreviousState.slot_id -eq $Allocation.slot_id } else { $false }
+        public_address_changed = if ($PreviousPublic) { $PreviousPublic -ne $CurrentPublic } else { $false }
+        public_address_reused = if ($PreviousPublic) { $PreviousPublic -eq $CurrentPublic } else { $false }
         started_at = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     }
     Save-State $StateData $StateFile
@@ -371,9 +462,21 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
     Write-Host "public_address=$($Allocation.server_addr):$($Allocation.server_port) reconnect_count=$($Allocation.reconnect_count)"
     Write-Host (Connection-Command $Creds.local_port $Allocation.server_addr $Allocation.server_port)
     Write-Host "Using frpc config: $FrpcConfig"
-    Write-Host "Press Ctrl+C to disconnect."
+    if ($ServiceMode) {
+        Write-Host "NekoTunnel service mode running. Use `nekotunnel stop $Protocol $($Creds.local_port)` to stop."
+    } else {
+        Write-Host "Press Ctrl+C to disconnect."
+    }
 
-    $Process = Start-Process -FilePath $FrpcPath -ArgumentList @("-c", $FrpcConfig) -PassThru -NoNewWindow
+    $FrpcOut = Frpc-Log-Path $Protocol $Creds.local_port "out"
+    $FrpcErr = Frpc-Log-Path $Protocol $Creds.local_port "err"
+    if ($ServiceMode) {
+        if (-not (Test-Path $FrpcOut)) { New-Item -ItemType File -Path $FrpcOut -Force | Out-Null }
+        if (-not (Test-Path $FrpcErr)) { New-Item -ItemType File -Path $FrpcErr -Force | Out-Null }
+        $Process = Start-Process -FilePath $FrpcPath -ArgumentList @("-c", $FrpcConfig) -PassThru -RedirectStandardOutput $FrpcOut -RedirectStandardError $FrpcErr -WindowStyle Hidden
+    } else {
+        $Process = Start-Process -FilePath $FrpcPath -ArgumentList @("-c", $FrpcConfig) -PassThru -NoNewWindow
+    }
     try {
         Start-Sleep -Milliseconds 500
         if ($Process.HasExited) {
@@ -388,14 +491,19 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
                 $Heartbeat = Invoke-NekoPost $Creds.api_url "/api/heartbeat" @{ token = $Creds.token; session_id = $Allocation.session_id }
                 if ($Heartbeat.ok) {
                     if ($HeartbeatMisses -gt 0) { Write-Host "API heartbeat recovered" }
+                    if ($ServiceMode -and ($StateData.PSObject.Properties.Name -contains "last_heartbeat_error")) { $StateData.PSObject.Properties.Remove("last_heartbeat_error"); Save-State $StateData $StateFile }
                     $HeartbeatMisses = 0
                 } else {
                     $HeartbeatMisses += 1
-                    Write-Host "API heartbeat degraded $HeartbeatMisses"
+                    $HeartbeatMessage = "API heartbeat degraded $HeartbeatMisses"
+                    Write-Host $HeartbeatMessage
+                    if ($ServiceMode) { $StateData | Add-Member -NotePropertyName last_heartbeat_error -NotePropertyValue $HeartbeatMessage -Force; Save-State $StateData $StateFile }
                 }
             } catch {
                 $HeartbeatMisses += 1
-                Write-Host "API heartbeat failure ${HeartbeatMisses}: $($_.Exception.Message)"
+                $HeartbeatMessage = "API heartbeat failure ${HeartbeatMisses}: $($_.Exception.Message)"
+                Write-Host $HeartbeatMessage
+                if ($ServiceMode) { $StateData | Add-Member -NotePropertyName last_heartbeat_error -NotePropertyValue $HeartbeatMessage -Force; Save-State $StateData $StateFile }
             }
         }
     } finally {
@@ -404,19 +512,24 @@ function Run-Tcp-Once([string[]]$TcpArgs) {
             $Process.WaitForExit()
         }
         $ExitCode = if ($Process) { $Process.ExitCode } else { 1 }
-        $Release = -not ($TcpArgs -contains "--foreground-service")
+        $Release = -not $ServiceMode
         try { Invoke-NekoPost $Creds.api_url "/api/disconnect" @{ token = $Creds.token; session_id = $Allocation.session_id; release = $Release } | Out-Null } catch { Write-Host "Disconnect failed: $($_.Exception.Message)" }
-        if ($TcpArgs -contains "--foreground-service") {
+        if ($ServiceMode) {
             $StateData | Add-Member -NotePropertyName frpc_exit_code -NotePropertyValue $ExitCode -Force
             $StateData | Add-Member -NotePropertyName last_error -NotePropertyValue "frpc exited with code $ExitCode" -Force
             $StateData | Add-Member -NotePropertyName ended_at -NotePropertyValue (Get-Date).ToString("yyyy-MM-dd HH:mm:ss") -Force
             Save-State $StateData $StateFile
+            $ExitAt = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+            $TcpMuxLabel = TcpMux-Text ([bool]$StateData.tcp_mux)
+            Write-Host "frpc_exit_at=$ExitAt exit_code=$ExitCode reconnect_count=$($Allocation.reconnect_count) same_endpoint_reused=$($StateData.same_endpoint_reused) public_address_reused=$($StateData.public_address_reused) same_slot_reused=$($StateData.same_slot_reused) tcpMux=$TcpMuxLabel tcp_profile=$($StateData.connection_profile) route_mode=$($StateData.route_mode)"
+            Show-RecentLog $FrpcOut "last_100_frpc_out" 100
+            Show-RecentLog $FrpcErr "last_100_frpc_err" 100
         } else {
             Clear-State $StateFile
         }
         Remove-Item -Path $FrpcConfig -Force -ErrorAction SilentlyContinue
     }
-    return 0
+    return $ExitCode
 }
 
 function Run-Tcp([string[]]$TcpArgs) {
@@ -434,6 +547,16 @@ function Run-Tcp([string[]]$TcpArgs) {
         $Delay = $Backoffs[[Math]::Min($BackoffIndex, $Backoffs.Count - 1)]
         $Jitter = Get-Random -Minimum 0 -Maximum ([Math]::Max(1, [int]($Delay / 5 + 1)))
         $WaitFor = [Math]::Min(60, $Delay + $Jitter)
+        try {
+            $PortArgs = @(Strip-ValuedOption (@($TcpArgs | Where-Object { $_ -ne "--foreground-service" })) "--tcp-mux")
+            $StateFile = State-Path "tcp" (Parse-Port $PortArgs[0])
+            $State = Load-State $StateFile
+            if ($null -ne $State) {
+                $State | Add-Member -NotePropertyName last_reconnect_delay_seconds -NotePropertyValue $WaitFor -Force
+                $State | Add-Member -NotePropertyName last_error -NotePropertyValue "frpc exited with code $Code" -Force
+                Save-State $State $StateFile
+            }
+        } catch {}
         Write-Host "Tunnel exited with code $Code. Reconnecting in $WaitFor seconds..."
         $BackoffIndex = [Math]::Min($BackoffIndex + 1, $Backoffs.Count - 1)
         Start-Sleep -Seconds $WaitFor
@@ -444,11 +567,13 @@ function Run-Service([string[]]$ServiceArgs) {
     $Endpoint = Parse-Endpoint $ServiceArgs
     if ($null -eq $Endpoint) { Show-Usage }
     Ensure-AppDir
+    $Mux = if ($ServiceArgs -contains "--tcp-mux") { Parse-TcpMuxOption $ServiceArgs $Endpoint.port } else { Persisted-TcpMux $Endpoint.protocol $Endpoint.port }
+    if ($null -eq $Mux) { $Mux = ($Endpoint.port -ne 3389) }
     $LogFile = Log-Path $Endpoint.protocol $Endpoint.port
     try { Start-Transcript -Path $LogFile -Append | Out-Null } catch {}
     try {
-        Write-Host "started_at=$((Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) endpoint=$(Endpoint-Key $Endpoint.protocol $Endpoint.port)"
-        Run-Tcp @([string]$Endpoint.port, "--foreground-service")
+        Write-Host "started_at=$((Get-Date).ToString("yyyy-MM-dd HH:mm:ss")) endpoint=$(Endpoint-Key $Endpoint.protocol $Endpoint.port) tcpMux=$(TcpMux-Text $Mux)"
+        Run-Tcp @([string]$Endpoint.port, "--foreground-service", "--tcp-mux", (TcpMux-Text $Mux))
     } finally {
         try { Stop-Transcript | Out-Null } catch {}
     }
@@ -469,11 +594,12 @@ function Start-Background([string[]]$StartArgs) {
     $Protocol = [string]$Endpoint.protocol
     $Port = [int]$Endpoint.port
     Ensure-AppDir
-    Save-BackgroundEndpoint $Protocol $Port
+    $TcpMux = Parse-TcpMuxOption $StartArgs $Port
+    Save-BackgroundEndpoint $Protocol $Port $TcpMux
     Install-Self
     $TaskName = Task-Name $Protocol $Port
     $LogFile = Log-Path $Protocol $Port
-    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$InstalledScriptPath`" run-service $Protocol $Port"
+    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$InstalledScriptPath`" run-service $Protocol $Port --tcp-mux $(TcpMux-Text $TcpMux)"
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
     $Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
     $Settings = New-ScheduledTaskSettingsSet -Hidden -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -MultipleInstances IgnoreNew
@@ -529,23 +655,73 @@ function Restart-Background([string[]]$RestartArgs) {
     $Endpoint = Parse-Endpoint $RestartArgs
     if ($null -eq $Endpoint) { Show-Usage }
     Stop-Endpoint $Endpoint.protocol $Endpoint.port $false | Out-Null
-    Start-Background @($Endpoint.protocol, [string]$Endpoint.port)
+    $Args = @($Endpoint.protocol, [string]$Endpoint.port)
+    if ($RestartArgs -contains "--tcp-mux") { $Args += @("--tcp-mux", (TcpMux-Text (Parse-TcpMuxOption $RestartArgs $Endpoint.port))) }
+    Start-Background $Args
+}
+
+function Show-RecentLog([string]$Path, [string]$Label, [int]$Tail = 100) {
+    Write-Host "==> $Label ($Path) <=="
+    if (Test-Path $Path) { Get-Content $Path -Tail $Tail } else { Write-Host "No log file yet." }
+}
+
+function Last-LogLine([string]$Path) {
+    if (-not (Test-Path $Path)) { return "-" }
+    $Line = Get-Content $Path -Tail 1 -ErrorAction SilentlyContinue
+    if ($null -eq $Line) { return "-" }
+    return [string]$Line
+}
+
+function Show-LogReport([string]$Protocol, [int]$Port) {
+    $State = Load-State (State-Path $Protocol $Port)
+    if ($null -eq $State) { $State = [pscustomobject]@{} }
+    Write-Host "endpoint=$(Endpoint-Key $Protocol $Port)"
+    Write-Host "last_public_address=$($State.server_addr):$($State.server_port)"
+    $EndpointId = [string]$State.endpoint_id
+    Write-Host "endpoint_id_short=$($EndpointId.Substring(0, [Math]::Min(12, $EndpointId.Length)))"
+    Write-Host "same_slot_reused=$($State.same_slot_reused)"
+    Write-Host "same_endpoint_reused=$($State.same_endpoint_reused)"
+    Write-Host "public_address_changed=$($State.public_address_changed)"
+    Write-Host "public_address_reused=$($State.public_address_reused)"
+    Write-Host "reconnect_count=$($State.reconnect_count)"
+    Write-Host "last_frpc_exit_code=$($State.frpc_exit_code)"
+    $LastFrpcErr = Last-LogLine (Frpc-Log-Path $Protocol $Port "err")
+    Write-Host "last_frpc_stderr_reason=$LastFrpcErr"
+    Write-Host "last_api_heartbeat_error=$($State.last_heartbeat_error)"
+    Write-Host "current_mode=$(if (Test-Path (State-Path $Protocol $Port)) { 'background' } else { 'foreground' })"
+    Write-Host "current_tcp_profile=$($State.connection_profile)"
+    Write-Host "tcpMux=$($State.tcp_mux)"
+    Write-Host "route_mode=$(if ($State.route_mode) { $State.route_mode } else { 'mux' })"
 }
 
 function Show-Logs([string[]]$LogArgs) {
     Ensure-AppDir
+    if ($LogArgs.Count -eq 0) {
+        Write-Host "Usage: nekotunnel logs <all|tcp <local_port>> [--frpc|--report]"
+        Write-Host "Try: nekotunnel logs all"
+        Write-Host "Try: nekotunnel logs tcp 3389"
+        return
+    }
     if ($LogArgs.Count -eq 1 -and $LogArgs[0] -eq "all") {
         $Endpoints = Get-BackgroundEndpoints
         if ($Endpoints.Count -eq 0) { Write-Host "No background endpoints configured."; return }
         foreach ($Endpoint in $Endpoints) {
-            $Path = Log-Path $Endpoint.protocol $Endpoint.port
-            Write-Host "==> $(Endpoint-Key $Endpoint.protocol $Endpoint.port) ($Path) <=="
-            if (Test-Path $Path) { Get-Content $Path -Tail 100 } else { Write-Host "No log file yet." }
+            Show-RecentLog (Log-Path $Endpoint.protocol $Endpoint.port) "$(Endpoint-Key $Endpoint.protocol $Endpoint.port)" 100
         }
         return
     }
-    $Endpoint = Parse-Endpoint $LogArgs
+    $Frpc = $LogArgs -contains "--frpc"
+    $Report = $LogArgs -contains "--report"
+    $EndpointArgs = @($LogArgs | Where-Object { $_ -ne "--frpc" -and $_ -ne "--report" })
+    $Endpoint = Parse-Endpoint $EndpointArgs
     if ($null -eq $Endpoint) { Show-Usage }
+    if ($Report) { Show-LogReport $Endpoint.protocol $Endpoint.port; return }
+    if ($Frpc) {
+        Show-RecentLog (Log-Path $Endpoint.protocol $Endpoint.port) "main" 100
+        Show-RecentLog (Frpc-Log-Path $Endpoint.protocol $Endpoint.port "out") "frpc stdout" 100
+        Show-RecentLog (Frpc-Log-Path $Endpoint.protocol $Endpoint.port "err") "frpc stderr" 100
+        return
+    }
     $Path = Log-Path $Endpoint.protocol $Endpoint.port
     if (-not (Test-Path $Path)) { New-Item -ItemType File -Path $Path | Out-Null }
     Get-Content $Path -Tail 100 -Wait
@@ -557,16 +733,29 @@ $Rest = @($args | Select-Object -Skip 1)
 
 switch ($Command) {
     "token" {
-        if ($Rest.Count -ne 3 -or $Rest[1] -ne "--api") { Show-Usage }
-        Save-Config $Rest[2] $Rest[0]
-        Write-Host "Saved NekoTunnel config for $($Rest[2].TrimEnd('/')) with token $(Mask-Token $Rest[0])"
+        if ($Rest.Count -eq 1) { $ApiUrl = $DefaultApiUrl } elseif ($Rest.Count -eq 3 -and $Rest[1] -eq "--api") { $ApiUrl = $Rest[2] } else { Show-Usage }
+        Save-Config $ApiUrl $Rest[0]
+        Write-Host "Saved NekoTunnel config for $($ApiUrl.TrimEnd('/')) with token $(Mask-Token $Rest[0])"
     }
     "login" {
-        if ($Rest.Count -ne 3 -or $Rest[1] -ne "--api") { Show-Usage }
-        Save-Config $Rest[2] $Rest[0]
-        Write-Host "Saved NekoTunnel config for $($Rest[2].TrimEnd('/')) with token $(Mask-Token $Rest[0])"
+        if ($Rest.Count -eq 1) { $ApiUrl = $DefaultApiUrl } elseif ($Rest.Count -eq 3 -and $Rest[1] -eq "--api") { $ApiUrl = $Rest[2] } else { Show-Usage }
+        Save-Config $ApiUrl $Rest[0]
+        Write-Host "Saved NekoTunnel config for $($ApiUrl.TrimEnd('/')) with token $(Mask-Token $Rest[0])"
     }
     "tcp" { Run-Tcp $Rest }
+    "rdp" { Write-Host (Rdp-UnsupportedMessage); exit 2 }
+    "api" {
+        $Config = Load-Config
+        if ($Rest.Count -eq 0) {
+            $ApiUrl = if ($null -eq $Config -or [string]::IsNullOrEmpty($Config.api_url)) { $DefaultApiUrl } else { $Config.api_url.TrimEnd('/') }
+            Write-Host "API URL: $ApiUrl"
+        } elseif ($Rest.Count -eq 1) {
+            if ($null -eq $Config) { $Config = [pscustomobject]@{} }
+            $Config | Add-Member -NotePropertyName api_url -NotePropertyValue $Rest[0].TrimEnd('/') -Force
+            Write-ConfigObject $Config
+            Write-Host "API URL: $($Rest[0].TrimEnd('/'))"
+        } else { Show-Usage }
+    }
     "run-service" { Run-Service $Rest }
     "start" { Start-Background $Rest }
     "install-service" { Start-Background $Rest }

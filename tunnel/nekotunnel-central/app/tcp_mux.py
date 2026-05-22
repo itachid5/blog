@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import contextlib
+import itertools
 import os
 import signal
 import socket
@@ -22,8 +23,97 @@ def log(message: str) -> None:
     print(f"[nekotunnel-mux] {message}", flush=True)
 
 
+CONTROL_MARKER = "nekotunnel-control"
+_CONNECTION_IDS = itertools.count(1)
+
+
 def is_tls_client_hello(data: bytes) -> bool:
-    return len(data) >= 3 and data[0] == 0x16 and data[1] == 0x03 and 0x00 <= data[2] <= 0x04
+    return len(data) >= 5 and data[0] == 0x16 and data[1] == 0x03 and 0x00 <= data[2] <= 0x04
+
+
+def _read_u16(data: bytes, offset: int) -> tuple[int, int]:
+    if offset + 2 > len(data):
+        raise ValueError("truncated-u16")
+    return int.from_bytes(data[offset : offset + 2], "big"), offset + 2
+
+
+def _read_u24(data: bytes, offset: int) -> tuple[int, int]:
+    if offset + 3 > len(data):
+        raise ValueError("truncated-u24")
+    return int.from_bytes(data[offset : offset + 3], "big"), offset + 3
+
+
+def _parse_client_hello_markers(data: bytes) -> tuple[list[str], list[str]]:
+    if not is_tls_client_hello(data):
+        return [], []
+    record_length, offset = _read_u16(data, 3)
+    record_end = min(len(data), 5 + record_length)
+    if record_end < 9 or data[5] != 0x01:
+        return [], []
+    handshake_length, offset = _read_u24(data, 6)
+    hello_end = min(record_end, 9 + handshake_length)
+    offset = 9 + 2 + 32
+    if offset + 1 > hello_end:
+        return [], []
+    session_len = data[offset]
+    offset += 1 + session_len
+    cipher_len, offset = _read_u16(data, offset)
+    offset += cipher_len
+    if offset + 1 > hello_end:
+        return [], []
+    compression_len = data[offset]
+    offset += 1 + compression_len
+    if offset + 2 > hello_end:
+        return [], []
+    extensions_len, offset = _read_u16(data, offset)
+    extensions_end = min(hello_end, offset + extensions_len)
+    sni_names: list[str] = []
+    alpn_protocols: list[str] = []
+    while offset + 4 <= extensions_end:
+        ext_type, offset = _read_u16(data, offset)
+        ext_len, offset = _read_u16(data, offset)
+        ext_end = min(extensions_end, offset + ext_len)
+        ext = data[offset:ext_end]
+        if ext_type == 0 and len(ext) >= 2:
+            list_len = int.from_bytes(ext[0:2], "big")
+            pos = 2
+            list_end = min(len(ext), 2 + list_len)
+            while pos + 3 <= list_end:
+                name_type = ext[pos]
+                name_len = int.from_bytes(ext[pos + 1 : pos + 3], "big")
+                pos += 3
+                name = ext[pos : pos + name_len]
+                pos += name_len
+                if name_type == 0:
+                    with contextlib.suppress(UnicodeDecodeError):
+                        sni_names.append(name.decode("idna"))
+        elif ext_type == 16 and len(ext) >= 2:
+            list_len = int.from_bytes(ext[0:2], "big")
+            pos = 2
+            list_end = min(len(ext), 2 + list_len)
+            while pos + 1 <= list_end:
+                proto_len = ext[pos]
+                pos += 1
+                proto = ext[pos : pos + proto_len]
+                pos += proto_len
+                with contextlib.suppress(UnicodeDecodeError):
+                    alpn_protocols.append(proto.decode("ascii"))
+        offset = ext_end
+    return sni_names, alpn_protocols
+
+
+def classify_route(data: bytes) -> tuple[str, str]:
+    if not is_tls_client_hello(data):
+        return "data", "non-tls"
+    try:
+        sni_names, alpn_protocols = _parse_client_hello_markers(data)
+    except ValueError:
+        return "data", "ambiguous-tls-fallback-data"
+    if CONTROL_MARKER in alpn_protocols:
+        return "control", "control-marker-alpn"
+    if CONTROL_MARKER in sni_names:
+        return "control", "control-marker-sni"
+    return "data", "ambiguous-tls-fallback-data"
 
 
 def tune_socket(sock: socket.socket | None) -> None:
@@ -73,13 +163,15 @@ async def handle_client(
     target_retry_delay: float,
 ) -> None:
     peer = writer.get_extra_info("peername")
+    connection_id = next(_CONNECTION_IDS)
     tune_socket(writer.get_extra_info("socket"))
     upstream_writer: asyncio.StreamWriter | None = None
     try:
-        initial = await asyncio.wait_for(reader.read(8), timeout=5)
-        target = control if is_tls_client_hello(initial) else data
+        initial = await asyncio.wait_for(reader.read(4096), timeout=5)
+        route_name, route_reason = classify_route(initial)
+        target = control if route_name == "control" else data
         route = "tls/control" if target == control else "data/proxy"
-        log(f"connection peer={peer} route={route}")
+        log(f"connection id={connection_id} peer={peer} route={route} reason={route_reason}")
         upstream_reader, upstream_writer = await open_target(target, target_attempts, target_retry_delay)
         if initial:
             upstream_writer.write(initial)
@@ -89,13 +181,13 @@ async def handle_client(
             pipe(upstream_reader, writer),
             return_exceptions=True,
         )
-        log(f"connection peer={peer} route={route} closed reason={reasons[0]}/{reasons[1]}")
+        log(f"connection id={connection_id} peer={peer} route={route} closed reason={reasons[0]}/{reasons[1]}")
     except asyncio.TimeoutError:
-        log(f"connection peer={peer} closed reason=initial-timeout")
+        log(f"connection id={connection_id} peer={peer} closed reason=initial-timeout")
     except OSError as exc:
-        log(f"connection peer={peer} closed reason=target-connect-failed error={exc}")
+        log(f"connection id={connection_id} peer={peer} closed reason=target-connect-failed error={exc}")
     except Exception as exc:
-        log(f"connection peer={peer} closed reason=handler-error error={exc.__class__.__name__}: {exc}")
+        log(f"connection id={connection_id} peer={peer} closed reason=handler-error error={exc.__class__.__name__}: {exc}")
     finally:
         if upstream_writer is not None:
             upstream_writer.close()

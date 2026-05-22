@@ -7,7 +7,7 @@
 <div class="panel">
   <div class="table-scroll">
     <table>
-      <thead><tr><th>Session ID</th><th>User</th><th>Slot</th><th>Endpoint</th><th>Endpoint ID</th><th>Client ID</th><th>Status</th><th>Public Address</th><th>Reconnects</th><th>Last Disconnect</th><th>Proxy</th><th>Client</th><th>Started At</th><th>Last Seen</th><th>Grace Until</th><th>Ended At</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Session ID</th><th>User</th><th>Slot</th><th>Endpoint</th><th>Endpoint ID</th><th>Client ID</th><th>Status</th><th>Public Address</th><th>Reconnects</th><th>Control Disconnects</th><th>Control Reason</th><th>Public Changed</th><th>Route</th><th>tcpMux</th><th>TCP profile</th><th>Last Disconnect</th><th>Proxy</th><th>Client</th><th>Started At</th><th>Last Seen</th><th>Grace Until</th><th>Ended At</th><th>Actions</th></tr></thead>
       <tbody>
       {% for session in sessions %}
         <tr>
@@ -20,6 +20,12 @@
           <td><span class="badge status-{{ session.status }}">{{ session.status }}</span></td>
           <td>{% if session.last_public_host and session.last_public_port %}<code>{{ session.last_public_host }}:{{ session.last_public_port }}</code>{% else %}-{% endif %}</td>
           <td>{{ session.reconnect_count }}</td>
+          <td>{{ session.control_disconnect_count or 0 }}</td>
+          <td>{{ session.last_control_disconnect_reason or '-' }}</td>
+          <td>{% if session.public_address_changed is none %}-{% elif session.public_address_changed %}yes{% else %}no{% endif %}</td>
+          <td>{{ session.route_mode or 'mux' }}</td>
+          <td>{% if session.tcp_mux is none %}-{% elif session.tcp_mux %}true{% else %}false{% endif %}</td>
+          <td>{{ session.connection_profile or '-' }}</td>
           <td>{{ session.last_disconnect_reason or '-' }}</td>
           <td>{{ session.proxy_name or '-' }}</td>
           <td>{{ session.client_info or '-' }}</td>
@@ -30,7 +36,7 @@
           <td class="actions"><form method="post" action="/sessions/{{ session.id }}/force-close"><button type="submit">Force Close</button></form></td>
         </tr>
       {% else %}
-        <tr><td colspan="17" class="empty">No active or historical sessions yet.</td></tr>
+        <tr><td colspan="23" class="empty">No active or historical sessions yet.</td></tr>
       {% endfor %}
       </tbody>
     </table>

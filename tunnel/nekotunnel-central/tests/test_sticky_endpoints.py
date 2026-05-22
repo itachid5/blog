@@ -162,6 +162,43 @@ def test_stale_sticky_session_enters_grace_without_freeing_slot(tmp_path):
     assert endpoint["grace_until"] is not None
 
 
+
+def test_sticky_reconnect_preserves_additive_profile_metadata(tmp_path):
+    store = make_store(tmp_path)
+    user, _token = store.create_user_token("alice", 3)
+    make_ready_slot(store, "slot-1", 7001)
+
+    first, first_error = store.allocate_session(
+        user,
+        3389,
+        protocol="tcp",
+        client_id="client-a",
+        endpoint_id="endpoint-tcp-3389",
+        tcp_mux=False,
+        route_mode="mux",
+        connection_profile="generic",
+    )
+    assert first_error == ""
+    assert store.close_session(first["session_id"], user.id, release=False, grace_seconds=300)
+
+    second, second_error = store.allocate_session(
+        user,
+        3389,
+        protocol="tcp",
+        client_id="client-a",
+        endpoint_id="endpoint-tcp-3389",
+        tcp_mux=False,
+        route_mode="mux",
+        connection_profile="generic",
+    )
+
+    assert second_error == ""
+    assert second["slot_id"] == first["slot_id"]
+    assert second["reconnect_count"] == 1
+    assert second["tcp_mux"] is False
+    assert second["route_mode"] == "mux"
+    assert second["connection_profile"] == "generic"
+
 def test_clients_expose_persistent_service_commands():
     linux = Path("client/nekotunnel").read_text()
     windows = Path("client/nekotunnel.ps1").read_text()
