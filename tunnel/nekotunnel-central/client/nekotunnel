@@ -43,6 +43,7 @@ def usage() -> int:
     print("  nekotunnel api [<API_URL>]")
     print("  nekotunnel tcp <local_port> [--tcp-mux true|false]")
     print("  nekotunnel self-test tcp <local_port> [--verbose] [--tcp-mux true|false]")
+    print("  nekotunnel cleanup tcp <local_port>")
     print("  nekotunnel tcp <local_port> <USER_TOKEN> <API_URL> [--tcp-mux true|false]")
     print("  nekotunnel start tcp <local_port>")
     print("  nekotunnel start tcp <local_port> --persist")
@@ -569,6 +570,30 @@ def disconnect(api_url: str, token: str, session_id: str, release: bool = True) 
         return False
 
 
+def disconnect_port(api_url: str, token: str, protocol: str, local_port: int, endpoint_id: str = "", client_id: str = "") -> tuple[bool, dict | None, str]:
+    payload = {"token": token, "protocol": protocol, "local_port": local_port}
+    if endpoint_id:
+        payload["endpoint_id"] = endpoint_id
+    if client_id:
+        payload["client_id"] = client_id
+    try:
+        status, data, body = post_json(api_url, "/api/disconnect-port", payload)
+    except Exception as exc:
+        return False, None, str(exc)
+    if data and data.get("ok"):
+        return True, data, body
+    return False, data, body or f"HTTP {status}"
+
+
+def configured_endpoint_identity(protocol: str, local_port: int) -> tuple[str, str, str, str]:
+    config = load_config()
+    api_url = config.get("API_URL", DEFAULT_API_URL).rstrip("/")
+    token = config.get("USER_TOKEN", "")
+    client_id = machine_id()
+    endpoint_id = stable_endpoint_id(api_url, token, client_id, protocol, local_port) if token else ""
+    return api_url, token, client_id, endpoint_id
+
+
 def disconnect_saved_state(path: Path = STATE_PATH) -> bool:
     state = load_state(path)
     if not state or "error" in state:
@@ -823,6 +848,8 @@ def run_tcp_once(args: list[str]) -> int:
         return 1
     if not data.get("ok"):
         print(json.dumps(data, indent=2))
+        if data.get("suggested_command"):
+            print(f"Suggested cleanup: {data['suggested_command']}")
         return 1
 
     session_id = data["session_id"]
@@ -1004,7 +1031,13 @@ def run_self_test(args: list[str]) -> int:
 
     session_id = data["session_id"]
     config_path = APP_DIR / f"frpc-self-test-{session_id}.toml"
-    write_frpc_config(config_path, data, local_port)
+    cleanup_done = False
+    try:
+        write_frpc_config(config_path, data, local_port)
+    except Exception:
+        disconnect(api_url, user_token, session_id, release=True)
+        cleanup_done = True
+        raise
     print(f"API connect: ok session={short_session_id(session_id)} public_address={data['server_addr']}:{data['server_port']}")
     print(f"config: route_mode={data.get('route_mode', 'mux')} tcpMux={str(data.get('tcp_mux', True)).lower()} tls=true")
     if verbose:
@@ -1023,6 +1056,7 @@ def run_self_test(args: list[str]) -> int:
         else:
             print(f"frpc verify: failed: {verify_message}")
             disconnect(api_url, user_token, session_id, release=True)
+            cleanup_done = True
             return 1
 
         process = subprocess.Popen(
@@ -1053,9 +1087,13 @@ def run_self_test(args: list[str]) -> int:
             print(frpc_context_message(reason, data, session_id))
             result = 1
         disconnect(api_url, user_token, session_id, release=True)
+        cleanup_done = True
         print("cleanup: released session")
         return result
     finally:
+        if not cleanup_done:
+            disconnect(api_url, user_token, session_id, release=True)
+            print("cleanup: released session")
         if config_path.exists():
             config_path.unlink()
 
@@ -1199,17 +1237,81 @@ def stop_nohup(protocol: str, local_port: int) -> bool:
     return True
 
 
-def stop_endpoint(protocol: str, local_port: int, remove_config: bool = True) -> bool:
+def kill_frpc_for_endpoint(protocol: str, local_port: int) -> int:
+    candidates = []
+    state = load_state(state_path_for(protocol, local_port)) or {}
+    if state.get("session_id"):
+        candidates.append(str(APP_DIR / f"frpc-{state['session_id']}.toml"))
+    if APP_DIR.exists():
+        for config_path in APP_DIR.glob("frpc-*.toml"):
+            try:
+                if f"localPort = {local_port}" in config_path.read_text():
+                    candidates.append(str(config_path))
+            except OSError:
+                pass
+    killed = 0
+    for proc in Path("/proc").iterdir() if Path("/proc").exists() else []:
+        if not proc.name.isdigit():
+            continue
+        try:
+            cmdline = (proc / "cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", "ignore")
+        except OSError:
+            continue
+        if "frpc" not in cmdline or not any(candidate in cmdline for candidate in candidates):
+            continue
+        try:
+            os.kill(int(proc.name), signal.SIGTERM)
+            killed += 1
+        except ProcessLookupError:
+            pass
+    return killed
+
+
+def cleanup_server_port(protocol: str, local_port: int, endpoint_id: str = "", client_id: str = "") -> tuple[bool, dict | None, str]:
+    api_url, token, configured_client_id, configured_endpoint_id = configured_endpoint_identity(protocol, local_port)
+    if not token:
+        return False, None, "No token configured. Run: nekotunnel token USER_TOKEN"
+    return disconnect_port(api_url, token, protocol, local_port, endpoint_id or configured_endpoint_id, client_id or configured_client_id)
+
+
+def stop_endpoint(protocol: str, local_port: int, remove_config: bool = True, server_cleanup: bool = True) -> bool:
     stopped = False
     if systemd_available():
         result = subprocess.run(["systemctl", "--user", "stop", service_name(protocol, local_port)], check=False)
         stopped = result.returncode == 0
     if stop_nohup(protocol, local_port):
         stopped = True
+    if kill_frpc_for_endpoint(protocol, local_port):
+        stopped = True
     disconnect_saved_state(state_path_for(protocol, local_port))
+    if server_cleanup:
+        ok, data, message = cleanup_server_port(protocol, local_port)
+        if ok:
+            print(f"Server cleanup: closed {data.get('closed', 0)} session(s); released_slots={data.get('released_slots', [])}")
+        else:
+            print(f"Server cleanup failed: {message}")
     if remove_config:
         remove_background_endpoint(protocol, local_port)
     return stopped
+
+
+def run_cleanup(args: list[str]) -> int:
+    endpoint = endpoint_from_args(args)
+    if endpoint is None:
+        return usage()
+    protocol, local_port = endpoint
+    stopped = stop_endpoint(protocol, local_port, server_cleanup=False)
+    killed = kill_frpc_for_endpoint(protocol, local_port)
+    ok, data, message = cleanup_server_port(protocol, local_port)
+    if stopped:
+        print(f"Stopped local background endpoint {endpoint_key(protocol, local_port)}.")
+    if killed:
+        print(f"Stopped {killed} local frpc process(es) for {endpoint_key(protocol, local_port)}.")
+    if ok:
+        print(f"Server cleanup: closed {data.get('closed', 0)} session(s); released_slots={data.get('released_slots', [])}")
+        return 0
+    print(f"Server cleanup failed: {message}")
+    return 1
 
 
 def run_stop(args: list[str]) -> int:
@@ -1345,6 +1447,8 @@ def main() -> int:
         return run_tcp(args[1:])
     if command == "self-test":
         return run_self_test(args[1:])
+    if command == "cleanup":
+        return run_cleanup(args[1:])
     if command == "rdp":
         print(rdp_unsupported_message())
         return 2

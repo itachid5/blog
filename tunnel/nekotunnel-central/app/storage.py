@@ -1822,7 +1822,7 @@ class SQLiteStore:
                       AND protocol = ?
                       AND local_port = ?
                       AND endpoint_id != ?
-                      AND status IN ('active', 'reconnecting')
+                      AND status = 'active'
                       AND (grace_until IS NULL OR grace_until >= ?)
                     LIMIT 1
                     """,
@@ -2106,6 +2106,108 @@ class SQLiteStore:
         self.add_log(actor, action, f"Released session {session_id} from slot {row['slot_id'] or '-'} with status {status}")
         return True
 
+    def port_conflict_details(self, user_id: int, protocol: str, local_port: int, endpoint_id: str = "") -> dict:
+        now_text = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT endpoint_id, status, last_seen_at, grace_until
+                FROM tunnel_endpoints
+                WHERE user_id = ?
+                  AND protocol = ?
+                  AND local_port = ?
+                  AND status IN ('active', 'reconnecting')
+                  AND (grace_until IS NULL OR grace_until >= ?)
+                ORDER BY CASE WHEN endpoint_id = ? THEN 0 ELSE 1 END, last_seen_at DESC
+                LIMIT 1
+                """,
+                (user_id, protocol, local_port, now_text, endpoint_id),
+            ).fetchone()
+            if not row:
+                row = conn.execute(
+                    """
+                    SELECT endpoint_id, status, last_heartbeat_at AS last_seen_at, grace_until
+                    FROM sessions
+                    WHERE user_id = ?
+                      AND protocol = ?
+                      AND local_port = ?
+                      AND status IN ('active', 'starting', 'connected', 'reconnecting', 'stale')
+                    ORDER BY last_heartbeat_at DESC
+                    LIMIT 1
+                    """,
+                    (user_id, protocol, local_port),
+                ).fetchone()
+        if not row:
+            return {}
+        conflict_endpoint = row["endpoint_id"] or ""
+        return {
+            "status": row["status"],
+            "last_seen_at": row["last_seen_at"],
+            "endpoint_id_short": conflict_endpoint[:12] if conflict_endpoint else "-",
+            "same_endpoint": bool(endpoint_id and conflict_endpoint == endpoint_id),
+        }
+
+    def disconnect_port(
+        self,
+        user_id: int,
+        protocol: str,
+        local_port: int,
+        endpoint_id: str = "",
+        client_id: str = "",
+        actor: str = "user",
+        force: bool = False,
+    ) -> dict:
+        params: list[object] = [user_id, protocol, local_port]
+        filters = ["user_id = ?", "protocol = ?", "local_port = ?"]
+        if endpoint_id:
+            filters.append("endpoint_id = ?")
+            params.append(endpoint_id)
+            statuses = ('active', 'starting', 'connected', 'reconnecting', 'stale')
+        elif force:
+            statuses = ('active', 'starting', 'connected', 'reconnecting', 'stale')
+        else:
+            statuses = ('reconnecting', 'stale')
+        if client_id:
+            filters.append("client_id = ?")
+            params.append(client_id[:200])
+        status_placeholders = ",".join("?" for _ in statuses)
+        params.extend(statuses)
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT id, slot_id FROM sessions
+                WHERE {' AND '.join(filters)}
+                  AND status IN ({status_placeholders})
+                ORDER BY started_at DESC
+                """,
+                tuple(params),
+            ).fetchall()
+        released_slots: list[int] = []
+        for row in rows:
+            if self.close_session(row["id"], user_id, "closed", actor, release=True):
+                if row["slot_id"] is not None and row["slot_id"] not in released_slots:
+                    released_slots.append(row["slot_id"])
+        if released_slots:
+            active_statuses = self.active_status_placeholders()
+            with self.connect() as conn:
+                for slot_id in released_slots:
+                    active = conn.execute(
+                        f"SELECT 1 FROM sessions WHERE slot_id = ? AND status IN ({active_statuses}) LIMIT 1",
+                        (slot_id, *ACTIVE_SESSION_STATUSES),
+                    ).fetchone()
+                    if not active:
+                        conn.execute(
+                            """
+                            UPDATE slots
+                            SET status = 'free', current_session_id = NULL, error = '', updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                            """,
+                            (slot_id,),
+                        )
+                conn.commit()
+        self.add_log(actor, "disconnect.port", f"Closed {len(rows)} session(s) for {protocol}-{local_port}")
+        return {"ok": True, "closed": len(rows), "released_slots": released_slots}
+
     def expire_stale_sessions(self, ttl_seconds: int, grace_seconds: int = 300) -> list[str]:
         cutoff = (datetime.utcnow() - timedelta(seconds=ttl_seconds)).strftime("%Y-%m-%d %H:%M:%S")
         with self.connect() as conn:
@@ -2173,8 +2275,16 @@ class SQLiteStore:
         slot = self.get_slot(slot_id)
         if not slot:
             return False
-        if slot.current_session_id:
-            self.close_session(slot.current_session_id, None, "closed", "admin")
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT id FROM sessions
+                WHERE slot_id = ? AND status IN ('active', 'starting', 'connected', 'reconnecting', 'stale')
+                """,
+                (slot_id,),
+            ).fetchall()
+        for row in rows:
+            self.close_session(row["id"], None, "closed", "admin")
         with self.connect() as conn:
             cursor = conn.execute(
                 """
@@ -2205,6 +2315,9 @@ class SQLiteStore:
 
     def force_close_session(self, session_id: str) -> bool:
         return self.close_session(session_id, None, "closed", "admin")
+
+    def force_close_port(self, user_id: int, protocol: str, local_port: int) -> dict:
+        return self.disconnect_port(user_id, protocol, local_port, actor="admin", force=True)
 
 
 class PostgresStore(SQLiteStore):

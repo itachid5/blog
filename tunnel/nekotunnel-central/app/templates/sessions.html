@@ -33,7 +33,17 @@
           <td>{{ session.last_heartbeat }}</td>
           <td>{{ session.grace_until or '-' }}</td>
           <td>{{ session.ended_at or '-' }}</td>
-          <td class="actions"><form method="post" action="/sessions/{{ session.id }}/force-close"><button type="submit">Force Close</button></form></td>
+          <td class="actions">
+            <form method="post" action="/sessions/{{ session.id }}/force-close"><button type="submit">Force Close</button></form>
+            {% if session.user_id and session.local_port %}
+              <form method="post" action="/sessions/force-close-port">
+                <input type="hidden" name="user_id" value="{{ session.user_id }}">
+                <input type="hidden" name="protocol" value="{{ session.protocol }}">
+                <input type="hidden" name="local_port" value="{{ session.local_port }}">
+                <button type="submit">Force Close User+Port</button>
+              </form>
+            {% endif %}
+          </td>
         </tr>
       {% else %}
         <tr><td colspan="23" class="empty">No active or historical sessions yet.</td></tr>

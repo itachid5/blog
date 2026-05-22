@@ -1814,6 +1814,18 @@ def force_close_session(request: Request, session_id: str):
     return RedirectResponse("/sessions", status_code=303)
 
 
+@app.post("/sessions/force-close-port")
+def force_close_port(request: Request, user_id: Annotated[int, Form()], protocol: Annotated[str, Form()], local_port: Annotated[int, Form()]):
+    auth_redirect = require_admin(request)
+    if auth_redirect:
+        return auth_redirect
+    if protocol != "tcp" or local_port < 1 or local_port > 65535:
+        flash(request, "danger", "Invalid endpoint.")
+        return RedirectResponse("/sessions", status_code=303)
+    result = store.force_close_port(user_id, protocol, local_port)
+    flash(request, "success", f"Force closed {result['closed']} session(s) for {protocol}-{local_port}.")
+    return RedirectResponse("/sessions", status_code=303)
+
 
 @app.get("/provision-logs")
 def provision_logs(request: Request, status: Annotated[str, Query()] = "all"):
@@ -2163,7 +2175,20 @@ async def api_connect(request: Request):
         if error == "session_limit_reached":
             return JSONResponse({"ok": False, "error": error, "max_active_sessions": user.max_sessions}, status_code=409)
         if error == "port_already_active":
-            return JSONResponse({"ok": False, "error": error, "local_port": local_port}, status_code=409)
+            details = store.port_conflict_details(user.id, protocol, local_port, endpoint_id)
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": error,
+                    "local_port": local_port,
+                    "status": details.get("status"),
+                    "last_seen_at": details.get("last_seen_at"),
+                    "endpoint_id_short": details.get("endpoint_id_short"),
+                    "same_endpoint": details.get("same_endpoint", False),
+                    "suggested_command": f"nekotunnel cleanup {protocol} {local_port}",
+                },
+                status_code=409,
+            )
         status_code = 409 if error == "no_available_slot" else 400
         return JSONResponse({"ok": False, "error": error}, status_code=status_code)
 
@@ -2226,3 +2251,33 @@ async def api_disconnect(request: Request):
     if not store.close_session(session_id, user.id, "closed", "user", release=release, grace_seconds=settings.session_reconnect_grace_seconds):
         return JSONResponse({"ok": False, "error": "session_not_found"}, status_code=404)
     return {"ok": True, "release": release}
+
+
+@app.post("/api/disconnect-port")
+async def api_disconnect_port(request: Request):
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=400)
+    if not isinstance(payload, dict):
+        return JSONResponse({"ok": False, "error": "invalid_json"}, status_code=400)
+    user = api_user(payload)
+    if not user:
+        return JSONResponse({"ok": False, "error": "invalid_token"}, status_code=401)
+    try:
+        local_port = int(payload.get("local_port"))
+    except (TypeError, ValueError):
+        return JSONResponse({"ok": False, "error": "invalid_local_port"}, status_code=400)
+    if local_port < 1 or local_port > 65535:
+        return JSONResponse({"ok": False, "error": "invalid_local_port"}, status_code=400)
+    protocol = str(payload.get("protocol") or "tcp").lower()
+    if protocol != "tcp":
+        return JSONResponse({"ok": False, "error": "invalid_protocol"}, status_code=400)
+    result = store.disconnect_port(
+        user.id,
+        protocol,
+        local_port,
+        endpoint_id=str(payload.get("endpoint_id") or "").strip(),
+        client_id=str(payload.get("client_id") or "").strip(),
+    )
+    return result
