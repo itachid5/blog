@@ -6,15 +6,15 @@
 </section>
 <div class="panel">
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table logs-table">
       <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Details</th></tr></thead>
       <tbody>
       {% for log in logs %}
         <tr>
-          <td>{{ log.created_at }}</td>
-          <td>{{ log.actor }}</td>
-          <td><code>{{ log.action }}</code></td>
-          <td>{{ log.details }}</td>
+          <td data-label="Time">{{ log.created_at }}</td>
+          <td data-label="Actor">{{ log.actor }}</td>
+          <td data-label="Action"><code>{{ log.action }}</code></td>
+          <td data-label="Details">{{ log.details }}</td>
         </tr>
       {% else %}
         <tr><td colspan="4" class="empty">No logs yet.</td></tr>

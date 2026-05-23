@@ -2,38 +2,38 @@ function isMobileViewport() {
   return window.innerWidth <= 768;
 }
 
-function closeMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('overlay');
+function getSidebarElements() {
+  return {
+    sidebar: document.getElementById('sidebar'),
+    overlay: document.getElementById('overlay'),
+    openButton: document.getElementById('openMenuBtn'),
+  };
+}
+
+function setSidebarOpen(isOpen) {
+  const { sidebar, overlay, openButton } = getSidebarElements();
   if (!sidebar || !overlay) return;
-  sidebar.classList.remove('open');
-  overlay.classList.remove('show');
-  document.body.classList.remove('sidebar-open');
+  sidebar.classList.toggle('open', isOpen);
+  overlay.classList.toggle('show', isOpen);
+  document.body.classList.toggle('sidebar-open', isOpen);
+  sidebar.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+  if (openButton) openButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function closeMobileSidebar() {
+  setSidebarOpen(false);
 }
 
 function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const mainContent = document.getElementById('mainContent');
-  const overlay = document.getElementById('overlay');
-  if (!sidebar || !mainContent || !overlay) return;
-
-  if (isMobileViewport()) {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('show', sidebar.classList.contains('open'));
-    document.body.classList.toggle('sidebar-open', sidebar.classList.contains('open'));
-    return;
-  }
-
-  sidebar.classList.toggle('closed');
-  mainContent.classList.toggle('expanded');
-  localStorage.setItem('nekotunnel-sidebar-collapsed', sidebar.classList.contains('closed') ? '1' : '0');
+  const { sidebar } = getSidebarElements();
+  if (!sidebar) return;
+  setSidebarOpen(!sidebar.classList.contains('open'));
 }
 
-function setThemeIcon(theme) {
-  const icon = document.querySelector('#themeToggleBtn i');
-  if (!icon) return;
-  icon.classList.toggle('ph-moon', theme === 'dark');
-  icon.classList.toggle('ph-sun', theme !== 'dark');
+function syncThemeIcon(theme) {
+  const button = document.getElementById('themeToggleBtn');
+  if (!button) return;
+  button.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
 }
 
 function toggleTheme() {
@@ -41,7 +41,7 @@ function toggleTheme() {
   const nextTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', nextTheme);
   localStorage.setItem('nekotunnel-theme', nextTheme);
-  setThemeIcon(nextTheme);
+  syncThemeIcon(nextTheme);
 }
 
 function copyWithTextareaFallback(text) {
@@ -86,6 +86,12 @@ function bindCopyButtons() {
   });
 }
 
+function createLucideIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
 window.toggleSidebar = toggleSidebar;
 window.toggleTheme = toggleTheme;
 window.copyLiteralText = copyLiteralText;
@@ -94,22 +100,21 @@ window.copyTextFromElement = copyTextFromElement;
 document.addEventListener('DOMContentLoaded', () => {
   const theme = localStorage.getItem('nekotunnel-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
-  setThemeIcon(theme);
-
-  const sidebar = document.getElementById('sidebar');
-  const mainContent = document.getElementById('mainContent');
-  if (sidebar && mainContent && !isMobileViewport() && localStorage.getItem('nekotunnel-sidebar-collapsed') === '1') {
-    sidebar.classList.add('closed');
-    mainContent.classList.add('expanded');
-  }
+  syncThemeIcon(theme);
+  createLucideIcons();
 
   const overlay = document.getElementById('overlay');
   if (overlay) overlay.addEventListener('click', closeMobileSidebar);
 
+  const closeButton = document.getElementById('closeMenuBtn');
+  if (closeButton) closeButton.addEventListener('click', closeMobileSidebar);
+
   document.querySelectorAll('.sidebar a').forEach((link) => {
-    link.addEventListener('click', () => {
-      if (isMobileViewport()) closeMobileSidebar();
-    });
+    link.addEventListener('click', closeMobileSidebar);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMobileSidebar();
   });
 
   bindCopyButtons();

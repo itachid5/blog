@@ -13,7 +13,7 @@
 </div>
 <div class="panel">
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table provision-logs-table">
       <thead>
         <tr>
           <th>Time</th><th>Action</th><th>Railway Account</th><th>Slot</th><th>Project</th><th>Service</th><th>Status</th><th>Command / Method</th><th>stdout</th><th>stderr</th><th>Error</th><th>Duration</th><th>Actions</th>
@@ -22,19 +22,19 @@
       <tbody>
       {% for log in provision_logs %}
         <tr>
-          <td>{{ log.created_at }}</td>
-          <td><code>{{ log.action }}</code></td>
-          <td>{{ log.account_label or account_label(accounts, log.account_id) }}</td>
-          <td>{{ log.slot_id or '-' }}</td>
-          <td>{{ log.project_name }}</td>
-          <td>{{ log.service_name or '-' }}</td>
-          <td><span class="badge status-{{ log.status }}">{{ log.status }}</span></td>
-          <td><details><summary>View command</summary><pre>{{ log.command }}</pre></details></td>
-          <td><details><summary>View stdout</summary><pre>{{ log.stdout or '-' }}</pre></details></td>
-          <td><details><summary>View stderr</summary><pre>{{ log.stderr or '-' }}</pre></details></td>
-          <td><details><summary>View error</summary><pre>{{ log.error or '-' }}</pre></details></td>
-          <td>{{ log.duration_ms }} ms</td>
-          <td class="actions">
+          <td data-label="Time">{{ log.created_at }}</td>
+          <td data-label="Action"><code>{{ log.action }}</code></td>
+          <td data-label="Railway Account">{{ log.account_label or account_label(accounts, log.account_id) }}</td>
+          <td data-label="Slot">{{ log.slot_id or '-' }}</td>
+          <td data-label="Project">{{ log.project_name }}</td>
+          <td data-label="Service">{{ log.service_name or '-' }}</td>
+          <td data-label="Status"><span class="badge status-{{ log.status }}">{{ log.status }}</span></td>
+          <td data-label="Command / Method"><details><summary>View command</summary><pre>{{ log.command }}</pre></details></td>
+          <td data-label="stdout"><details><summary>View stdout</summary><pre>{{ log.stdout or '-' }}</pre></details></td>
+          <td data-label="stderr"><details><summary>View stderr</summary><pre>{{ log.stderr or '-' }}</pre></details></td>
+          <td data-label="Error"><details><summary>View error</summary><pre>{{ log.error or '-' }}</pre></details></td>
+          <td data-label="Duration">{{ log.duration_ms }} ms</td>
+          <td data-label="Actions" class="actions row-actions">
             <details><summary>View full log</summary><pre>Command:
 {{ log.command }}
 

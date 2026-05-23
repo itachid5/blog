@@ -1,18 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-head">
-  <h1>Dashboard</h1>
-  <p class="muted">Placeholder operational overview for the base server.</p>
+  <h1>Dashboard Overview</h1>
+  <p class="muted">NekoTunnel Central operations at a glance.</p>
 </section>
-<section class="cards">
-  <article class="card"><span>Total Railway Accounts</span><strong>{{ stats.total_accounts }}</strong></article>
-  <article class="card"><span>Total Slots</span><strong>{{ stats.total_slots }}</strong></article>
-  <article class="card"><span>Free Slots</span><strong>{{ stats.free_slots }}</strong></article>
-  <article class="card"><span>Busy Slots</span><strong>{{ stats.busy_slots }}</strong></article>
-  <article class="card"><span>Active Sessions</span><strong>{{ stats.active_sessions }}</strong></article>
-  <article class="card danger-card"><span>Failed Slots</span><strong>{{ stats.failed_slots }}</strong></article>
-  <article class="card"><span>Manual Billing Enabled</span><strong>{{ manual_billing_stats.enabled }}</strong></article>
-  <article class="card"><span>Billing Expiring ≤3 Days</span><strong>{{ manual_billing_stats.expiring_within_3_days }}</strong></article>
-  <article class="card danger-card"><span>Billing Expired</span><strong>{{ manual_billing_stats.expired }}</strong></article>
+<section class="stats-grid">
+  <article class="stat-card full-width">
+    <div class="stat-card-header"><span>Total Railway Accounts</span><i data-lucide="server" style="color: var(--accent-color);" aria-hidden="true"></i></div>
+    <h3>{{ stats.total_accounts }}</h3>
+  </article>
+  <article class="stat-card">
+    <div class="stat-card-header"><span>Total Slots</span><i data-lucide="layout-grid" aria-hidden="true"></i></div>
+    <h3>{{ stats.total_slots }}</h3>
+  </article>
+  <article class="stat-card">
+    <div class="stat-card-header"><span>Free Slots</span><i data-lucide="check-circle" style="color: var(--color-success);" aria-hidden="true"></i></div>
+    <h3>{{ stats.free_slots }}</h3>
+  </article>
+  <article class="stat-card">
+    <div class="stat-card-header"><span>Busy Slots</span><i data-lucide="activity" style="color: var(--color-warning);" aria-hidden="true"></i></div>
+    <h3>{{ stats.busy_slots }}</h3>
+  </article>
+  <article class="stat-card">
+    <div class="stat-card-header"><span>Active Sessions</span><i data-lucide="zap" style="color: var(--accent-color);" aria-hidden="true"></i></div>
+    <h3>{{ stats.active_sessions }}</h3>
+  </article>
+  <article class="stat-card danger-card">
+    <div class="stat-card-header"><span>Failed Slots</span><i data-lucide="x-circle" style="color: var(--color-danger);" aria-hidden="true"></i></div>
+    <h3>{{ stats.failed_slots }}</h3>
+  </article>
+  <article class="stat-card">
+    <div class="stat-card-header"><span>Manual Billing Enabled</span><i data-lucide="settings" aria-hidden="true"></i></div>
+    <h3>{{ manual_billing_stats.enabled }}</h3>
+  </article>
+  <article class="stat-card">
+    <div class="stat-card-header"><span>Billing Expiring ≤3 Days</span><i data-lucide="clock" style="color: var(--color-warning);" aria-hidden="true"></i></div>
+    <h3>{{ manual_billing_stats.expiring_within_3_days }}</h3>
+  </article>
+  <article class="stat-card danger-card">
+    <div class="stat-card-header"><span>Billing Expired</span><i data-lucide="calendar-x" style="color: var(--color-danger);" aria-hidden="true"></i></div>
+    <h3>{{ manual_billing_stats.expired }}</h3>
+  </article>
 </section>
 {% endblock %}

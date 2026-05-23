@@ -6,34 +6,34 @@
 </section>
 <div class="panel">
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table sessions-table">
       <thead><tr><th>Session ID</th><th>User</th><th>Slot</th><th>Endpoint</th><th>Endpoint ID</th><th>Client ID</th><th>Status</th><th>Public Address</th><th>Reconnects</th><th>Control Disconnects</th><th>Control Reason</th><th>Public Changed</th><th>Route</th><th>tcpMux</th><th>TCP profile</th><th>Last Disconnect</th><th>Proxy</th><th>Client</th><th>Started At</th><th>Last Seen</th><th>Grace Until</th><th>Ended At</th><th>Actions</th></tr></thead>
       <tbody>
       {% for session in sessions %}
         <tr>
-          <td><code>{{ session.id }}</code></td>
-          <td>{{ session.user }}</td>
-          <td>{{ session.slot }}</td>
-          <td>{{ session.protocol or 'tcp' }} {{ session.local_port or '-' }}</td>
-          <td><code>{{ session.endpoint_short }}</code></td>
-          <td><code>{{ session.client_short }}</code></td>
-          <td><span class="badge status-{{ session.status }}">{{ session.status }}</span></td>
-          <td>{% if session.last_public_host and session.last_public_port %}<code>{{ session.last_public_host }}:{{ session.last_public_port }}</code>{% else %}-{% endif %}</td>
-          <td>{{ session.reconnect_count }}</td>
-          <td>{{ session.control_disconnect_count or 0 }}</td>
-          <td>{{ session.last_control_disconnect_reason or '-' }}</td>
-          <td>{% if session.public_address_changed is none %}-{% elif session.public_address_changed %}yes{% else %}no{% endif %}</td>
-          <td>{{ session.route_mode or 'mux' }}</td>
-          <td>{% if session.tcp_mux is none %}-{% elif session.tcp_mux %}true{% else %}false{% endif %}</td>
-          <td>{{ session.connection_profile or '-' }}</td>
-          <td>{{ session.last_disconnect_reason or '-' }}</td>
-          <td>{{ session.proxy_name or '-' }}</td>
-          <td>{{ session.client_info or '-' }}</td>
-          <td>{{ session.started_at }}</td>
-          <td>{{ session.last_heartbeat }}</td>
-          <td>{{ session.grace_until or '-' }}</td>
-          <td>{{ session.ended_at or '-' }}</td>
-          <td class="actions">
+          <td data-label="Session ID"><code>{{ session.id }}</code></td>
+          <td data-label="User">{{ session.user }}</td>
+          <td data-label="Slot">{{ session.slot }}</td>
+          <td data-label="Endpoint">{{ session.protocol or 'tcp' }} {{ session.local_port or '-' }}</td>
+          <td data-label="Endpoint ID"><code>{{ session.endpoint_short }}</code></td>
+          <td data-label="Client ID"><code>{{ session.client_short }}</code></td>
+          <td data-label="Status"><span class="badge status-{{ session.status }}">{{ session.status }}</span></td>
+          <td data-label="Public Address">{% if session.last_public_host and session.last_public_port %}<code>{{ session.last_public_host }}:{{ session.last_public_port }}</code>{% else %}-{% endif %}</td>
+          <td data-label="Reconnects">{{ session.reconnect_count }}</td>
+          <td data-label="Control Disconnects">{{ session.control_disconnect_count or 0 }}</td>
+          <td data-label="Control Reason">{{ session.last_control_disconnect_reason or '-' }}</td>
+          <td data-label="Public Changed">{% if session.public_address_changed is none %}-{% elif session.public_address_changed %}yes{% else %}no{% endif %}</td>
+          <td data-label="Route">{{ session.route_mode or 'mux' }}</td>
+          <td data-label="tcpMux">{% if session.tcp_mux is none %}-{% elif session.tcp_mux %}true{% else %}false{% endif %}</td>
+          <td data-label="TCP Profile">{{ session.connection_profile or '-' }}</td>
+          <td data-label="Last Disconnect">{{ session.last_disconnect_reason or '-' }}</td>
+          <td data-label="Proxy">{{ session.proxy_name or '-' }}</td>
+          <td data-label="Client">{{ session.client_info or '-' }}</td>
+          <td data-label="Started At">{{ session.started_at }}</td>
+          <td data-label="Last Seen">{{ session.last_heartbeat }}</td>
+          <td data-label="Grace Until">{{ session.grace_until or '-' }}</td>
+          <td data-label="Ended At">{{ session.ended_at or '-' }}</td>
+          <td data-label="Actions" class="actions row-actions">
             <form method="post" action="/sessions/{{ session.id }}/force-close"><button type="submit">Force Close</button></form>
             {% if session.user_id and session.local_port %}
               <form method="post" action="/sessions/force-close-port">

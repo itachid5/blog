@@ -93,13 +93,13 @@
                   <div class="panel browserless-box">
                     <div><strong>Railway Login URL:</strong></div>
                     <div><a href="{{ attempt.login_url }}" target="_blank" rel="noreferrer">Open Login URL</a></div>
-                    <div><code>{{ attempt.login_url }}</code></div>
-                    <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.login_url }}')">Copy URL</button>
+                    <div><code id="login-url-{{ account.id }}">{{ attempt.login_url }}</code></div>
+                    <button type="button" data-copy-target="login-url-{{ account.id }}">Copy URL</button>
                     {% if attempt.pairing_code %}
                       <div class="device-code-card">
                         <div><strong>Device Code:</strong></div>
-                        <div><code>{{ attempt.pairing_code }}</code></div>
-                        <button type="button" onclick="navigator.clipboard.writeText('{{ attempt.pairing_code }}')">Copy Code</button>
+                        <div><code id="pairing-code-{{ account.id }}">{{ attempt.pairing_code }}</code></div>
+                        <button type="button" data-copy-target="pairing-code-{{ account.id }}">Copy Code</button>
                       </div>
                     {% else %}
                       <div class="alert alert-warning">Login URL found, but device code was not parsed yet. Wait a few seconds and refresh status.</div>

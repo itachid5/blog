@@ -70,21 +70,21 @@ nekotunnel api https://your-domain.example</code></pre>
 <div class="panel">
   <h2>User Tokens</h2>
   <div class="table-scroll">
-    <table>
+    <table class="responsive-table users-table">
       <thead><tr><th>Name</th><th>Token Prefix</th><th>Status</th><th>Max Active Sessions</th><th>Actions</th></tr></thead>
       <tbody>
       {% for user in users %}
         <tr>
-          <td>{{ user.name }}</td>
-          <td><code>{{ user.token_prefix }}</code></td>
-          <td><span class="badge">{{ user.status }}</span></td>
-          <td>
+          <td data-label="Name">{{ user.name }}</td>
+          <td data-label="Token Prefix"><code>{{ user.token_prefix }}</code></td>
+          <td data-label="Status"><span class="badge">{{ user.status }}</span></td>
+          <td data-label="Max Active Sessions">
             <form method="post" action="/users/{{ user.id }}/max-active-sessions" class="inline-form">
               <input name="max_sessions" type="number" min="1" value="{{ user.max_sessions }}" required>
               <button type="submit">Save</button>
             </form>
           </td>
-          <td class="actions">
+          <td data-label="Actions" class="actions row-actions">
             <form method="post" action="/users/{{ user.id }}/disable"><button type="submit">Disable</button></form>
             <form method="post" action="/users/{{ user.id }}/delete"><button class="danger" type="submit">Delete</button></form>
           </td>
