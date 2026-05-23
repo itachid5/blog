@@ -1,356 +1,410 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard Overview · NekoTunnel Central</title>
-  <script>
-    (function () {
-      const storedTheme = localStorage.getItem('nekotunnel-theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', storedTheme);
-    })();
-</script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Overview · NekoTunnel Central</title>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    :root[data-theme="dark"] {
-      color-scheme: dark;
-      --bg-body: #000;
-      --bg-radial: radial-gradient(circle at top left, rgba(114, 156, 255, 0.18), transparent 32rem), radial-gradient(circle at 85% 10%, rgba(136, 85, 255, 0.16), transparent 30rem), #000;
-      --glass-bg: rgba(15, 15, 18, 0.68);
-      --glass-strong: rgba(22, 22, 26, 0.84);
-      --glass-border: rgba(255, 255, 255, 0.09);
-      --text-primary: #e8e8ef;
-      --text-secondary: #9a9aa8;
-      --hover-bg: rgba(255, 255, 255, 0.08);
-      --accent-color: #729cff;
-      --accent-glass: rgba(114, 156, 255, 0.14);
-      --card-bg: rgba(255, 255, 255, 0.045);
-      --input-bg: rgba(8, 8, 10, 0.76);
-      --code-bg: rgba(255, 255, 255, 0.07);
-      --shadow-color: rgba(0, 0, 0, 0.45);
-      --color-success: #22c55e;
-      --color-warning: #f59e0b;
-      --color-danger: #ef4444;
-    }
-    :root[data-theme="light"] {
-      color-scheme: light;
-      --bg-body: #f4f5f8;
-      --bg-radial: radial-gradient(circle at top left, rgba(79, 70, 229, 0.14), transparent 30rem), radial-gradient(circle at 90% 10%, rgba(14, 165, 233, 0.12), transparent 28rem), #f4f5f8;
-      --glass-bg: rgba(255, 255, 255, 0.72);
-      --glass-strong: rgba(255, 255, 255, 0.9);
-      --glass-border: rgba(15, 23, 42, 0.08);
-      --text-primary: #171721;
-      --text-secondary: #5f6472;
-      --hover-bg: rgba(15, 23, 42, 0.055);
-      --accent-color: #4f46e5;
-      --accent-glass: rgba(79, 70, 229, 0.12);
-      --card-bg: rgba(255, 255, 255, 0.58);
-      --input-bg: rgba(255, 255, 255, 0.86);
-      --code-bg: rgba(15, 23, 42, 0.055);
-      --shadow-color: rgba(15, 23, 42, 0.12);
-      --color-success: #16a34a;
-      --color-warning: #d97706;
-      --color-danger: #dc2626;
-    }
-    * { box-sizing: border-box; }
-    html { min-width: 0; overflow-x: hidden; }
-    body { margin: 0; min-width: 0; min-height: 100vh; overflow-x: hidden; background: var(--bg-radial); color: var(--text-primary); font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }
-    a { color: inherit; }
-    code, pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
-    code { border-radius: 8px; background: var(--code-bg); padding: 2px 6px; font-size: 12px; }
-    pre { margin: 0; border: 1px solid var(--glass-border); border-radius: 14px; background: var(--code-bg); padding: 14px; color: var(--text-primary); overflow-x: auto; }
-    button, .button-link { border: 1px solid var(--glass-border); border-radius: 999px; background: var(--card-bg); color: var(--text-primary); min-height: 38px; padding: 9px 14px; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
-    button:hover, .button-link:hover, .button-link.active { border-color: color-mix(in srgb, var(--accent-color), transparent 35%); background: var(--accent-glass); }
-    button:active, .button-link:active { transform: translateY(1px); }
-    button.primary, .primary { border-color: transparent; background: linear-gradient(135deg, var(--accent-color), color-mix(in srgb, var(--accent-color), #000 18%)); color: #fff; }
-    button.danger, .danger { border-color: color-mix(in srgb, var(--color-danger), transparent 55%); color: var(--color-danger); }
-    input, select, textarea { width: 100%; min-width: 0; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--input-bg); color: var(--text-primary); padding: 10px 12px; font: inherit; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: color-mix(in srgb, var(--accent-color), transparent 28%); box-shadow: 0 0 0 3px var(--accent-glass); }
-    label { display: grid; gap: 7px; color: var(--text-secondary); font-size: 12px; font-weight: 700; letter-spacing: .03em; }
-    h1, h2, h3, p { margin-top: 0; }
-    h1 { margin-bottom: 7px; font-size: clamp(26px, 4vw, 42px); letter-spacing: -.05em; }
-    h2 { margin-bottom: 16px; font-size: 19px; letter-spacing: -.03em; }
-    h3 { margin-bottom: 10px; font-size: 15px; }
-    .muted { color: var(--text-secondary); }
-    .small { font-size: 12px; }
-    .mobile-only { display: none; }
-    .app-shell { display: grid; grid-template-columns: 272px minmax(0, 1fr); min-height: 100vh; }
-    .sidebar { position: sticky; top: 0; height: 100vh; padding: 18px; border-right: 1px solid var(--glass-border); background: color-mix(in srgb, var(--glass-bg), transparent 5%); backdrop-filter: blur(22px); z-index: 30; overflow-y: auto; }
-    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-    .brand-mark, .logo-mark { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--glass-border); border-radius: 15px; background: var(--accent-glass); color: var(--accent-color); font-weight: 800; }
-    .brand-title { font-weight: 800; letter-spacing: -.03em; }
-    .brand-subtitle { color: var(--text-secondary); font-size: 12px; }
-    .sidebar-close { display: none; margin-left: auto; min-height: 34px; width: 34px; padding: 0; }
-    .nav-group { margin: 18px 0; }
-    .nav-label { margin: 0 0 8px 10px; color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-    .nav-item { width: 100%; justify-content: flex-start; margin-bottom: 6px; border-radius: 14px; background: transparent; }
-    .nav-item.active { border-color: color-mix(in srgb, var(--accent-color), transparent 42%); background: var(--accent-glass); color: var(--accent-color); }
-    .logout-form { margin: 0; }
-    .nav-logout { color: var(--color-danger); }
-    .overlay { position: fixed; inset: 0; z-index: 20; display: none; background: rgba(0, 0, 0, .45); backdrop-filter: blur(8px); }
-    .overlay.show { display: block; }
-    .main-pane { min-width: 0; }
-    .topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 74px; padding: 16px 24px; border-bottom: 1px solid var(--glass-border); background: color-mix(in srgb, var(--glass-bg), transparent 12%); backdrop-filter: blur(22px); }
-    .topbar-left, .topbar-actions { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .menu-button { display: none; width: 42px; padding: 0; }
-    .topbar-title { min-width: 0; overflow: hidden; color: var(--text-secondary); font-size: 13px; font-weight: 800; letter-spacing: .02em; text-overflow: ellipsis; white-space: nowrap; }
-    .theme-toggle { width: 42px; padding: 0; }
-    .content { width: min(100%, 1420px); margin: 0 auto; padding: 28px 24px 56px; }
-    .page-head { margin-bottom: 20px; }
-    .panel, .stat-card, .login-card, .command-card { min-width: 0; border: 1px solid var(--glass-border); border-radius: 22px; background: var(--glass-bg); box-shadow: 0 24px 80px var(--shadow-color); backdrop-filter: blur(24px); }
-    .panel { margin-bottom: 18px; padding: 20px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-    .stat-card { padding: 20px; }
-    .stat-card.full-width { grid-column: span 2; }
-    .stat-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--text-secondary); font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    .stat-card h3 { margin: 18px 0 0; font-size: 40px; letter-spacing: -.06em; }
-    .danger-card { border-color: color-mix(in srgb, var(--color-danger), transparent 70%); }
-    .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .settings-grid > div { min-width: 0; border: 1px solid var(--glass-border); border-radius: 14px; background: var(--card-bg); padding: 12px; }
-    .settings-grid span { display: block; color: var(--text-secondary); font-size: 12px; }
-    .settings-grid strong { overflow-wrap: anywhere; }
-    .grid-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: end; }
-    .stack { display: grid; gap: 14px; }
-    .inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    .row-actions, .project-actions, .slot-actions, .account-actions, .billing-actions { align-items: flex-start; }
-    .row-actions form, .project-actions form, .slot-actions form, .account-actions form { margin: 0; }
-    .table-scroll { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid var(--glass-border); padding: 12px; text-align: left; vertical-align: top; }
-    th { color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    td { min-width: 110px; }
-    .empty { color: var(--text-secondary); text-align: center; }
-    .badge { display: inline-flex; align-items: center; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--card-bg); padding: 4px 9px; font-size: 12px; font-weight: 800; }
-    .status-success, .status-valid, .status-free, .status-deployed, .status-active { color: var(--color-success); }
-    .status-failed, .status-invalid, .status-offline, .status-expired, .status-closed { color: var(--color-danger); }
-    .status-busy, .status-tcp_pending, .status-pending { color: var(--color-warning); }
-    .alert { margin: 10px 0; border: 1px solid var(--glass-border); border-radius: 14px; background: var(--card-bg); padding: 12px 14px; }
-    .alert-warning { border-color: color-mix(in srgb, var(--color-warning), transparent 58%); color: var(--color-warning); }
-    .alert-danger { border-color: color-mix(in srgb, var(--color-danger), transparent 58%); color: var(--color-danger); }
-    .alert-success { border-color: color-mix(in srgb, var(--color-success), transparent 58%); color: var(--color-success); }
-    .command-card { margin: 12px 0 18px; padding: 14px; }
-    .command-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: var(--text-secondary); font-weight: 800; }
-    .command-box { overflow-x: auto; }
-    .account-mini-panel, .browserless-box { padding: 12px; border-radius: 14px; box-shadow: none; }
-    .browserless-output { max-width: 28rem; white-space: pre-wrap; overflow-wrap: anywhere; }
-    details summary { cursor: pointer; color: var(--accent-color); font-weight: 700; }
-    .login-body { display: grid; place-items: center; min-height: 100vh; padding: 20px; }
-    .login-card { width: min(100%, 420px); padding: 28px; }
-    .login-card .logo-mark { margin-bottom: 18px; }
-    @media (max-width: 1100px) {
-      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .grid-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 768px) {
-      body.sidebar-open { overflow: hidden; }
-      .app-shell { display: block; }
-      .sidebar { position: fixed; left: 0; top: 0; width: min(86vw, 310px); transform: translateX(-102%); transition: transform .22s ease; }
-      .sidebar.open { transform: translateX(0); }
-      .sidebar-close, .menu-button { display: inline-flex; }
-      .topbar { padding: 14px 16px; }
-      .content { padding: 22px 14px 42px; }
-      .stats-grid, .settings-grid, .grid-form { grid-template-columns: 1fr; }
-      .stat-card.full-width { grid-column: auto; }
-      .panel { padding: 16px; border-radius: 18px; }
-      .mobile-only { display: block; }
-      .table-scroll { overflow-x: visible; }
-      .responsive-table { min-width: 0; }
-      .responsive-table thead { display: none; }
-      .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { display: block; width: 100%; }
-      .responsive-table tr { margin-bottom: 14px; border: 1px solid var(--glass-border); border-radius: 18px; background: var(--card-bg); padding: 12px; }
-      .responsive-table td { min-width: 0; border-bottom: 1px solid var(--glass-border); padding: 10px 0; overflow-wrap: anywhere; }
-      .responsive-table td:last-child { border-bottom: 0; }
-      .responsive-table td::before { content: attr(data-label); display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-      .actions, .inline-form { flex-direction: column; align-items: stretch; }
-      .actions > *, .actions form, .actions button, .actions .button-link, .inline-form > *, .inline-form button { width: 100%; }
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           গ্লোবাল টাচ হাইলাইট ও আউটলাইন ফিক্স 
+           ========================================= */
+        * {
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-touch-callout: none;
+        }
+        *:focus { outline: none !important; }
 
-  </style>
+        /* =========================================
+           থিম ভেরিয়বলস (নিউট্রাল কালার আপডেট)
+           ========================================= */
+        :root[data-theme="dark"] {
+            --bg-body: #000000; 
+            --glass-bg: rgba(15, 15, 15, 0.65); 
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #e0e0e6; 
+            --text-secondary: #9ca3af; 
+            --hover-bg: rgba(255, 255, 255, 0.08);
+            
+            /* একদম সিম্পল নিউট্রাল/গ্রে অ্যাক্টিভ বাটন */
+            --menu-active-bg: rgba(255, 255, 255, 0.12); 
+            --menu-active-text: #ffffff;
+            
+            /* অন্যান্য জায়গায় সামান্য অ্যাক্সেন্ট (যেমন আইকন) */
+            --accent-color: #e0e0e6; /* ব্লু সরিয়ে সাদা করা হলো */
+            
+            --card-bg: rgba(20, 20, 20, 0.4);
+            
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+        }
+
+        :root[data-theme="light"] {
+            --bg-body: #f4f5f7; 
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.05);
+            --text-primary: #111827;
+            --text-secondary: #4b5563; 
+            --hover-bg: rgba(0, 0, 0, 0.05);
+            
+            /* লাইট মোডের জন্য সফট গ্রে অ্যাক্টিভ বাটন */
+            --menu-active-bg: rgba(0, 0, 0, 0.06);
+            --menu-active-text: #111827;
+            
+            --accent-color: #111827; /* ব্লু সরিয়ে কালো করা হলো */
+            
+            --card-bg: rgba(255, 255, 255, 0.5);
+            
+            --color-success: #16a34a;
+            --color-warning: #d97706;
+            --color-danger: #dc2626;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300; 
+            font-size: 14px; 
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            transition: background 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* টপ নেভিগেশন বার */
+        .topbar {
+            padding: 10px 20px; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-left { display: flex; align-items: center; }
+
+        .icon-btn {
+            background: transparent; border: none; color: var(--text-secondary);
+            cursor: pointer; padding: 6px; 
+            border-radius: 8px; display: flex; align-items: center; 
+            transition: all 0.2s ease; user-select: none;
+        }
+        .icon-btn.menu-btn { margin-right: 12px; }
+
+        @media (hover: hover) {
+            .icon-btn:hover { background-color: var(--hover-bg); color: var(--text-primary); }
+        }
+        .icon-btn:active { transform: scale(0.90); background-color: transparent !important; }
+
+        .topbar h1 { margin: 0; font-size: 15px; font-weight: 400; letter-spacing: 0.2px; }
+        .sun-icon { display: none; }
+        .moon-icon { display: block; }
+        :root[data-theme="light"] .sun-icon { display: block; }
+        :root[data-theme="light"] .moon-icon { display: none; }
+
+        /* মূল কন্টেন্ট */
+        .main-content {
+            padding: 25px 20px; max-width: 1100px; margin: 0 auto; padding-bottom: 100px;
+        }
+        .main-content h2 { 
+            font-weight: 400; font-size: 20px; margin-top: 0; margin-bottom: 20px; letter-spacing: -0.5px; 
+        }
+
+        /* রেস্পন্সিভ স্ট্যাটাস কার্ডস */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin-bottom: 25px; 
+        }
+
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 15px; } }
+        @media (min-width: 1024px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        .stat-card { 
+            padding: 15px 18px; 
+            border-radius: 12px; 
+            border: 1px solid var(--glass-border); 
+            background: var(--card-bg); 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        .stat-card.full-width { grid-column: span 2; }
+        @media (min-width: 768px) { .stat-card.full-width { grid-column: span 1; } }
+
+        .stat-card-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            color: var(--text-secondary); font-size: 11px; font-weight: 500; 
+            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        
+        .stat-card h3 { 
+            margin: 0; font-size: 24px; font-weight: 300; 
+            color: var(--text-primary); letter-spacing: -0.5px; 
+        }
+
+        /* সাইডবার লেআউট */
+        .sidebar {
+            width: 250px; height: 100vh; position: fixed; top: 0; left: 0;
+            padding-top: 15px; border-right: 1px solid var(--glass-border); 
+            z-index: 1000; transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow-y: auto;
+        }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; margin-bottom: 20px; }
+        .sidebar-logo { font-weight: 400; font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--text-primary); }
+        .section-title { font-size: 10px; color: var(--text-secondary); font-weight: 500; letter-spacing: 0.5px; margin: 15px 0 8px 15px; text-transform: uppercase; }
+        
+        .menu-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 15px;
+            margin: 0 8px 4px 8px; cursor: pointer; border-radius: 8px;
+            color: var(--text-secondary); font-size: 14px; font-weight: 400;
+            transition: all 0.2s ease; user-select: none;
+            text-decoration: none;
+        }
+        
+        button.menu-item {
+            width: calc(100% - 16px);
+            border: none;
+            background: transparent;
+            font-family: inherit;
+        }
+
+        @media (hover: hover) { .menu-item:hover { background-color: var(--hover-bg); color: var(--text-primary); } }
+        .menu-item:active { transform: scale(0.98); }
+        
+        /* নিউট্রাল কালার অ্যাক্টিভ বাটন */
+        .menu-item.active { 
+            background-color: var(--menu-active-bg); 
+            color: var(--menu-active-text); 
+            font-weight: 500; 
+        }
+        
+        .menu-item.logout:hover { color: var(--color-danger); background-color: rgba(239, 68, 68, 0.1); }
+        
+        .lucide { width: 16px; height: 16px; } 
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            z-index: 900; visibility: hidden; opacity: 0; transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        :root[data-theme="light"] .overlay { background: rgba(255, 255, 255, 0.3); }
+        .overlay.show { visibility: visible; opacity: 1; }
+
+        /* Alerts from current template */
+        .alert { margin: 0 0 20px 0; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--card-bg); padding: 12px 14px; }
+        .alert-warning { border-color: color-mix(in srgb, var(--color-warning), transparent 58%); color: var(--color-warning); }
+        .alert-danger { border-color: color-mix(in srgb, var(--color-danger), transparent 58%); color: var(--color-danger); }
+        .alert-success { border-color: color-mix(in srgb, var(--color-success), transparent 58%); color: var(--color-success); }
+    </style>
+    <script>
+        (function () {
+            const storedTheme = localStorage.getItem('nekotunnel-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', storedTheme);
+        })();
+    </script>
 </head>
 <body>
-  <div class="overlay" id="overlay" aria-hidden="true"></div>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar" aria-hidden="false">
-      <div class="brand">
-        <div class="brand-mark">NT</div>
-        <div>
-          <div class="brand-title">NekoTunnel</div>
-          <div class="brand-subtitle">Central Admin</div>
-        </div>
-        <button class="sidebar-close" id="closeMenuBtn" type="button" aria-label="Close menu"><i data-lucide="x" aria-hidden="true"></i></button>
-      </div>
-        <div class="nav-group">
-          <div class="nav-label">Operations</div>
-          <a class="nav-item active" href="/"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Dashboard</span></a>
-          <a class="nav-item" href="/railway-accounts"><i data-lucide="server" aria-hidden="true"></i><span>Railway Accounts</span></a>
-          <a class="nav-item" href="/railway-billing"><i data-lucide="receipt" aria-hidden="true"></i><span>Railway Billing</span></a>
-          <a class="nav-item" href="/projects"><i data-lucide="folder-kanban" aria-hidden="true"></i><span>Projects</span></a>
-          <a class="nav-item" href="/slots"><i data-lucide="layout-grid" aria-hidden="true"></i><span>Slots</span></a>
-        </div>
-        <div class="nav-group">
-          <div class="nav-label">Access</div>
-          <a class="nav-item" href="/users"><i data-lucide="users" aria-hidden="true"></i><span>Users</span></a>
-          <a class="nav-item" href="/sessions"><i data-lucide="activity" aria-hidden="true"></i><span>Sessions</span></a>
-        </div>
-        <div class="nav-group">
-          <div class="nav-label">Observability</div>
-          <a class="nav-item" href="/logs"><i data-lucide="list" aria-hidden="true"></i><span>Logs</span></a>
-          <a class="nav-item" href="/provision-logs"><i data-lucide="scroll-text" aria-hidden="true"></i><span>Provision Logs</span></a>
-        </div>
-        <div class="nav-group">
-          <div class="nav-label">System</div>
-          <a class="nav-item" href="/settings"><i data-lucide="settings" aria-hidden="true"></i><span>Settings</span></a>
-          <form method="post" action="/logout" class="logout-form"><button class="nav-item nav-logout" type="submit"><i data-lucide="log-out" aria-hidden="true"></i><span>Logout</span></button></form>
-        </div>
-    </aside>
-    <div class="main-pane">
-      <header class="topbar">
+
+    <div class="topbar glass-panel">
         <div class="topbar-left">
-          <button class="menu-button" id="openMenuBtn" type="button" aria-label="Open menu" aria-expanded="false"><i data-lucide="menu" aria-hidden="true"></i></button>
-          <div class="topbar-title">ap.tunnel.theorbit.tech/console</div>
+            <button class="icon-btn menu-btn" id="openMenuBtn">
+                <i data-lucide="menu"></i>
+            </button>
+            <h1>ap.tunnel.theorbit.tech/console</h1>
         </div>
-        <div class="topbar-actions">
-          <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="Toggle theme"><i data-lucide="sun" aria-hidden="true"></i></button>
-        </div>
-      </header>
-      <main class="content">
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme">
+            <i data-lucide="sun" class="sun-icon"></i>
+            <i data-lucide="moon" class="moon-icon"></i>
+        </button>
+    </div>
+
+    <div class="main-content">
         {% for flash in flashes or [] %}
           <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
         {% endfor %}
-<section class="page-head">
-  <h1>Dashboard Overview</h1>
-  <p class="muted">NekoTunnel Central operations at a glance.</p>
-</section>
-<section class="stats-grid">
-  <article class="stat-card full-width">
-    <div class="stat-card-header"><span>Total Railway Accounts</span><i data-lucide="server" style="color: var(--accent-color);" aria-hidden="true"></i></div>
-    <h3>{{ stats.total_accounts }}</h3>
-  </article>
-  <article class="stat-card">
-    <div class="stat-card-header"><span>Total Slots</span><i data-lucide="layout-grid" aria-hidden="true"></i></div>
-    <h3>{{ stats.total_slots }}</h3>
-  </article>
-  <article class="stat-card">
-    <div class="stat-card-header"><span>Free Slots</span><i data-lucide="check-circle" style="color: var(--color-success);" aria-hidden="true"></i></div>
-    <h3>{{ stats.free_slots }}</h3>
-  </article>
-  <article class="stat-card">
-    <div class="stat-card-header"><span>Busy Slots</span><i data-lucide="activity" style="color: var(--color-warning);" aria-hidden="true"></i></div>
-    <h3>{{ stats.busy_slots }}</h3>
-  </article>
-  <article class="stat-card">
-    <div class="stat-card-header"><span>Active Sessions</span><i data-lucide="zap" style="color: var(--accent-color);" aria-hidden="true"></i></div>
-    <h3>{{ stats.active_sessions }}</h3>
-  </article>
-  <article class="stat-card danger-card">
-    <div class="stat-card-header"><span>Failed Slots</span><i data-lucide="x-circle" style="color: var(--color-danger);" aria-hidden="true"></i></div>
-    <h3>{{ stats.failed_slots }}</h3>
-  </article>
-  <article class="stat-card">
-    <div class="stat-card-header"><span>Manual Billing Enabled</span><i data-lucide="settings" aria-hidden="true"></i></div>
-    <h3>{{ manual_billing_stats.enabled }}</h3>
-  </article>
-  <article class="stat-card">
-    <div class="stat-card-header"><span>Billing Expiring ≤3 Days</span><i data-lucide="clock" style="color: var(--color-warning);" aria-hidden="true"></i></div>
-    <h3>{{ manual_billing_stats.expiring_within_3_days }}</h3>
-  </article>
-  <article class="stat-card danger-card">
-    <div class="stat-card-header"><span>Billing Expired</span><i data-lucide="calendar-x" style="color: var(--color-danger);" aria-hidden="true"></i></div>
-    <h3>{{ manual_billing_stats.expired }}</h3>
-  </article>
-</section>
 
-      </main>
+        <h2>Dashboard Overview</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card full-width">
+                <div class="stat-card-header">
+                    <span>Total Railway Accounts</span>
+                    <i data-lucide="server" style="color: var(--accent-color);"></i>
+                </div>
+                <h3>{{ stats.total_accounts }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Total Slots</span>
+                    <i data-lucide="layout-grid"></i>
+                </div>
+                <h3>{{ stats.total_slots }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Free Slots</span>
+                    <i data-lucide="check-circle" style="color: var(--color-success);"></i>
+                </div>
+                <h3>{{ stats.free_slots }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Busy Slots</span>
+                    <i data-lucide="activity" style="color: var(--color-warning);"></i>
+                </div>
+                <h3>{{ stats.busy_slots }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Active Sessions</span>
+                    <i data-lucide="zap" style="color: var(--accent-color);"></i>
+                </div>
+                <h3>{{ stats.active_sessions }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Failed Slots</span>
+                    <i data-lucide="x-circle" style="color: var(--color-danger);"></i>
+                </div>
+                <h3>{{ stats.failed_slots }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Manual Billing Enabled</span>
+                    <i data-lucide="settings"></i>
+                </div>
+                <h3>{{ manual_billing_stats.enabled }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Billing Expiring ≤3 Days</span>
+                    <i data-lucide="clock" style="color: var(--color-warning);"></i>
+                </div>
+                <h3>{{ manual_billing_stats.expiring_within_3_days }}</h3>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span>Billing Expired</span>
+                    <i data-lucide="calendar-x" style="color: var(--color-danger);"></i>
+                </div>
+                <h3>{{ manual_billing_stats.expired }}</h3>
+            </div>
+        </div>
     </div>
-  </div>
-  <script>
 
-    function copyWithTextareaFallback(text) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.setAttribute('readonly', '');
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-    }
-    function copyLiteralText(text) {
-      if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(text).catch(function () { copyWithTextareaFallback(text); });
-      }
-      copyWithTextareaFallback(text);
-      return Promise.resolve();
-    }
-    function copyTextFromElement(elementId) {
-      const target = document.getElementById(elementId);
-      if (!target) return Promise.resolve();
-      return copyLiteralText(target.innerText.trim());
-    }
-    function syncThemeIcon(theme) {
-      const icon = document.querySelector('#themeToggleBtn i');
-      if (icon) icon.setAttribute('data-lucide', theme === 'dark' ? 'sun' : 'moon');
-      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
-    }
-    function setSidebarOpen(open) {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('overlay');
-      const button = document.getElementById('openMenuBtn');
-      if (!sidebar || !overlay) return;
-      sidebar.classList.toggle('open', open);
-      overlay.classList.toggle('show', open);
-      document.body.classList.toggle('sidebar-open', open);
-      sidebar.setAttribute('aria-hidden', open ? 'false' : 'true');
-      if (button) button.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-    function bindCopyButtons() {
-      document.querySelectorAll('[data-copy-target]').forEach(function (button) {
-        button.addEventListener('click', function () {
-          const originalText = button.textContent;
-          copyTextFromElement(button.dataset.copyTarget).then(function () {
-            button.textContent = 'Copied';
-            window.setTimeout(function () { button.textContent = originalText; }, 1500);
-          });
-        });
-      });
-    }
-    document.addEventListener('DOMContentLoaded', function () {
-      const theme = localStorage.getItem('nekotunnel-theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', theme);
-      syncThemeIcon(theme);
-      const themeButton = document.getElementById('themeToggleBtn');
-      if (themeButton) {
-        themeButton.addEventListener('click', function () {
-          const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', nextTheme);
-          localStorage.setItem('nekotunnel-theme', nextTheme);
-          syncThemeIcon(nextTheme);
-        });
-      }
-      const openButton = document.getElementById('openMenuBtn');
-      const closeButton = document.getElementById('closeMenuBtn');
-      const overlay = document.getElementById('overlay');
-      if (openButton) openButton.addEventListener('click', function () { setSidebarOpen(true); });
-      if (closeButton) closeButton.addEventListener('click', function () { setSidebarOpen(false); });
-      if (overlay) overlay.addEventListener('click', function () { setSidebarOpen(false); });
-      document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') setSidebarOpen(false);
-      });
-      document.querySelectorAll('.nav-item').forEach(function (link) {
-        link.addEventListener('click', function () {
-          if (window.innerWidth <= 768) setSidebarOpen(false);
-        });
-      });
-      bindCopyButtons();
-      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
-    });
+    <div class="overlay" id="sidebarOverlay"></div>
 
-  </script>
+    <div class="sidebar glass-panel" id="sidebarMenu">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">Console</div>
+            <button class="icon-btn" id="closeMenuBtn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="section-title">Operations</div>
+        <a href="/" class="menu-item active">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/railway-accounts" class="menu-item">
+            <i data-lucide="server"></i>
+            <span>Railway Accounts</span>
+        </a>
+        <a href="/railway-billing" class="menu-item">
+            <i data-lucide="receipt"></i>
+            <span>Railway Billing</span>
+        </a>
+        <a href="/projects" class="menu-item">
+            <i data-lucide="boxes"></i>
+            <span>Projects</span>
+        </a>
+        <a href="/slots" class="menu-item">
+            <i data-lucide="layout-grid"></i>
+            <span>Slots</span>
+        </a>
+
+        <div class="section-title">Access</div>
+        <a href="/users" class="menu-item">
+            <i data-lucide="users"></i>
+            <span>Users</span>
+        </a>
+        <a href="/sessions" class="menu-item">
+            <i data-lucide="activity"></i>
+            <span>Sessions</span>
+        </a>
+
+        <div class="section-title">Observability</div>
+        <a href="/logs" class="menu-item">
+            <i data-lucide="terminal-square"></i>
+            <span>Logs</span>
+        </a>
+        <a href="/provision-logs" class="menu-item">
+            <i data-lucide="clipboard-list"></i>
+            <span>Provision Logs</span>
+        </a>
+
+        <div class="section-title">System</div>
+        <a href="/settings" class="menu-item">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+        </a>
+        <form method="post" action="/logout" style="margin: 0;">
+            <button type="submit" class="menu-item logout" style="margin-bottom: 20px;">
+                <i data-lucide="log-out"></i>
+                <span>Logout</span>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        document.getElementById('openMenuBtn').onclick = () => { 
+            sidebarMenu.classList.add('open'); 
+            overlay.classList.add('show'); 
+        };
+        
+        document.getElementById('closeMenuBtn').onclick = () => { 
+            sidebarMenu.classList.remove('open'); 
+            overlay.classList.remove('show'); 
+        };
+        
+        overlay.onclick = () => { 
+            sidebarMenu.classList.remove('open'); 
+            overlay.classList.remove('show'); 
+        };
+
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        themeToggleBtn.onclick = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            localStorage.setItem('nekotunnel-theme', nextTheme);
+        };
+    </script>
 </body>
 </html>
