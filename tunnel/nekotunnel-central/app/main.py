@@ -50,13 +50,17 @@ from .railway_cli import (
 )
 from .storage import account_label, mask_token, store
 
+ADMIN_SESSION_MAX_AGE_SECONDS = settings.admin_session_days * 86400
+ADMIN_COOKIE_SECURE = settings.render
+DEFAULT_SESSION_SECRET = "dev-session-secret-change-me"
+
 app = FastAPI(title=settings.app_name)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
-    max_age=settings.session_ttl_seconds,
+    max_age=ADMIN_SESSION_MAX_AGE_SECONDS,
     same_site="lax",
-    https_only=False,
+    https_only=ADMIN_COOKIE_SECURE,
 )
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
@@ -334,7 +338,9 @@ def login_submit(request: Request, admin_token: Annotated[str, Form()]):
 @app.post("/logout")
 def logout(request: Request):
     logout_admin(request)
-    return RedirectResponse("/login", status_code=303)
+    response = RedirectResponse("/login", status_code=303)
+    response.delete_cookie("session", path="/")
+    return response
 
 
 @app.get("/")
@@ -1868,6 +1874,11 @@ def settings_page(request: Request):
             "database_info": store.database_info(),
             "railway_cli": railway_cli_diagnostics(),
             "app_secret_strong": app_secret_strong_enough(),
+            "app_secret_present": bool((settings.app_secret or "").strip()),
+            "session_secret_default": settings.session_secret == DEFAULT_SESSION_SECRET,
+            "admin_session_days": settings.admin_session_days,
+            "admin_session_max_age_seconds": ADMIN_SESSION_MAX_AGE_SECONDS,
+            "admin_cookie_secure": ADMIN_COOKIE_SECURE,
             "cli_backup_stats": store.cli_session_backup_stats(),
             "provision_work_dir": provision_work_dir,
             "provision_work_dir_exists": provision_work_dir.exists(),

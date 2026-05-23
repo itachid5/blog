@@ -14,6 +14,7 @@ class Settings:
     admin_token: str = os.getenv("ADMIN_TOKEN", "change-me")
     app_secret: str = os.getenv("APP_SECRET", "")
     session_secret: str = os.getenv("APP_SECRET", os.getenv("SESSION_SECRET", "dev-session-secret-change-me"))
+    admin_session_days: int = int(os.getenv("ADMIN_SESSION_DAYS", "30"))
     session_ttl_seconds: int = int(os.getenv("SESSION_TTL_SECONDS", "3600"))
     cleanup_interval_seconds: int = int(os.getenv("CLEANUP_INTERVAL_SECONDS", "300"))
     tunnel_session_ttl_seconds: int = int(os.getenv("TUNNEL_SESSION_TTL_SECONDS", os.getenv("SESSION_TTL_SECONDS", "90")))
